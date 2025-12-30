@@ -16,7 +16,7 @@ function Login({ onLogin }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError("Credenciales incorrectas");
+    if (error) setError("Credenciales incorrectas: " + error.message);
     else onLogin(data.user);
   };
 
@@ -40,6 +40,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState('ventas');
   const [products, setProducts] = useState([]);
+  const [fetchError, setFetchError] = useState(null); // Nuevo estado para errores
   const [cart, setCart] = useState([]);
   const [showReport, setShowReport] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
@@ -109,9 +110,18 @@ function App() {
     }
   };
 
+  // --- MODIFICADO: CARGA DE PRODUCTOS CON MANEJO DE ERRORES VISIBLE ---
   useEffect(() => {
     if (user) {
-      getProducts().then(res => setProducts(res.data));
+      getProducts().then(res => {
+        if (res.error) {
+          console.error("Error cargando productos:", res.error);
+          setFetchError(res.error.message); // Guardamos el mensaje de error
+        } else {
+          setProducts(res.data || []);
+          setFetchError(null);
+        }
+      });
       fetchInventory();
     }
   }, [user]);
@@ -151,7 +161,6 @@ function App() {
 
     setSales(data || []);
     
-    // MODIFICACIÓN: Calcular total excluyendo cancelados
     const total = data?.reduce((acc, sale) => {
       return sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc;
     }, 0) || 0;
@@ -163,35 +172,23 @@ function App() {
   const fetchFinances = async () => {
     setLoading(true);
     
-    const { data: profitData, error: profitError } = await supabase
+    const { data: profitData } = await supabase
       .from('daily_profit')
       .select('*')
       .eq('fecha', financeDate)
       .single();
 
-    if (profitError && profitError.code !== 'PGRST116') {
-      console.error('Error fetching profit:', profitError);
-    }
-
-    const { data: utilityData, error: utilityError } = await supabase
+    const { data: utilityData } = await supabase
       .from('daily_utility')
       .select('*')
       .eq('fecha', financeDate)
       .single();
 
-    if (utilityError && utilityError.code !== 'PGRST116') {
-      console.error('Error fetching utility:', utilityError);
-    }
-
-    const { data: expensesData, error: expensesError } = await supabase
+    const { data: expensesData } = await supabase
       .from('expenses')
       .select('*')
       .eq('fecha', financeDate)
       .order('created_at', { ascending: false });
-
-    if (expensesError) {
-      console.error('Error fetching expenses:', expensesError);
-    }
 
     setDailyProfit(profitData);
     setDailyUtility(utilityData);
@@ -199,7 +196,6 @@ function App() {
     setLoading(false);
   };
 
-  // --- FUNCIÓN PARA ACTUALIZAR ESTADO Y DEVOLVER STOCK SI SE CANCELA ---
   const updateSaleStatus = async (saleId, newStatus) => {
     if (selectedSale && selectedSale.status === 'cancelado' && newStatus === 'cancelado') {
       alert("Esta venta ya está cancelada.");
@@ -391,9 +387,6 @@ function App() {
   const totalGastosReales = (dailyUtility?.costo_total_productos || 0) + totalGastosOperativos;
   const utilidadNetaReal = (dailyProfit?.ingresos || 0) - totalGastosReales;
 
-  // =========================================================================
-  // AQUÍ EMPIEZA LA VISTA
-  // =========================================================================
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
       
@@ -431,11 +424,22 @@ function App() {
         {/* CONTENEDOR DE PRODUCTOS (MODIFICADO CON FLEX Y MENSAJE DE DEBUG) */}
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
           
-          {/* MENSAJE DE DEBUGGING: Si no hay productos, te avisa */}
-          {products.length === 0 && (
+          {/* AVISO DE ERROR DE CONEXIÓN */}
+          {fetchError && (
+             <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '10px', marginBottom: '20px', border: '2px solid #fecaca' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                  <AlertTriangle size={24}/> Error de Conexión
+                </p>
+                <p style={{ fontSize: '14px' }}>Supabase dice: <strong>{fetchError}</strong></p>
+                <p style={{ fontSize: '12px', marginTop: '5px' }}>Posible solución: Ve a Supabase {'>'} SQL Editor y ejecuta los comandos para desactivar RLS o crear políticas públicas.</p>
+             </div>
+          )}
+
+          {/* MENSAJE DE LISTA VACÍA */}
+          {!fetchError && products.length === 0 && (
              <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '20px' }}>
                 <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No se encontraron productos</p>
-                <p style={{ fontSize: '14px' }}>Si estás en Vercel, revisa que hayas agregado las Variables de Entorno (URL y KEY) en la configuración del proyecto y haz un Redeploy.</p>
+                <p style={{ fontSize: '14px' }}>Si estás en Vercel, asegúrate de haber hecho REDEPLOY después de agregar las variables.</p>
              </div>
           )}
 

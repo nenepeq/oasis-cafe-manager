@@ -1,7 +1,11 @@
-import axios from 'axios';
+import { supabase } from './supabaseClient';
 
-// Dirección de tu servidor Node que ya configuramos
-const API_URL = 'http://localhost:3000';
-
-export const getProducts = () => axios.get(`${API_URL}/products`);
-export const registerSale = (saleData) => axios.post(`${API_URL}/sales`, saleData);
+export const getProducts = async () => {
+  // Seleccionamos todos los campos de la tabla products
+  const result = await supabase
+    .from('products')
+    .select('*')
+    .order('name', { ascending: true }); // Ordenar alfabéticamente
+    
+  return result;
+};

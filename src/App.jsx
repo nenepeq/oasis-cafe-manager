@@ -286,51 +286,51 @@ function App() {
     <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
       
       {/* 1. SECCIÓN DE TIENDA (IZQUIERDA) */}
-      <div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
+      <div className="store-section" style={{ flex: 2, padding: '15px', display: 'flex', flexDirection: 'column' }}>
         
-        {/* A. ENCABEZADO */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <img src="/logo.png" alt="Oasis" style={{ height: '50px' }} />
-            <h1 style={{ color: '#4a3728', margin: 0, fontSize: '28px', fontWeight: '900' }}>Oasis Café</h1>
+        {/* A. ENCABEZADO (Ajustado para móvil) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
+            <h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            {/* Botones más compactos */}
             {userRole === 'admin' && (
-              <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' }}>
-                <Package size={18}/> INVENTARIO
+              <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>
+                <Package size={16}/>
               </button>
             )}
-            <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' }}><FileText size={18}/> REPORTES</button>
+            <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><FileText size={16}/></button>
             {userRole === 'admin' && (
-              <button onClick={() => setShowFinances(true)} style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' }}>
-                <PieChart size={18}/> FINANZAS
+              <button onClick={() => setShowFinances(true)} style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>
+                <PieChart size={16}/>
               </button>
             )}
-            <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '2px solid #e74c3c', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LogOut size={18} /> 
-              <span style={{ textTransform: 'uppercase' }}>{userRole === 'admin' ? 'ADMIN' : 'VENTAS'}</span>
+            <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <LogOut size={16} /> 
             </button>
           </div>
         </div>
 
-        {/* B. MENÚ DE CATEGORÍAS (AHORA FUERA DEL CONTENEDOR GRID) */}
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
+        {/* B. MENÚ DE CATEGORÍAS */}
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button 
               key={cat} 
               onClick={() => setSelectedCategory(cat)}
               style={{ 
-                padding: '10px 20px', 
-                borderRadius: '20px', 
+                padding: '8px 16px', 
+                borderRadius: '15px', 
                 border: 'none', 
                 backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', 
                 color: selectedCategory === cat ? '#ffffff' : '#4a3728', 
                 fontWeight: 'bold', 
-                fontSize: '12px',
+                fontSize: '11px',
                 whiteSpace: 'nowrap',
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: selectedCategory === cat ? '0 4px 10px rgba(74, 55, 40, 0.3)' : 'none',
+                boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none',
                 transition: 'all 0.2s ease'
               }}
             >
@@ -339,7 +339,7 @@ function App() {
           ))}
         </div>
 
-        {/* C. MENSAJES DE ERROR O VACÍO (TAMBIÉN FUERA DEL GRID) */}
+        {/* C. MENSAJES DE ERROR */}
         {fetchError && (
             <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '10px', marginBottom: '10px', border: '2px solid #fecaca' }}>
               <p style={{ fontWeight: 'bold', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
@@ -356,101 +356,107 @@ function App() {
             </div>
         )}
 
-        {/* D. CONTENEDOR DE PRODUCTOS (ESTE SÍ DEBE SER EL ÚLTIMO HIJO PARA QUE EL CSS FUNCIONE) */}
+        {/* D. CONTENEDOR DE PRODUCTOS (GRID) */}
+        {/* Aquí la magia: Usamos 105px minmax para asegurar 2 columnas en móviles (360px ancho aprox) */}
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
             {filteredProducts.map(p => (
-              <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '10px', borderRadius: '15px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '140px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '8px', borderRadius: '12px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '130px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
-                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.2', marginBottom: '5px' }}>{p.name}</div>
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
+                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '12px', lineHeight: '1.2', marginBottom: '4px' }}>{p.name}</div>
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '13px' }}>${p.sale_price}</div>
               </button>
             ))}
           </div>
         </div>
+        
+        {/* === TRUCO PARA EL CSS === */}
+        {/* Este div vacío absorbe el estilo roto de 'div:last-child' que tienes en tu CSS */}
+        <div style={{ display: 'none' }}></div>
 
       </div>
 
       {/* 2. SECCIÓN DEL CARRITO (DERECHA) */}
-      <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
-        <h2 style={{ color: '#4a3728', fontSize: '22px', fontWeight: '900' }}><ShoppingCart size={24} /> Pedido</h2>
-        <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '15px', marginBottom: '20px', borderRadius: '12px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900' }} />
+      <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+        <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Pedido</h2>
+        <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
         
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {cart.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', borderBottom: '1px solid #f5f5f5' }}>
+            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
               <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name} x{item.quantity}</div>
               <div style={{ color: '#27ae60', fontWeight: '900' }}>${item.sale_price * item.quantity}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: '900', color: '#4a3728' }}>MÉTODO DE PAGO:</label>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-            <button onClick={() => setPaymentMethod('Efectivo')} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: paymentMethod === 'Efectivo' ? '3px solid #27ae60' : '1px solid #ddd', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', fontWeight: 'bold', color: '#fff', cursor: 'pointer' }}> EFECTIVO </button>
-            <button onClick={() => setPaymentMethod('Tarjeta')} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: paymentMethod === 'Tarjeta' ? '3px solid #3498db' : '1px solid #ddd', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', fontWeight: 'bold', color: '#fff', cursor: 'pointer' }}> TARJETA </button>
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+            <button onClick={() => setPaymentMethod('Efectivo')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: paymentMethod === 'Efectivo' ? '2px solid #27ae60' : '1px solid #ddd', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', fontWeight: 'bold', color: '#fff', cursor: 'pointer', fontSize: '12px' }}> EFECTIVO </button>
+            <button onClick={() => setPaymentMethod('Tarjeta')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: paymentMethod === 'Tarjeta' ? '2px solid #3498db' : '1px solid #ddd', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', fontWeight: 'bold', color: '#fff', cursor: 'pointer', fontSize: '12px' }}> TARJETA </button>
           </div>
         </div>
 
-        <div style={{ fontSize: '32px', fontWeight: '900', color: '#4a3728', textAlign: 'right', marginTop: '15px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
-        <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '15px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px' }}>
-          {loading ? 'PROCESANDO...' : 'FINALIZAR COBRO'}
+        <div style={{ fontSize: '24px', fontWeight: '900', color: '#4a3728', textAlign: 'right', marginTop: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
+        <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>
+          {loading ? 'PROCESANDO...' : 'COBRAR'}
         </button>
-        <button onClick={handleNewOrder} style={{ width: '100%', padding: '12px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '15px', fontWeight: '900', marginTop: '10px', border: 'none', cursor: 'pointer' }}><RotateCcw size={16}/> PEDIDO NUEVO</button>
+        <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '12px' }}><RotateCcw size={14}/> NUEVO</button>
       </div>
 
       {/* MODAL GESTIÓN DE STOCK */}
       {showInventory && userRole === 'admin' && (
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '40px', borderRadius: '30px', width: '950px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '25px', right: '25px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30}/></button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingRight: '50px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Package size={28}/> Gestión de Stock y Gastos
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '40px' }}>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}>
+                <Package size={24}/> Stock
               </h2>
-              <button onClick={fetchInventory} disabled={loading} style={{ padding: '10px 20px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <RefreshCw size={16} /> ACTUALIZAR
+              <button onClick={fetchInventory} disabled={loading} style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                <RefreshCw size={16} />
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', marginBottom: '30px' }}>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>Existencias Actuales</h3>
-                <div style={{ border: '1px solid #f0f0f0', borderRadius: '20px', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>Existencias</h3>
+                <div style={{ border: '1px solid #f0f0f0', borderRadius: '15px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead style={{ background: '#f8f6f2' }}>
-                      <tr><th style={{ padding: '15px', textAlign: 'left', color: '#000000' }}>Producto</th><th style={{ padding: '15px', color: '#000000' }}>Stock</th><th style={{ padding: '15px', color: '#000000' }}>Estado</th></tr>
+                      <tr><th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Prod</th><th style={{ padding: '10px', color: '#000' }}>Cant</th><th style={{ padding: '10px', color: '#000' }}>!</th></tr>
                     </thead>
                     <tbody>
                       {inventoryList.map((inv, index) => (
                         <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '15px', color: '#000000', fontWeight: '600' }}>{inv.products?.name}</td>
-                          <td style={{ padding: '15px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>{inv.stock}</td>
-                          <td style={{ padding: '15px', textAlign: 'center' }}>{inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={18}/> : <CheckCircle color="#27ae60" size={18}/>}</td>
+                          <td style={{ padding: '10px', color: '#000', fontWeight: '600' }}>{inv.products?.name}</td>
+                          <td style={{ padding: '10px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td>
+                          <td style={{ padding: '10px', textAlign: 'center' }}>{inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16}/> : <CheckCircle color="#27ae60" size={16}/>}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div style={{ background: '#fdfbf9', padding: '25px', borderRadius: '25px', border: '1px solid #f1ece6' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}><Truck size={20}/> Compra de Inventario</h3>
-                <select value={selectedPurchaseProd} onChange={(e) => setSelectedPurchaseProd(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', marginBottom: '10px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }}>
+
+              <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>Entrada Stock</h3>
+                <select value={selectedPurchaseProd} onChange={(e) => setSelectedPurchaseProd(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
                   <option value="">Seleccionar...</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                  <input type="number" placeholder="Cant." value={purchaseQty || ''} onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} style={{ flex: 1, padding: '15px', borderRadius: '12px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }} />
-                  <input type="number" placeholder="$ Costo" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, padding: '15px', borderRadius: '12px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }} />
+                  <input type="number" placeholder="Cant." value={purchaseQty || ''} onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
+                  <input type="number" placeholder="$ Costo" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
                 </div>
                 <button onClick={() => { 
                   const p = products.find(x => x.id === selectedPurchaseProd); 
                   if (p && purchaseQty > 0 && purchaseCost > 0) {
                     setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
                     setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0);
-                  } else { alert('Complete todos los campos correctamente'); }
-                }} style={{ width: '100%', padding: '15px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>+ AÑADIR</button>
-                <div style={{ marginTop: '20px', color: '#000000' }}>
+                  } else { alert('Complete campos'); }
+                }} style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>+ AÑADIR</button>
+                <div style={{ marginTop: '15px', color: '#000' }}>
                   {purchaseCart.map((item, i) => (
                     <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
                       <span>📦 {item.name} x{item.qty}</span>
@@ -458,38 +464,25 @@ function App() {
                     </div>
                   ))}
                   {purchaseCart.length > 0 && (
-                    <>
-                      <div style={{ borderTop: '2px solid #000', marginTop: '10px', paddingTop: '10px', fontWeight: '900', fontSize: '14px' }}>
-                        TOTAL: ${purchaseCart.reduce((acc, i) => acc + (i.qty * i.cost), 0).toFixed(2)}
-                      </div>
-                      <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '15px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', marginTop: '15px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                        {loading ? 'PROCESANDO...' : 'FINALIZAR COMPRA'}
+                     <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                        GUARDAR COMPRA
                       </button>
-                    </>
                   )}
                 </div>
               </div>
             </div>
-            <div style={{ background: '#fff3e0', padding: '25px', borderRadius: '25px', border: '2px solid #ff9800' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#000000', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}><Receipt size={24} color="#ff9800"/> Registrar Gasto Operativo</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '900', color: '#000000', display: 'block', marginBottom: '5px' }}>Categoría:</label>
-                  <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }}>
+            
+             <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800', marginTop: '20px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>Gastos Operativos</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
                     {expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: '900', color: '#000000', display: 'block', marginBottom: '5px' }}>Monto:</label>
-                  <input type="number" placeholder="$ 0.00" value={expenseMonto || ''} onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '15px', borderRadius: '12px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }} />
-                </div>
+                  <input type="number" placeholder="$ 0.00" value={expenseMonto || ''} onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
               </div>
-              <div style={{ marginTop: '15px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '900', color: '#000000', display: 'block', marginBottom: '5px' }}>Concepto / Descripción:</label>
-                <input type="text" placeholder="Ej: Compra de café molido 2kg" value={expenseConcepto} onChange={(e) => setExpenseConcepto(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ddd', fontWeight: 'bold' }} />
-              </div>
-              <button onClick={handleRegisterExpense} disabled={loading} style={{ width: '100%', padding: '15px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', marginTop: '15px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '16px' }}>
-                {loading ? 'PROCESANDO...' : '💰 REGISTRAR GASTO'}
+              <input type="text" placeholder="Concepto" value={expenseConcepto} onChange={(e) => setExpenseConcepto(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', marginTop: '10px' }} />
+              <button onClick={handleRegisterExpense} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                REGISTRAR GASTO
               </button>
             </div>
           </div>
@@ -499,42 +492,41 @@ function App() {
       {/* MODAL DE REPORTES */}
       {showReport && (
         <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '40px', borderRadius: '30px', width: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30}/></button>
-            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FileText size={28}/> Reporte de Ventas</h2>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
-              <Calendar size={18} color="#4a3728" />
-              <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '14px' }} />
-              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '20px', color: '#27ae60' }}>Total: ${totalIngresos.toFixed(2)}</div>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
+            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte Ventas</h2>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
+              <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>${totalIngresos.toFixed(2)}</div>
             </div>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <div style={{ flex: 1 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ textAlign: 'left', padding: '10px', color: '#000' }}>Hora</th><th style={{ textAlign: 'left', padding: '10px', color: '#000' }}>Cliente</th><th style={{ textAlign: 'right', padding: '10px', color: '#000' }}>Total</th><th style={{ textAlign: 'center', padding: '10px', color: '#000' }}>Estado</th></tr></thead>
+            
+             <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
+              <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Hora</th><th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th><th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th></tr></thead>
                   <tbody>
                     {sales.map(sale => (
                       <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent' }}>
-                        <td style={{ padding: '15px', color: '#000', fontWeight: 'bold' }}>{new Date(sale.created_at).toLocaleTimeString()}</td>
-                        <td style={{ padding: '15px', color: '#000' }}>{sale.customer_name}</td>
-                        <td style={{ padding: '15px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900', textDecoration: sale.status === 'cancelado' ? 'line-through' : 'none' }}>${sale.total}</td>
-                        <td style={{ padding: '15px', textAlign: 'center' }}><span style={{ padding: '5px 10px', borderRadius: '10px', backgroundColor: sale.status === 'recibido' ? '#f1c40f' : sale.status === 'entregado' ? '#2ecc71' : '#e74c3c', color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>{sale.status.toUpperCase()}</span></td>
+                        <td style={{ padding: '10px', color: '#000' }}>{new Date(sale.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td style={{ padding: '10px', color: '#000' }}>{sale.customer_name}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>${sale.total}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               {selectedSale && (
-                <div style={{ flex: 0.8, backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
-                  <h3 style={{ marginTop: 0, color: '#000' }}>Detalle Venta #{selectedSale.id.slice(0,4)}</h3>
-                  <div style={{ marginBottom: '15px', color: '#000000' }}>
+                <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
+                  <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>Nota #{selectedSale.id.slice(0,4)}</h3>
+                  <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
                     {selectedSale.sale_items.map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}><span>{item.products?.name} x{item.quantity}</span><span style={{ fontWeight: 'bold' }}>${item.price * item.quantity}</span></div>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}><span>{item.products?.name} x{item.quantity}</span><span style={{ fontWeight: 'bold' }}>${item.price * item.quantity}</span></div>
                     ))}
                   </div>
-                  <div style={{ borderTop: '2px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '18px', color: '#000000' }}><span>Total</span><span>${selectedSale.total}</span></div>
-                  <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                     {selectedSale.status === 'recibido' && <button onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>MARCAR COMO ENTREGADO</button>}
-                     {userRole === 'admin' && selectedSale.status !== 'cancelado' && <button onClick={() => updateSaleStatus(selectedSale.id, 'cancelado')} style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>CANCELAR VENTA</button>}
+                  <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}><span>Total</span><span>${selectedSale.total}</span></div>
+                  <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                     {selectedSale.status === 'recibido' && <button onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>MARCAR ENTREGADO</button>}
+                     {userRole === 'admin' && selectedSale.status !== 'cancelado' && <button onClick={() => updateSaleStatus(selectedSale.id, 'cancelado')} style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>CANCELAR</button>}
                   </div>
                 </div>
               )}
@@ -546,75 +538,45 @@ function App() {
       {/* MODAL DE FINANZAS */}
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '40px', borderRadius: '30px', width: '1050px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30}/></button>
-            <div style={{ marginBottom: '25px', paddingRight: '50px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><PieChart size={28}/> Finanzas (Administrador)</h2>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
+            <div style={{ marginBottom: '20px', paddingRight: '40px' }}>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 10px 0', fontSize: '20px' }}>Finanzas</h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <Calendar size={18} color="#4a3728" />
-                <input type="date" value={financeDate} onChange={(e) => setFinanceDate(e.target.value)} style={{ padding: '10px 15px', borderRadius: '10px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '14px' }} />
-                <button onClick={fetchFinances} disabled={loading} style={{ padding: '10px 20px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}><RefreshCw size={16} /> ACTUALIZAR</button>
+                <input type="date" value={financeDate} onChange={(e) => setFinanceDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+                <button onClick={fetchFinances} disabled={loading} style={{ padding: '8px 16px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: 'pointer' }}><RefreshCw size={16}/></button>
               </div>
             </div>
 
-            {loading ? <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>Cargando datos financieros...</div> : !dailyProfit && !dailyUtility ? <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No hay datos financieros para esta fecha</div> : (
+            {loading ? <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Cargando...</div> : !dailyProfit && !dailyUtility ? <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Sin datos hoy</div> : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                  <div style={{ background: 'linear-gradient(135deg, #27ae60, #2ecc71)', padding: '25px', borderRadius: '20px', color: '#fff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}><TrendingUp size={28} /><span style={{ fontSize: '16px', fontWeight: '600' }}>Ingresos del Día</span></div>
-                    <div style={{ fontSize: '40px', fontWeight: '900' }}>${(dailyProfit?.ingresos || 0).toFixed(2)}</div>
-                    <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>De {dailyUtility ? `${dailyUtility.ingresos_totales} productos vendidos` : 'ventas totales'}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #27ae60, #2ecc71)', padding: '15px', borderRadius: '15px', color: '#fff' }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Ingresos</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900' }}>${(dailyProfit?.ingresos || 0).toFixed(2)}</div>
                   </div>
-                  <div style={{ background: 'linear-gradient(135deg, #e74c3c, #ec7063)', padding: '25px', borderRadius: '20px', color: '#fff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}><AlertTriangle size={28} /><span style={{ fontSize: '16px', fontWeight: '600' }}>Gastos del Día</span></div>
-                    <div style={{ fontSize: '40px', fontWeight: '900' }}>${totalGastosReales.toFixed(2)}</div>
-                    <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>Incluye productos y gastos operativos</div>
+                  <div style={{ background: 'linear-gradient(135deg, #e74c3c, #ec7063)', padding: '15px', borderRadius: '15px', color: '#fff' }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Gastos Totales</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900' }}>${totalGastosReales.toFixed(2)}</div>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '15px', marginBottom: '25px' }}>
-                  <div style={{ background: 'linear-gradient(135deg, #9b59b6, #bb8fce)', padding: '25px', borderRadius: '20px', color: '#fff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}><DollarSign size={28} /><span style={{ fontSize: '16px', fontWeight: '600' }}>Utilidad Neta del Día</span></div>
-                    <div style={{ fontSize: '40px', fontWeight: '900' }}>${utilidadNetaReal.toFixed(2)}</div>
-                    <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>Ingresos - Gastos Totales</div>
-                  </div>
-                  <div style={{ background: 'linear-gradient(135deg, #3498db, #5dade2)', padding: '25px', borderRadius: '20px', color: '#fff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}><PieChart size={28} /><span style={{ fontSize: '16px', fontWeight: '600' }}>Margen</span></div>
-                    <div style={{ fontSize: '40px', fontWeight: '900' }}>{dailyProfit?.ingresos > 0 ? ((utilidadNetaReal / dailyProfit.ingresos) * 100).toFixed(1) : '0.0'}%</div>
-                    <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.9 }}>Ganancia por cada peso vendido</div>
-                  </div>
+                <div style={{ background: '#9b59b6', padding: '15px', borderRadius: '15px', color: '#fff', marginBottom: '20px' }}>
+                   <div style={{ fontSize: '12px', opacity: 0.9 }}>Utilidad Neta Real</div>
+                   <div style={{ fontSize: '30px', fontWeight: '900' }}>${utilidadNetaReal.toFixed(2)}</div>
                 </div>
+
                 {dailyExpenses.length > 0 && (
-                  <div style={{ background: '#fff3e0', padding: '25px', borderRadius: '20px', marginBottom: '25px', border: '2px solid #ff9800' }}>
-                    <h3 style={{ color: '#000000', fontWeight: '900', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}><Receipt size={24} color="#ff9800"/> Desglose de Gastos Operativos del Día</h3>
-                    <div style={{ background: '#fff', borderRadius: '10px', overflow: 'hidden' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ background: '#ff9800', color: '#fff' }}><tr><th style={{ padding: '15px', textAlign: 'left', fontWeight: '900' }}>Categoría</th><th style={{ padding: '15px', textAlign: 'left', fontWeight: '900' }}>Concepto</th><th style={{ padding: '15px', textAlign: 'right', fontWeight: '900' }}>Monto</th><th style={{ padding: '15px', textAlign: 'center', fontWeight: '900' }}>Hora</th></tr></thead>
-                        <tbody>
-                          {dailyExpenses.map((expense, idx) => (
-                            <tr key={expense.id} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '15px', color: '#000000', fontWeight: '600' }}>{expense.categoria}</td><td style={{ padding: '15px', color: '#000000' }}>{expense.concepto}</td><td style={{ padding: '15px', textAlign: 'right', color: '#e74c3c', fontWeight: '900' }}>${parseFloat(expense.monto).toFixed(2)}</td><td style={{ padding: '15px', textAlign: 'center', color: '#666', fontSize: '12px' }}>{new Date(expense.created_at).toLocaleTimeString()}</td></tr>
-                          ))}
-                          <tr style={{ background: '#fff3e0' }}><td colSpan="2" style={{ padding: '15px', color: '#000000', fontWeight: '900', fontSize: '16px' }}>TOTAL GASTOS OPERATIVOS</td><td style={{ padding: '15px', textAlign: 'right', color: '#ff9800', fontWeight: '900', fontSize: '18px' }}>${totalGastosOperativos.toFixed(2)}</td><td></td></tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                <div style={{ background: '#f8f9fa', padding: '25px', borderRadius: '20px' }}>
-                  <h3 style={{ color: '#000000', fontWeight: '900', marginBottom: '20px' }}>📊 Resumen Financiero Completo</h3>
-                  <div style={{ background: '#fff', borderRadius: '10px', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead style={{ background: '#9b59b6', color: '#fff' }}><tr><th style={{ padding: '15px', textAlign: 'left', fontWeight: '900' }}>Concepto</th><th style={{ padding: '15px', textAlign: 'right', fontWeight: '900' }}>Monto</th></tr></thead>
+                  <div style={{ background: '#fff3e0', padding: '15px', borderRadius: '15px', marginBottom: '15px', border: '1px solid #ff9800' }}>
+                    <h3 style={{ color: '#000', fontWeight: '900', margin: '0 0 10px 0', fontSize: '14px' }}>Gastos Operativos</h3>
+                    <table style={{ width: '100%', fontSize: '12px' }}>
                       <tbody>
-                        <tr style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '15px', color: '#000000', fontWeight: '600' }}>💰 Ingresos Totales</td><td style={{ padding: '15px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>${(dailyProfit?.ingresos || 0).toFixed(2)}</td></tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '15px 15px 15px 35px', color: '#666', fontSize: '14px' }}>📦 Costo de Productos</td><td style={{ padding: '15px', textAlign: 'right', color: '#e74c3c', fontWeight: '900' }}>-${(dailyUtility?.costo_total_productos || 0).toFixed(2)}</td></tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '15px', color: '#000000', fontWeight: '600' }}>💵 Utilidad Bruta</td><td style={{ padding: '15px', textAlign: 'right', color: '#3498db', fontWeight: '900' }}>${(dailyUtility?.utilidad_bruta || 0).toFixed(2)}</td></tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '15px 15px 15px 35px', color: '#666', fontSize: '14px' }}>🛒 Gastos Operativos</td><td style={{ padding: '15px', textAlign: 'right', color: '#ff9800', fontWeight: '900' }}>-${totalGastosOperativos.toFixed(2)}</td></tr>
-                        <tr style={{ borderBottom: '2px solid #9b59b6' }}><td style={{ padding: '15px', color: '#000000', fontWeight: '600' }}>📉 Total Gastos del Día</td><td style={{ padding: '15px', textAlign: 'right', color: '#e74c3c', fontWeight: '900' }}>-${totalGastosReales.toFixed(2)}</td></tr>
-                        <tr style={{ background: '#f8f9fa' }}><td style={{ padding: '15px', color: '#000000', fontWeight: '900', fontSize: '16px' }}>✅ UTILIDAD NETA</td><td style={{ padding: '15px', textAlign: 'right', color: utilidadNetaReal >= 0 ? '#27ae60' : '#e74c3c', fontWeight: '900', fontSize: '18px' }}>${utilidadNetaReal.toFixed(2)}</td></tr>
+                        {dailyExpenses.map((expense, idx) => (
+                          <tr key={expense.id}><td style={{ padding: '5px', color: '#000' }}>{expense.concepto}</td><td style={{ padding: '5px', textAlign: 'right', color: '#e74c3c', fontWeight: '900' }}>${parseFloat(expense.monto).toFixed(2)}</td></tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                )}
               </>
             )}
           </div>

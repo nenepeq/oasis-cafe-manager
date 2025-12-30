@@ -428,16 +428,28 @@ function App() {
           </div>
         </div>
 
-        {/* LISTA DE PRODUCTOS - MODIFICADO CON FLEX Y MINHEIGHT PARA OCUPAR ESPACIO */}
-        <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', overflowY: 'auto' }}>
-          {products.map(p => (
-            <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '10px', borderRadius: '15px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '140px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
-              <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.2', marginBottom: '5px' }}>{p.name}</div>
-              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
-            </button>
-          ))}
+        {/* CONTENEDOR DE PRODUCTOS (MODIFICADO CON FLEX Y MENSAJE DE DEBUG) */}
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
+          
+          {/* MENSAJE DE DEBUGGING: Si no hay productos, te avisa */}
+          {products.length === 0 && (
+             <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '20px' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No se encontraron productos</p>
+                <p style={{ fontSize: '14px' }}>Si estás en Vercel, revisa que hayas agregado las Variables de Entorno (URL y KEY) en la configuración del proyecto y haz un Redeploy.</p>
+             </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+            {products.map(p => (
+              <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '10px', borderRadius: '15px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '140px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
+                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.2', marginBottom: '5px' }}>{p.name}</div>
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
+              </button>
+            ))}
+          </div>
         </div>
+
       </div>
 
       {/* 2. SECCIÓN DEL CARRITO (DERECHA) */}

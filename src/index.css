@@ -76,7 +76,7 @@ button:focus-visible {
    DISEÑO RESPONSIVO MÓVIL
    ========================================================= */
 
-/* Corrección general para móviles */
+/* Corrección general para móviles para quitar el centrado forzado de Vite */
 @media (max-width: 900px) {
   body {
     display: block !important;
@@ -93,21 +93,23 @@ button:focus-visible {
     overflow-y: auto !important;
   }
 
-  /* Tienda arriba */
   .store-section {
     flex: none !important;
     width: 100% !important;
     height: auto !important;
     padding: 15px !important;
-    overflow: visible !important;
+    /* Dejar que la altura se ajuste al contenido */
+    display: flex !important;
+    flex-direction: column !important;
   }
   
-  /* Ajuste de botones para que quepan bien */
+  /* Contenedor de productos en vertical */
   .store-section > div:last-child {
+    display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+    overflow-y: visible !important; /* Scroll natural de la página */
   }
 
-  /* Carrito abajo */
   .cart-section {
     flex: none !important;
     width: 100% !important;
@@ -119,53 +121,78 @@ button:focus-visible {
   }
 }
 
-/* CASO 2: CELULAR HORIZONTAL (ACOSTADO) - Lado a lado */
+/* CASO 2: CELULAR HORIZONTAL (ACOSTADO) - CORRECCIÓN COMPLETA */
 @media (max-width: 900px) and (orientation: landscape) {
   .app-container {
-    flex-direction: row !important; /* Lado a lado */
-    height: 100vh !important; /* Altura fija de pantalla */
-    overflow: hidden !important; /* Sin scroll general */
+    flex-direction: row !important;
+    height: 100vh !important;
+    overflow: hidden !important; /* Evitamos scroll en el body */
     align-items: stretch !important;
   }
 
-  /* Tienda Izquierda (Usa Flex en lugar de width fijo) */
+  /* --- TIENDA (IZQUIERDA) --- */
   .store-section {
-    flex: 1.5 !important; /* Ocupa más espacio */
+    flex: 1.8 !important; /* Ocupa más espacio (aprox 65%) */
     width: auto !important;
     height: 100% !important;
-    overflow: hidden !important; /* El scroll lo maneja el grid interno */
-    padding: 10px !important;
+    overflow: hidden !important;
+    padding: 8px !important;
     display: flex !important;
     flex-direction: column !important;
   }
   
-  /* --- HACER EL HEADER PEQUEÑO PARA QUE QUEPAN LOS PRODUCTOS --- */
+  /* HEADER MINI: Hacemos todo pequeño para dejar espacio a los productos */
   .store-section > div:first-child {
-    margin-bottom: 8px !important;
+    margin-bottom: 5px !important;
+    padding-bottom: 5px !important;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0 !important; /* No permitimos que el header se aplaste */
   }
   .store-section > div:first-child img {
-    height: 30px !important; /* Logo pequeño */
+    height: 25px !important; /* Logo pequeño */
   }
   .store-section > div:first-child h1 {
-    font-size: 16px !important; /* Título pequeño */
+    font-size: 14px !important; /* Título pequeño */
   }
-  /* Botones del menú superior pequeños */
+  /* Botones del menú (Inventario, Reportes...) */
   .store-section > div:first-child button {
-    padding: 6px 10px !important;
-    font-size: 10px !important;
+    padding: 4px 8px !important;
+    font-size: 9px !important;
     border-radius: 6px !important;
+    margin-left: 2px !important;
   }
   .store-section > div:first-child svg {
-    width: 14px !important;
-    height: 14px !important;
+    width: 12px !important;
+    height: 12px !important;
   }
 
-  /* Carrito Derecha */
+  /* CONTENEDOR DE PRODUCTOS (GRID) */
+  /* Forzamos que ocupe el espacio restante */
+  .store-section > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important; /* Tarjetas más chicas */
+    gap: 8px !important;
+    overflow-y: auto !important; /* Scroll interno solo aquí */
+    padding-bottom: 50px !important; /* Espacio extra al final */
+    flex: 1 !important; /* ESTO ES CLAVE: Estírate para llenar el hueco */
+    min-height: 0 !important;
+  }
+
+  /* Tarjetas de productos individuales */
+  .store-section > div:last-child button {
+    height: 110px !important;
+    padding: 5px !important;
+  }
+  .store-section > div:last-child button div {
+    font-size: 11px !important; /* Letra más chica */
+  }
+
+  /* --- CARRITO (DERECHA) --- */
   .cart-section {
-    flex: 1 !important; /* Ocupa menos espacio */
+    flex: 1 !important; /* Ocupa menos espacio (aprox 35%) */
     width: auto !important;
     height: 100% !important;
-    overflow-y: auto !important; /* Scroll interno */
+    overflow-y: auto !important;
     border-left: 2px solid #ddd !important;
     border-top: none !important;
     padding: 10px !important;

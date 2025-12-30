@@ -105,6 +105,13 @@ function App() {
     }
   };
 
+  // --- FUNCIÓN CORREGIDA DE CERRAR SESIÓN ---
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null); // Esto fuerza a React a mostrar el Login inmediatamente sin recargar
+    setUserRole('ventas');
+  };
+
   useEffect(() => {
     if (user) {
       getProducts().then(res => {
@@ -307,7 +314,7 @@ function App() {
                 <PieChart size={16}/>
               </button>
             )}
-            <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <button onClick={handleLogout} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               <LogOut size={16} /> 
             </button>
           </div>
@@ -357,7 +364,6 @@ function App() {
         )}
 
         {/* D. CONTENEDOR DE PRODUCTOS (GRID) */}
-        {/* Aquí la magia: Usamos 105px minmax para asegurar 2 columnas en móviles (360px ancho aprox) */}
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
             {filteredProducts.map(p => (
@@ -371,7 +377,6 @@ function App() {
         </div>
         
         {/* === TRUCO PARA EL CSS === */}
-        {/* Este div vacío absorbe el estilo roto de 'div:last-child' que tienes en tu CSS */}
         <div style={{ display: 'none' }}></div>
 
       </div>

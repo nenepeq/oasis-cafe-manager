@@ -128,30 +128,41 @@ button:focus-visible {
     align-items: stretch !important;
   }
 
-  /* Tienda Izquierda (Usa Flex en lugar de width fijo para evitar errores) */
+  /* Tienda Izquierda (Usa Flex en lugar de width fijo) */
   .store-section {
-    flex: 1.5 !important; /* Ocupa 60% aprox del espacio disponible */
+    flex: 1.5 !important; /* Ocupa más espacio */
     width: auto !important;
     height: 100% !important;
-    overflow-y: auto !important; /* Scroll interno */
+    overflow: hidden !important; /* El scroll lo maneja el grid interno */
     padding: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   
-  /* Botones un poco más pequeños para aprovechar espacio */
-  .store-section button {
-    height: 130px !important; 
-    padding: 10px !important;
+  /* --- HACER EL HEADER PEQUEÑO PARA QUE QUEPAN LOS PRODUCTOS --- */
+  .store-section > div:first-child {
+    margin-bottom: 8px !important;
   }
-  
-  /* Rejilla más compacta */
-  .store-section > div:last-child {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-    gap: 10px !important;
+  .store-section > div:first-child img {
+    height: 30px !important; /* Logo pequeño */
+  }
+  .store-section > div:first-child h1 {
+    font-size: 16px !important; /* Título pequeño */
+  }
+  /* Botones del menú superior pequeños */
+  .store-section > div:first-child button {
+    padding: 6px 10px !important;
+    font-size: 10px !important;
+    border-radius: 6px !important;
+  }
+  .store-section > div:first-child svg {
+    width: 14px !important;
+    height: 14px !important;
   }
 
   /* Carrito Derecha */
   .cart-section {
-    flex: 1 !important; /* Ocupa 40% aprox */
+    flex: 1 !important; /* Ocupa menos espacio */
     width: auto !important;
     height: 100% !important;
     overflow-y: auto !important; /* Scroll interno */

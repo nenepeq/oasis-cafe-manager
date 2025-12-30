@@ -392,14 +392,15 @@ function App() {
   const utilidadNetaReal = (dailyProfit?.ingresos || 0) - totalGastosReales;
 
   // =========================================================================
-  // AQUÍ EMPIEZA LA VISTA (CORREGIDO PARA RESPONSIVE)
-  // Las clases 'className' ahora están DENTRO de las etiquetas HTML
+  // AQUÍ EMPIEZA LA VISTA
   // =========================================================================
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
       
-      {/* 1. SECCIÓN DE TIENDA (IZQUIERDA / ARRIBA EN MÓVIL) */}
+      {/* 1. SECCIÓN DE TIENDA (IZQUIERDA) */}
       <div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* ENCABEZADO / MENÚ SUPERIOR */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '50px' }} />
@@ -427,18 +428,19 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '15px', overflowY: 'auto' }}>
+        {/* LISTA DE PRODUCTOS - MODIFICADO CON FLEX Y MINHEIGHT PARA OCUPAR ESPACIO */}
+        <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', overflowY: 'auto' }}>
           {products.map(p => (
-            <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '20px', borderRadius: '20px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '160px', boxShadow: '0 5px 15px rgba(0,0,0,0.03)', cursor: 'pointer' }}>
-              <div>{getCategoryIcon(p)}</div>
-              <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '14px', marginTop: '10px' }}>{p.name}</div>
-              <div style={{ color: '#27ae60', fontWeight: '900' }}>${p.sale_price}</div>
+            <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '10px', borderRadius: '15px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '140px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
+              <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.2', marginBottom: '5px' }}>{p.name}</div>
+              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* 2. SECCIÓN DEL CARRITO (DERECHA / ABAJO EN MÓVIL) */}
+      {/* 2. SECCIÓN DEL CARRITO (DERECHA) */}
       <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ color: '#4a3728', fontSize: '22px', fontWeight: '900' }}><ShoppingCart size={24} /> Pedido</h2>
         <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '15px', marginBottom: '20px', borderRadius: '12px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900' }} />

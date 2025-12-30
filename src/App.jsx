@@ -199,9 +199,8 @@ function App() {
     setLoading(false);
   };
 
-  // --- MODIFICADA: FUNCIÓN PARA ACTUALIZAR ESTADO Y DEVOLVER STOCK SI SE CANCELA ---
+  // --- FUNCIÓN PARA ACTUALIZAR ESTADO Y DEVOLVER STOCK SI SE CANCELA ---
   const updateSaleStatus = async (saleId, newStatus) => {
-    // Evitar errores si ya se está procesando o si ya está cancelada
     if (selectedSale && selectedSale.status === 'cancelado' && newStatus === 'cancelado') {
       alert("Esta venta ya está cancelada.");
       return;
@@ -210,7 +209,6 @@ function App() {
     setLoading(true);
 
     try {
-      // 1. SI SE VA A CANCELAR, PRIMERO DEVOLVEMOS EL STOCK
       if (newStatus === 'cancelado') {
         const { data: itemsToReturn, error: itemsError } = await supabase
           .from('sale_items')
@@ -220,15 +218,13 @@ function App() {
         if (itemsError) throw itemsError;
 
         for (const item of itemsToReturn) {
-          // Obtener stock actual
-          const { data: currentInv, error: invErr } = await supabase
+          const { data: currentInv } = await supabase
             .from('inventory')
             .select('stock')
             .eq('product_id', item.product_id)
             .single();
 
           if (currentInv) {
-            // Sumar lo cancelado al stock existente
             const newStock = currentInv.stock + item.quantity;
             await supabase
               .from('inventory')
@@ -238,7 +234,6 @@ function App() {
         }
       }
 
-      // 2. ACTUALIZAR EL ESTADO DE LA VENTA EN BASE DE DATOS
       const { error } = await supabase
         .from('sales')
         .update({ status: newStatus })
@@ -248,11 +243,9 @@ function App() {
         throw new Error(error.message);
       } else {
         alert(`✅ Venta actualizada a: ${newStatus.toUpperCase()}`);
-        
-        // 3. REFRESCAR TODAS LAS LISTAS
-        await fetchSales(); // Actualiza reporte y total ingresos
-        await fetchInventory(); // Actualiza el inventario visual
-        setSelectedSale(null); // Cierra el modal
+        await fetchSales(); 
+        await fetchInventory(); 
+        setSelectedSale(null); 
       }
 
     } catch (err) {
@@ -391,18 +384,22 @@ function App() {
   if (!user) return <Login onLogin={fetchProfile} />;
 
   // --------------------------------------------------------------------------------
-  // CÁLCULOS FINANCIEROS (CON CORRECCIÓN DE GASTOS OPERATIVOS)
+  // CÁLCULOS FINANCIEROS
   // --------------------------------------------------------------------------------
   
   const totalGastosOperativos = dailyExpenses.reduce((acc, exp) => acc + (parseFloat(exp.monto) || 0), 0);
   const totalGastosReales = (dailyUtility?.costo_total_productos || 0) + totalGastosOperativos;
   const utilidadNetaReal = (dailyProfit?.ingresos || 0) - totalGastosReales;
 
+  // =========================================================================
+  // AQUÍ EMPIEZA LA VISTA (CORREGIDO PARA RESPONSIVE)
+  // Las clases 'className' ahora están DENTRO de las etiquetas HTML
+  // =========================================================================
   return (
-<div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>      
-      {/* TIENDA */}
-      className="store-section":
-<div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
+      
+      {/* 1. SECCIÓN DE TIENDA (IZQUIERDA / ARRIBA EN MÓVIL) */}
+      <div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '50px' }} />
@@ -441,9 +438,8 @@ function App() {
         </div>
       </div>
 
-      {/* PANEL COBRO */}
-      className="cart-section":
-<div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+      {/* 2. SECCIÓN DEL CARRITO (DERECHA / ABAJO EN MÓVIL) */}
+      <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ color: '#4a3728', fontSize: '22px', fontWeight: '900' }}><ShoppingCart size={24} /> Pedido</h2>
         <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '15px', marginBottom: '20px', borderRadius: '12px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900' }} />
         
@@ -647,7 +643,6 @@ function App() {
                 <div style={{ flex: 0.8, backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
                   <h3 style={{ marginTop: 0, color: '#000' }}>Detalle Venta #{selectedSale.id.slice(0,4)}</h3>
                   
-                  {/* SECCIÓN ITEMS CON COLOR CORREGIDO */}
                   <div style={{ marginBottom: '15px', color: '#000000' }}>
                     {selectedSale.sale_items.map((item, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
@@ -657,14 +652,13 @@ function App() {
                     ))}
                   </div>
 
-                  {/* SECCIÓN TOTAL CON COLOR CORREGIDO */}
                   <div style={{ borderTop: '2px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '18px', color: '#000000' }}>
                     <span>Total</span>
                     <span>${selectedSale.total}</span>
                   </div>
 
                   <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                     {/* NUEVO BOTÓN PARA MARCAR COMO ENTREGADO */}
+                     {/* BOTÓN ENTREGADO */}
                      {selectedSale.status === 'recibido' && (
                        <button onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
                          MARCAR COMO ENTREGADO

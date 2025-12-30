@@ -4,7 +4,7 @@ import { getProducts } from './api';
 import { 
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart, Trash2, 
   LogOut, List, IceCream, FileText, CheckCircle, Clock, TrendingUp, RefreshCw, User, 
-  CreditCard, Banknote, Calendar, RotateCcw, X, Package, Truck, AlertTriangle, DollarSign, Eye, PieChart, Receipt, ArrowDown, ArrowUp, Activity
+  CreditCard, Banknote, Calendar, RotateCcw, X, Package, Truck, AlertTriangle, DollarSign, Eye, PieChart, Receipt, ArrowDown, ArrowUp, Activity, Layers
 } from 'lucide-react';
 
 // --- PANTALLA DE LOGIN ---
@@ -69,14 +69,15 @@ function App() {
   const [financeDate, setFinanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [finData, setFinData] = useState({
     ingresos: 0,
+    costoProductos: 0, 
     gastosOps: 0,
     gastosStock: 0,
-    totalGastos: 0,
+    totalEgresos: 0,   
     utilidadNeta: 0,
     margen: 0
   });
-  const [dailyExpensesList, setDailyExpensesList] = useState([]); // Lista detallada de gastos operativos
-  const [dailyStockList, setDailyStockList] = useState([]); // Lista detallada de compras stock
+  const [dailyExpensesList, setDailyExpensesList] = useState([]); 
+  const [dailyStockList, setDailyStockList] = useState([]); 
 
   // Estados para Gastos Operativos (Formulario)
   const [expenseConcepto, setExpenseConcepto] = useState('');
@@ -132,13 +133,10 @@ function App() {
     }
   }, [user]);
 
-  // Actualizar reportes al cambiar fecha
   useEffect(() => { if (showReport && user) fetchSales(); }, [showReport, reportDate]);
-  
-  // Actualizar finanzas al cambiar fecha
   useEffect(() => { if (showFinances && user) calculateFinances(); }, [showFinances, financeDate]);
 
-  // --- LÓGICA DE REPORTES (SOLO LISTADO) ---
+  // --- LÓGICA DE REPORTES ---
   const fetchSales = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -154,25 +152,50 @@ function App() {
       return;
     }
     setSales(data || []);
-    // Sumar solo ventas NO canceladas
     const total = data?.reduce((acc, sale) => sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc, 0) || 0;
     setTotalIngresosReporte(total);
     setLoading(false);
   };
 
-  // --- LÓGICA MAESTRA DE FINANZAS (CÁLCULO REAL) ---
+  // --- LÓGICA MAESTRA DE FINANZAS (CÁLCULO REAL INSTANTÁNEO) ---
   const calculateFinances = async () => {
     setLoading(true);
     
-    // 1. Obtener VENTAS del día (Solo activas)
+    // 1. Obtener VENTAS + ÍTEMS + COSTO PRODUCTO (Solo activas)
+    // CAMBIO APLICADO: Usamos 'cost_price' en lugar de 'cost'
     const { data: salesData } = await supabase
       .from('sales')
-      .select('total, status')
+      .select(`
+        total,
+        status,
+        sale_items (
+          quantity,
+          products (
+            cost_price
+          )
+        )
+      `)
       .gte('created_at', financeDate + 'T00:00:00')
       .lte('created_at', financeDate + 'T23:59:59')
-      .neq('status', 'cancelado'); // Importante: Ignorar cancelados en la base
+      .neq('status', 'cancelado');
     
-    const totalIngresos = salesData?.reduce((acc, s) => acc + s.total, 0) || 0;
+    let totalIngresos = 0;
+    let totalCostoProductos = 0;
+
+    if (salesData) {
+      salesData.forEach(sale => {
+        totalIngresos += sale.total;
+        
+        // Sumar costo de productos de esta venta
+        if (sale.sale_items) {
+          sale.sale_items.forEach(item => {
+             // CAMBIO APLICADO: Usamos cost_price
+             const unitCost = item.products?.cost_price || 0;
+             totalCostoProductos += (item.quantity * unitCost);
+          });
+        }
+      });
+    }
 
     // 2. Obtener GASTOS OPERATIVOS del día
     const { data: expensesData } = await supabase
@@ -196,15 +219,17 @@ function App() {
     setDailyStockList(purchasesData || []);
 
     // 4. Calcular Totales Finales
-    const totalGastos = totalGastosOps + totalGastosStock;
-    const utilidad = totalIngresos - totalGastos;
+    // Egresos Totales = Costo Producto (lo que salió del almacén) + Gastos Ops + Compras Stock (Inversión)
+    const totalEgresos = totalCostoProductos + totalGastosOps + totalGastosStock;
+    const utilidad = totalIngresos - totalEgresos;
     const margen = totalIngresos > 0 ? (utilidad / totalIngresos) * 100 : 0;
 
     setFinData({
       ingresos: totalIngresos,
+      costoProductos: totalCostoProductos,
       gastosOps: totalGastosOps,
       gastosStock: totalGastosStock,
-      totalGastos: totalGastos,
+      totalEgresos: totalEgresos,
       utilidadNeta: utilidad,
       margen: margen
     });
@@ -212,7 +237,7 @@ function App() {
     setLoading(false);
   };
 
-  // --- LÓGICA DE CANCELACIÓN Y DEVOLUCIÓN DE STOCK ---
+  // --- LÓGICA DE CANCELACIÓN Y DEVOLUCIÓN ---
   const updateSaleStatus = async (saleId, newStatus) => {
     if (selectedSale && selectedSale.status === 'cancelado' && newStatus === 'cancelado') {
       alert("Esta venta ya está cancelada.");
@@ -221,7 +246,6 @@ function App() {
     setLoading(true);
     try {
       if (newStatus === 'cancelado') {
-        // 1. Obtener items para devolver
         const { data: itemsToReturn, error: itemsError } = await supabase
           .from('sale_items')
           .select('product_id, quantity')
@@ -229,7 +253,6 @@ function App() {
 
         if (itemsError) throw itemsError;
 
-        // 2. Devolver al inventario (Bucle)
         for (const item of itemsToReturn) {
           const { data: currentInv } = await supabase
             .from('inventory')
@@ -247,15 +270,14 @@ function App() {
         }
       }
 
-      // 3. Actualizar estado de la venta
       const { error } = await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
       
       if (error) throw new Error(error.message);
       else {
         alert(`✅ Venta actualizada a: ${newStatus.toUpperCase()}`);
-        await fetchSales();    // Refrescar reporte ventas
-        await calculateFinances(); // Refrescar finanzas (si está abierto o en caché)
-        await fetchInventory(); // Refrescar inventario visual
+        await fetchSales(); 
+        await calculateFinances(); 
+        await fetchInventory(); 
         setSelectedSale(null); 
       }
     } catch (err) {
@@ -303,7 +325,6 @@ function App() {
       const itemsToInsert = cart.map(item => ({ sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price }));
       await supabase.from('sale_items').insert(itemsToInsert);
       
-      // Descontar stock al vender (opcional si lo manejas por triggers, pero aquí lo hacemos manual por seguridad en frontend básico)
       for (const item of cart) {
          const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
          if(currentInvItem) {
@@ -314,7 +335,7 @@ function App() {
 
       alert("✅ Venta Registrada");
       setCart([]); setCustomerName('');
-      fetchInventory(); // Actualizar stock visual
+      fetchInventory(); 
     } catch (err) { alert(err.message); }
     setLoading(false);
   };
@@ -331,7 +352,6 @@ function App() {
         const { error: itemError } = await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost }]);
         if (itemError) throw itemError;
         
-        // Sumar al stock
         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
         if(currentInvItem) {
              const newStock = currentInvItem.stock + item.qty;
@@ -368,16 +388,13 @@ function App() {
 
   if (!user) return <Login onLogin={fetchProfile} />;
 
-  // --- PREPARAR GRÁFICA DE PASTEL CSS ---
-  // Calculamos el porcentaje que representan los gastos sobre los ingresos
-  // Si gastos > ingresos, la barra se llena al 100% de rojo.
+  // --- GRÁFICA DE PASTEL CSS ---
   const percentageExpenses = finData.ingresos > 0 
-    ? Math.min((finData.totalGastos / finData.ingresos) * 100, 100) 
-    : (finData.totalGastos > 0 ? 100 : 0);
+    ? Math.min((finData.totalEgresos / finData.ingresos) * 100, 100) 
+    : (finData.totalEgresos > 0 ? 100 : 0);
   
   const percentageProfit = 100 - percentageExpenses;
 
-  // CSS Conic Gradient para la gráfica
   const donutStyle = {
     background: `conic-gradient(
       #e74c3c 0% ${percentageExpenses}%, 
@@ -393,7 +410,6 @@ function App() {
     boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
   };
 
-  // Círculo interior blanco para hacer el efecto Donut
   const innerCircleStyle = {
     background: '#fff',
     width: '80px',
@@ -593,8 +609,8 @@ function App() {
             <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30}/></button>
             
             {/* ENCABEZADO FINANZAS */}
-            <div style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ color: '#000', fontWeight: '900', margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ marginBottom: '25px', marginTop: '10px' }}>
+              <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <PieChart size={28}/> Dashboard Financiero
               </h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -606,28 +622,37 @@ function App() {
             {loading ? <div style={{ textAlign: 'center', padding: '50px', color: '#999', fontSize: '18px' }}>Analizando datos...</div> : (
               <>
                 {/* 1. TARJETAS DE KPIS PRINCIPALES */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '30px' }}>
                    {/* CARD INGRESOS */}
                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}>
-                        <TrendingUp size={20}/> <span style={{ fontWeight: 'bold' }}>Ingresos</span>
+                        <TrendingUp size={20}/> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span>
                       </div>
-                      <div style={{ fontSize: '28px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
                    </div>
+                   
+                   {/* CARD COSTO PRODUCTO */}
+                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', marginBottom: '5px' }}>
+                        <Layers size={20}/> <span style={{ fontWeight: 'bold' }}>Costo Productos</span>
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563eb' }}>-${finData.costoProductos.toFixed(2)}</div>
+                   </div>
+
                    {/* CARD GASTOS */}
                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '20px', borderRadius: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', marginBottom: '5px' }}>
-                        <ArrowDown size={20}/> <span style={{ fontWeight: 'bold' }}>Gastos Totales</span>
+                        <ArrowDown size={20}/> <span style={{ fontWeight: 'bold' }}>Gastos & Stock</span>
                       </div>
-                      <div style={{ fontSize: '28px', fontWeight: '900', color: '#dc2626' }}>${finData.totalGastos.toFixed(2)}</div>
-                      <div style={{ fontSize: '12px', color: '#991b1b', marginTop: '5px' }}>Ops: ${finData.gastosOps} | Stock: ${finData.gastosStock}</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>-${(finData.gastosOps + finData.gastosStock).toFixed(2)}</div>
                    </div>
+
                    {/* CARD UTILIDAD */}
                    <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}>
                         <DollarSign size={20}/> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span>
                       </div>
-                      <div style={{ fontSize: '28px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
                       <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(1)}%</div>
                    </div>
                 </div>
@@ -652,8 +677,8 @@ function App() {
                            <span style={{ fontWeight: 'bold' }}>${finData.utilidadNeta.toFixed(2)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Gastos</span>
-                           <span style={{ fontWeight: 'bold' }}>${finData.totalGastos.toFixed(2)}</span>
+                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
+                           <span style={{ fontWeight: 'bold' }}>${finData.totalEgresos.toFixed(2)}</span>
                         </div>
                      </div>
                   </div>
@@ -674,7 +699,7 @@ function App() {
 
                      <div style={{ marginBottom: '20px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
-                           <span>Gastos Operativos & Stock</span>
+                           <span>Costo Productos + Gastos</span>
                            <span>{percentageExpenses.toFixed(1)}%</span>
                         </div>
                         <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>

@@ -66,3 +66,46 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* --- DISEÑO RESPONSIVO PARA MOVILES --- */
+@media (max-width: 900px) {
+  /* Arreglo para que el body no centre la app en móviles */
+  body {
+    display: block !important;
+    place-items: unset !important;
+  }
+
+  /* Contenedor principal: Cambia de lado-a-lado a columna vertical */
+  .app-container {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Sección de productos */
+  .store-section {
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 15px !important;
+  }
+
+  /* Ajuste de la rejilla de botones para pantallas pequeñas */
+  .store-section > div:last-child {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+    overflow-y: visible !important; /* Dejar que la pagina scrollee */
+  }
+
+  /* Sección del carrito/cobro */
+  .cart-section {
+    flex: none !important;
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 4px solid #4a3728 !important;
+    padding: 20px !important;
+    background-color: #fff !important;
+    /* Aseguramos que el carrito se vea bien al fondo */
+    min-height: 400px; 
+  }
+}

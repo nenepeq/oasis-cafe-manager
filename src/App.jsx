@@ -399,10 +399,10 @@ function App() {
   const utilidadNetaReal = (dailyProfit?.ingresos || 0) - totalGastosReales;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
-      
+<div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>      
       {/* TIENDA */}
-      <div style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
+      className="store-section":
+<div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '50px' }} />
@@ -442,7 +442,8 @@ function App() {
       </div>
 
       {/* PANEL COBRO */}
-      <div style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+      className="cart-section":
+<div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '25px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ color: '#4a3728', fontSize: '22px', fontWeight: '900' }}><ShoppingCart size={24} /> Pedido</h2>
         <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '15px', marginBottom: '20px', borderRadius: '12px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900' }} />
         

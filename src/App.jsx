@@ -133,36 +133,60 @@ function App() {
     }
   }, [user]);
 
-  useEffect(() => { if (showReport && user) fetchSales(); }, [showReport, reportDate]);
-  useEffect(() => { if (showFinances && user) calculateFinances(); }, [showFinances, financeDate]);
+  useEffect(() => { 
+    if (showReport && user) fetchSales(); 
+  }, [showReport, reportDate]);
 
-  // --- LÓGICA DE REPORTES ---
+  useEffect(() => { 
+    if (showFinances && user && userRole === 'admin') calculateFinances(); 
+  }, [showFinances, financeDate]);
+
+  // --- LÓGICA DE REPORTES CORREGIDA ---
   const fetchSales = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Usar la fecha seleccionada o hoy por defecto
+    const targetDate = reportDate || new Date().toISOString().split('T')[0];
+    
+    console.log('Buscando ventas para fecha:', targetDate);
+    
+    let query = supabase
       .from('sales')
       .select(`*, sale_items (*, products (name, sale_price))`)
-      .gte('created_at', reportDate + 'T00:00:00')
-      .lte('created_at', reportDate + 'T23:59:59')
+      .gte('created_at', targetDate + 'T00:00:00')
+      .lte('created_at', targetDate + 'T23:59:59')
       .order('created_at', { ascending: false });
 
+    const { data, error } = await query;
+
     if (error) {
-      console.error(error);
+      console.error('Error fetching sales:', error);
       setLoading(false);
       return;
     }
+    
+    console.log('Ventas encontradas:', data?.length || 0);
+    
+    // Para perfil VENTAS, mostrar todas las ventas (no filtrar por usuario)
+    // Esto asegura que vean las ventas de todos los usuarios
     setSales(data || []);
-    const total = data?.reduce((acc, sale) => sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc, 0) || 0;
+    
+    // Calcular total de ingresos (excluyendo cancelados)
+    const total = (data || []).reduce((acc, sale) => {
+      return sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc;
+    }, 0);
+    
     setTotalIngresosReporte(total);
     setLoading(false);
   };
 
   // --- LÓGICA MAESTRA DE FINANZAS (CÁLCULO REAL INSTANTÁNEO) ---
   const calculateFinances = async () => {
+    if (userRole !== 'admin') return;
+    
     setLoading(true);
     
     // 1. Obtener VENTAS + ÍTEMS + COSTO PRODUCTO (Solo activas)
-    // CAMBIO APLICADO: Usamos 'cost_price' en lugar de 'cost'
     const { data: salesData } = await supabase
       .from('sales')
       .select(`
@@ -189,7 +213,6 @@ function App() {
         // Sumar costo de productos de esta venta
         if (sale.sale_items) {
           sale.sale_items.forEach(item => {
-             // CAMBIO APLICADO: Usamos cost_price
              const unitCost = item.products?.cost_price || 0;
              totalCostoProductos += (item.quantity * unitCost);
           });
@@ -219,7 +242,6 @@ function App() {
     setDailyStockList(purchasesData || []);
 
     // 4. Calcular Totales Finales
-    // Egresos Totales = Costo Producto (lo que salió del almacén) + Gastos Ops + Compras Stock (Inversión)
     const totalEgresos = totalCostoProductos + totalGastosOps + totalGastosStock;
     const utilidad = totalIngresos - totalEgresos;
     const margen = totalIngresos > 0 ? (utilidad / totalIngresos) * 100 : 0;
@@ -239,10 +261,16 @@ function App() {
 
   // --- LÓGICA DE CANCELACIÓN Y DEVOLUCIÓN ---
   const updateSaleStatus = async (saleId, newStatus) => {
+    if (!userRole === 'admin') {
+      alert("Solo el administrador puede cancelar pedidos");
+      return;
+    }
+    
     if (selectedSale && selectedSale.status === 'cancelado' && newStatus === 'cancelado') {
       alert("Esta venta ya está cancelada.");
       return;
     }
+    
     setLoading(true);
     try {
       if (newStatus === 'cancelado') {
@@ -288,7 +316,12 @@ function App() {
   };
 
   const fetchInventory = async () => {
-    const { data, error } = await supabase.from('inventory').select('stock, product_id, products:product_id (name)');
+    if (userRole !== 'admin') return;
+    
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('stock, product_id, products:product_id (name)');
+    
     if (error) console.error(error);
     else setInventoryList(data || []);
   };
@@ -315,71 +348,155 @@ function App() {
   const handleSale = async () => {
     if (cart.length === 0) return;
     if (loading) return;
+    
     const confirmPay = window.confirm(`✅ CONFIRMAR VENTA ✅\n\nMétodo: ${paymentMethod.toUpperCase()}\n\n⚠️ AVISO IMPORTANTE ⚠️\n\nRecuerda que si es pago con 💳 TARJETA, procede a realizar el cobro en la terminal bancaria.`);
     if (!confirmPay) return;
+    
     setLoading(true);
     try {
       const totalVenta = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
-      const { data: sale, error: saleError } = await supabase.from('sales').insert([{ total: totalVenta, status: "recibido", created_by: user.id, customer_name: customerName.trim() || 'Sin nombre', payment_method: paymentMethod }]).select().single();
+      
+      const { data: sale, error: saleError } = await supabase
+        .from('sales')
+        .insert([{ 
+          total: totalVenta, 
+          status: "recibido", 
+          created_by: user.id, 
+          customer_name: customerName.trim() || 'Sin nombre', 
+          payment_method: paymentMethod 
+        }])
+        .select()
+        .single();
+        
       if (saleError) throw saleError;
-      const itemsToInsert = cart.map(item => ({ sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price }));
+      
+      const itemsToInsert = cart.map(item => ({ 
+        sale_id: sale.id, 
+        product_id: item.id, 
+        quantity: item.quantity, 
+        price: item.sale_price 
+      }));
+      
       await supabase.from('sale_items').insert(itemsToInsert);
       
+      // Actualizar inventario
       for (const item of cart) {
-         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
-         if(currentInvItem) {
-             const newStock = currentInvItem.stock - item.quantity;
-             await supabase.from('inventory').update({stock: newStock}).eq('product_id', item.id);
-         }
+        const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
+        if(currentInvItem) {
+          const newStock = currentInvItem.stock - item.quantity;
+          await supabase
+            .from('inventory')
+            .update({ stock: newStock })
+            .eq('product_id', item.id);
+        }
       }
 
       alert("✅ Venta Registrada");
-      setCart([]); setCustomerName('');
-      fetchInventory(); 
-    } catch (err) { alert(err.message); }
+      setCart([]); 
+      setCustomerName('');
+      
+      // Refrescar inventario si es admin
+      if (userRole === 'admin') {
+        fetchInventory();
+      }
+      
+    } catch (err) { 
+      alert("Error al registrar venta: " + err.message); 
+    }
     setLoading(false);
   };
 
   const handleRegisterPurchase = async () => {
     if (purchaseCart.length === 0) return;
     if (loading) return;
+    
     setLoading(true);
     try {
       const totalCompra = purchaseCart.reduce((acc, i) => acc + (i.cost * i.qty), 0);
-      const { data: purchase, error: pErr } = await supabase.from('purchases').insert([{ total: totalCompra, created_by: user.id }]).select().single();
+      const { data: purchase, error: pErr } = await supabase
+        .from('purchases')
+        .insert([{ total: totalCompra, created_by: user.id }])
+        .select()
+        .single();
+        
       if (pErr) throw pErr;
+      
       for (const item of purchaseCart) {
-        const { error: itemError } = await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost }]);
+        const { error: itemError } = await supabase
+          .from('purchase_items')
+          .insert([{ 
+            purchase_id: purchase.id, 
+            product_id: item.id, 
+            quantity: item.qty, 
+            cost: item.cost 
+          }]);
+          
         if (itemError) throw itemError;
         
         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
         if(currentInvItem) {
-             const newStock = currentInvItem.stock + item.qty;
-             await supabase.from('inventory').update({stock: newStock}).eq('product_id', item.id);
+          const newStock = currentInvItem.stock + item.qty;
+          await supabase
+            .from('inventory')
+            .update({ stock: newStock })
+            .eq('product_id', item.id);
         }
       }
+      
       alert("📦 Stock Actualizado");
-      setPurchaseCart([]); setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0);
+      setPurchaseCart([]); 
+      setSelectedPurchaseProd(''); 
+      setPurchaseQty(0); 
+      setPurchaseCost(0);
+      
+      // Refrescar inventario
       setTimeout(() => fetchInventory(), 500);
-    } catch (err) { alert("Error: " + err.message); }
+      
+    } catch (err) { 
+      alert("Error: " + err.message); 
+    }
     setLoading(false);
   };
 
   const handleRegisterExpense = async () => {
-    if (!expenseConcepto.trim() || expenseMonto <= 0) { alert('Por favor completa todos los campos correctamente'); return; }
+    if (!expenseConcepto.trim() || expenseMonto <= 0) { 
+      alert('Por favor completa todos los campos correctamente'); 
+      return; 
+    }
+    
     if (loading) return;
+    
     setLoading(true);
     try {
-      const { error } = await supabase.from('expenses').insert([{ concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto, fecha: new Date().toISOString().split('T')[0], created_by: user.id }]);
+      const { error } = await supabase
+        .from('expenses')
+        .insert([{ 
+          concepto: expenseConcepto.trim(), 
+          categoria: expenseCategoria, 
+          monto: expenseMonto, 
+          fecha: new Date().toISOString().split('T')[0], 
+          created_by: user.id 
+        }]);
+        
       if (error) throw error;
+      
       alert("💰 Gasto Registrado Exitosamente");
-      setExpenseConcepto(''); setExpenseCategoria('Insumos'); setExpenseMonto(0);
-    } catch (err) { alert("Error: " + err.message); }
+      setExpenseConcepto(''); 
+      setExpenseCategoria('Insumos'); 
+      setExpenseMonto(0);
+      
+    } catch (err) { 
+      alert("Error: " + err.message); 
+    }
     setLoading(false);
   };
 
   const handleNewOrder = () => {
-    if (window.confirm("¿Iniciar pedido nuevo?")) { setCart([]); setCustomerName(''); setPaymentMethod('Efectivo'); }
+    if (window.confirm("¿Iniciar pedido nuevo?")) { 
+      setCart([]); 
+      setCustomerName(''); 
+      setPaymentMethod('Efectivo'); 
+    }
   };
 
   const filteredProducts = selectedCategory === 'Todos' 
@@ -557,43 +674,164 @@ function App() {
         </div>
       )}
 
-      {/* MODAL REPORTES */}
+      {/* MODAL REPORTES - COMPARTIDO ENTRE ADMIN Y VENTAS */}
       {showReport && (
         <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
+            
+            {/* TÍTULO DEL REPORTE */}
             <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte Ventas</h2>
+            
+            {/* FILTRO DE FECHA Y TOTAL */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
-              <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
-              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>${totalIngresosReporte.toFixed(2)}</div>
-            </div>
-             <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
-              <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Hora</th><th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th><th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th></tr></thead>
-                  <tbody>
-                    {sales.map(sale => (
-                      <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent' }}>
-                        <td style={{ padding: '10px', color: '#000' }}>{new Date(sale.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                        <td style={{ padding: '10px', color: '#000' }}>{sale.customer_name}</td>
-                        <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>${sale.total}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <input 
+                type="date" 
+                value={reportDate} 
+                onChange={(e) => setReportDate(e.target.value)} 
+                style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} 
+              />
+              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
+                Total: ${totalIngresosReporte.toFixed(2)}
               </div>
+            </div>
+            
+            {/* TABLA DE VENTAS */}
+            <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
+              <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Cargando ventas...</div>
+                ) : sales.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                    No hay ventas para {reportDate}
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #000' }}>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Hora</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th>
+                        <th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sales.map(sale => (
+                        <tr 
+                          key={sale.id} 
+                          onClick={() => setSelectedSale(sale)} 
+                          style={{ 
+                            borderBottom: '1px solid #eee', 
+                            cursor: 'pointer', 
+                            backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent',
+                            opacity: sale.status === 'cancelado' ? 0.6 : 1
+                          }}
+                        >
+                          <td style={{ padding: '10px', color: '#000' }}>
+                            {new Date(sale.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </td>
+                          <td style={{ padding: '10px', color: '#000' }}>
+                            {sale.customer_name}
+                            {sale.payment_method && (
+                              <div style={{ fontSize: '10px', color: '#666' }}>
+                                {sale.payment_method}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>
+                            ${sale.total}
+                            {sale.status === 'cancelado' && (
+                              <div style={{ fontSize: '10px', color: '#e74c3c' }}>CANCELADO</div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              
+              {/* DETALLE DE VENTA SELECCIONADA */}
               {selectedSale && (
                 <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
-                  <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>Nota #{selectedSale.id.slice(0,4)}</h3>
+                  <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
+                    Nota #{selectedSale.id.slice(0,4)}
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                      {new Date(selectedSale.created_at).toLocaleDateString()} · {new Date(selectedSale.created_at).toLocaleTimeString()}
+                    </div>
+                  </h3>
+                  
                   <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
-                    {selectedSale.sale_items.map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}><span>{item.products?.name} x{item.quantity}</span><span style={{ fontWeight: 'bold' }}>${item.price * item.quantity}</span></div>
-                    ))}
+                    {selectedSale.sale_items && selectedSale.sale_items.length > 0 ? (
+                      selectedSale.sale_items.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                          <span>
+                            {item.products?.name} x{item.quantity}
+                          </span>
+                          <span style={{ fontWeight: 'bold' }}>
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div>No hay items en esta venta</div>
+                    )}
                   </div>
-                  <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}><span>Total</span><span>${selectedSale.total}</span></div>
+                  
+                  <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}>
+                    <span>Total</span>
+                    <span>${selectedSale.total}</span>
+                  </div>
+                  
                   <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                     {selectedSale.status === 'recibido' && <button onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>MARCAR ENTREGADO</button>}
-                     {userRole === 'admin' && selectedSale.status !== 'cancelado' && <button onClick={() => updateSaleStatus(selectedSale.id, 'cancelado')} style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>CANCELAR</button>}
+                    {/* BOTONES PARA ADMIN */}
+                    {userRole === 'admin' && (
+                      <>
+                        {selectedSale.status === 'recibido' && (
+                          <button 
+                            onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} 
+                            style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            MARCAR ENTREGADO
+                          </button>
+                        )}
+                        
+                        {selectedSale.status !== 'cancelado' && (
+                          <button 
+                            onClick={() => {
+                              if (window.confirm('¿Estás seguro de cancelar esta venta?')) {
+                                updateSaleStatus(selectedSale.id, 'cancelado');
+                              }
+                            }} 
+                            style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            CANCELAR VENTA
+                          </button>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* BOTONES PARA PERFIL VENTAS */}
+                    {userRole === 'ventas' && selectedSale.status === 'recibido' && (
+                      <div style={{ color: '#666', fontSize: '12px', textAlign: 'center', padding: '10px' }}>
+                        Solo el administrador puede cambiar el estado de las ventas
+                      </div>
+                    )}
+                    
+                    {/* ESTADO ACTUAL */}
+                    <div style={{ 
+                      padding: '8px', 
+                      borderRadius: '8px', 
+                      backgroundColor: 
+                        selectedSale.status === 'entregado' ? '#d4edda' : 
+                        selectedSale.status === 'cancelado' ? '#f8d7da' : '#fff3cd',
+                      color: 
+                        selectedSale.status === 'entregado' ? '#155724' : 
+                        selectedSale.status === 'cancelado' ? '#721c24' : '#856404',
+                      fontSize: '12px',
+                      textAlign: 'center'
+                    }}>
+                      Estado: {selectedSale.status.toUpperCase()}
+                    </div>
                   </div>
                 </div>
               )}
@@ -602,7 +840,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL FINANZAS AVANZADO (DASHBOARD) */}
+      {/* MODAL FINANZAS AVANZADO (SOLO ADMIN) */}
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>

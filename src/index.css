@@ -1,3 +1,8 @@
+/* === REGLA DE ORO: Evita que el padding rompa los anchos === */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -67,14 +72,20 @@ button:focus-visible {
   }
 }
 
-/* --- DISEÑO RESPONSIVO PARA MOVILES (VERTICAL / PORTRAIT) --- */
+/* =========================================================
+   DISEÑO RESPONSIVO MÓVIL
+   ========================================================= */
+
+/* Corrección general para móviles */
 @media (max-width: 900px) {
   body {
     display: block !important;
     place-items: unset !important;
   }
+}
 
-  /* Contenedor principal: Columna vertical */
+/* CASO 1: CELULAR VERTICAL (PARADO) - Uno encima del otro */
+@media (max-width: 900px) and (orientation: portrait) {
   .app-container {
     flex-direction: column !important;
     height: auto !important;
@@ -82,20 +93,21 @@ button:focus-visible {
     overflow-y: auto !important;
   }
 
-  /* Sección de productos */
+  /* Tienda arriba */
   .store-section {
     flex: none !important;
     width: 100% !important;
     height: auto !important;
     padding: 15px !important;
+    overflow: visible !important;
   }
-
+  
+  /* Ajuste de botones para que quepan bien */
   .store-section > div:last-child {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-    overflow-y: visible !important;
   }
 
-  /* Sección del carrito */
+  /* Carrito abajo */
   .cart-section {
     flex: none !important;
     width: 100% !important;
@@ -103,37 +115,49 @@ button:focus-visible {
     border-top: 4px solid #4a3728 !important;
     padding: 20px !important;
     background-color: #fff !important;
-    min-height: 400px; /* Esto causaba el problema en horizontal */
+    min-height: 400px;
   }
 }
 
-/* --- CORRECCIÓN PARA MODO HORIZONTAL (LANDSCAPE) --- */
-/* Esta regla sobreescribe la anterior si el celular está acostado */
+/* CASO 2: CELULAR HORIZONTAL (ACOSTADO) - Lado a lado */
 @media (max-width: 900px) and (orientation: landscape) {
-  
   .app-container {
-    flex-direction: row !important; /* Volver a ponerlos lado a lado */
-    height: 100vh !important;
-    overflow: hidden !important; /* Evitar scroll en toda la página */
+    flex-direction: row !important; /* Lado a lado */
+    height: 100vh !important; /* Altura fija de pantalla */
+    overflow: hidden !important; /* Sin scroll general */
+    align-items: stretch !important;
   }
 
-  /* La tienda toma el 60% de la pantalla */
+  /* Tienda Izquierda (Usa Flex en lugar de width fijo para evitar errores) */
   .store-section {
-    width: 60% !important;
+    flex: 1.5 !important; /* Ocupa 60% aprox del espacio disponible */
+    width: auto !important;
     height: 100% !important;
-    overflow-y: auto !important; /* Scroll interno solo para productos */
+    overflow-y: auto !important; /* Scroll interno */
+    padding: 10px !important;
+  }
+  
+  /* Botones un poco más pequeños para aprovechar espacio */
+  .store-section button {
+    height: 130px !important; 
+    padding: 10px !important;
+  }
+  
+  /* Rejilla más compacta */
+  .store-section > div:last-child {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+    gap: 10px !important;
   }
 
-  /* El carrito toma el 40% restante */
+  /* Carrito Derecha */
   .cart-section {
-    width: 40% !important;
+    flex: 1 !important; /* Ocupa 40% aprox */
+    width: auto !important;
     height: 100% !important;
-    overflow-y: auto !important; /* Scroll interno para el carrito */
-    
-    /* Restaurar bordes estilo PC */
+    overflow-y: auto !important; /* Scroll interno */
+    border-left: 2px solid #ddd !important;
     border-top: none !important;
-    border-left: 1px solid #eee !important;
-    min-height: 0 !important; /* Quitamos la altura mínima forzada */
-    padding: 15px !important;
+    padding: 10px !important;
+    background-color: #fff !important;
   }
 }

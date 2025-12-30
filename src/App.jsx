@@ -141,14 +141,12 @@ function App() {
     if (showFinances && user && userRole === 'admin') calculateFinances(); 
   }, [showFinances, financeDate]);
 
-  // --- LÓGICA DE REPORTES CORREGIDA ---
+  // --- LÓGICA DE REPORTES ---
   const fetchSales = async () => {
     setLoading(true);
     
     // Usar la fecha seleccionada o hoy por defecto
     const targetDate = reportDate || new Date().toISOString().split('T')[0];
-    
-    console.log('Buscando ventas para fecha:', targetDate);
     
     let query = supabase
       .from('sales')
@@ -165,10 +163,6 @@ function App() {
       return;
     }
     
-    console.log('Ventas encontradas:', data?.length || 0);
-    
-    // Para perfil VENTAS, mostrar todas las ventas (no filtrar por usuario)
-    // Esto asegura que vean las ventas de todos los usuarios
     setSales(data || []);
     
     // Calcular total de ingresos (excluyendo cancelados)
@@ -261,7 +255,9 @@ function App() {
 
   // --- LÓGICA DE CANCELACIÓN Y DEVOLUCIÓN ---
   const updateSaleStatus = async (saleId, newStatus) => {
-    if (!userRole === 'admin') {
+    // MODIFICADO: Solo permitir cancelar al ADMIN. 
+    // Ventas y Admin pueden marcar como entregado.
+    if (newStatus === 'cancelado' && userRole !== 'admin') {
       alert("Solo el administrador puede cancelar pedidos");
       return;
     }
@@ -783,56 +779,33 @@ function App() {
                   </div>
                   
                   <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {/* BOTONES PARA ADMIN */}
-                    {userRole === 'admin' && (
-                      <>
-                        {selectedSale.status === 'recibido' && (
-                          <button 
-                            onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} 
-                            style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                          >
-                            MARCAR ENTREGADO
-                          </button>
-                        )}
-                        
-                        {selectedSale.status !== 'cancelado' && (
-                          <button 
-                            onClick={() => {
-                              if (window.confirm('¿Estás seguro de cancelar esta venta?')) {
-                                updateSaleStatus(selectedSale.id, 'cancelado');
-                              }
-                            }} 
-                            style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                          >
-                            CANCELAR VENTA
-                          </button>
-                        )}
-                      </>
+                    {/* BOTÓN ENTREGADO - DISPONIBLE PARA TODOS (Admin y Ventas) */}
+                    {selectedSale.status === 'recibido' && (
+                      <button 
+                        onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} 
+                        style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        MARCAR ENTREGADO
+                      </button>
                     )}
                     
-                    {/* BOTONES PARA PERFIL VENTAS */}
-                    {userRole === 'ventas' && selectedSale.status === 'recibido' && (
-                      <div style={{ color: '#666', fontSize: '12px', textAlign: 'center', padding: '10px' }}>
-                        Solo el administrador puede cambiar el estado de las ventas
-                      </div>
+                    {/* BOTÓN CANCELAR - SOLO ADMIN */}
+                    {userRole === 'admin' && selectedSale.status !== 'cancelado' && (
+                      <button 
+                        onClick={() => {
+                          if (window.confirm('¿Estás seguro de cancelar esta venta?')) {
+                            updateSaleStatus(selectedSale.id, 'cancelado');
+                          }
+                        }} 
+                        style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        CANCELAR VENTA
+                      </button>
                     )}
-                    
-                    {/* ESTADO ACTUAL */}
-                    <div style={{ 
-                      padding: '8px', 
-                      borderRadius: '8px', 
-                      backgroundColor: 
-                        selectedSale.status === 'entregado' ? '#d4edda' : 
-                        selectedSale.status === 'cancelado' ? '#f8d7da' : '#fff3cd',
-                      color: 
-                        selectedSale.status === 'entregado' ? '#155724' : 
-                        selectedSale.status === 'cancelado' ? '#721c24' : '#856404',
-                      fontSize: '12px',
-                      textAlign: 'center'
-                    }}>
-                      Estado: {selectedSale.status.toUpperCase()}
-                    </div>
                   </div>
+                  
+                  {/* SE ELIMINÓ LA LEYENDA AMARILLA DE ESTADO AQUÍ */}
+
                 </div>
               )}
             </div>

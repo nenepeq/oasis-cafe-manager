@@ -51,7 +51,7 @@ function App() {
   const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   
-  // --- NUEVO ESTADO PARA EL FILTRO DE CATEGORÍAS ---
+  // Estado para el filtro
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
   // Estados para Reportes
@@ -76,16 +76,9 @@ function App() {
   const [expenseCategoria, setExpenseCategoria] = useState('Insumos');
   const [expenseMonto, setExpenseMonto] = useState(0);
 
-  // --- LISTA DE CATEGORÍAS PARA EL MENÚ ---
   const categories = [
-    'Todos',
-    'Bebidas Calientes',
-    'Alimentos',
-    'Frappés',
-    'Bebidas Frías',
-    'Refrescos',
-    'Postres',
-    'Sabritas y Otros'
+    'Todos', 'Bebidas Calientes', 'Alimentos', 'Frappés', 
+    'Bebidas Frías', 'Refrescos', 'Postres', 'Sabritas y Otros'
   ];
 
   const expenseCategories = [
@@ -279,7 +272,6 @@ function App() {
     if (window.confirm("¿Iniciar pedido nuevo?")) { setCart([]); setCustomerName(''); setPaymentMethod('Efectivo'); }
   };
 
-  // --- LÓGICA DE FILTRADO ---
   const filteredProducts = selectedCategory === 'Todos' 
     ? products 
     : products.filter(p => (p.category || '').trim() === selectedCategory);
@@ -296,7 +288,7 @@ function App() {
       {/* 1. SECCIÓN DE TIENDA (IZQUIERDA) */}
       <div className="store-section" style={{ flex: 2, padding: '25px', display: 'flex', flexDirection: 'column' }}>
         
-        {/* ENCABEZADO / MENÚ SUPERIOR */}
+        {/* A. ENCABEZADO */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '50px' }} />
@@ -308,15 +300,12 @@ function App() {
                 <Package size={18}/> INVENTARIO
               </button>
             )}
-            
             <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' }}><FileText size={18}/> REPORTES</button>
-            
             {userRole === 'admin' && (
               <button onClick={() => setShowFinances(true)} style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' }}>
                 <PieChart size={18}/> FINANZAS
               </button>
             )}
-            
             <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '2px solid #e74c3c', padding: '12px 24px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <LogOut size={18} /> 
               <span style={{ textTransform: 'uppercase' }}>{userRole === 'admin' ? 'ADMIN' : 'VENTAS'}</span>
@@ -324,54 +313,51 @@ function App() {
           </div>
         </div>
 
-        {/* CONTENEDOR DE PRODUCTOS */}
+        {/* B. MENÚ DE CATEGORÍAS (AHORA FUERA DEL CONTENEDOR GRID) */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
+          {categories.map(cat => (
+            <button 
+              key={cat} 
+              onClick={() => setSelectedCategory(cat)}
+              style={{ 
+                padding: '10px 20px', 
+                borderRadius: '20px', 
+                border: 'none', 
+                backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', 
+                color: selectedCategory === cat ? '#ffffff' : '#4a3728', 
+                fontWeight: 'bold', 
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: selectedCategory === cat ? '0 4px 10px rgba(74, 55, 40, 0.3)' : 'none',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {cat.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* C. MENSAJES DE ERROR O VACÍO (TAMBIÉN FUERA DEL GRID) */}
+        {fetchError && (
+            <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '10px', marginBottom: '10px', border: '2px solid #fecaca' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <AlertTriangle size={24}/> Error de Conexión
+              </p>
+              <p style={{ fontSize: '14px' }}>Supabase dice: <strong>{fetchError}</strong></p>
+            </div>
+        )}
+
+        {!fetchError && filteredProducts.length === 0 && (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
+              <p style={{ fontSize: '14px' }}>No hay elementos en la categoría "{selectedCategory}"</p>
+            </div>
+        )}
+
+        {/* D. CONTENEDOR DE PRODUCTOS (ESTE SÍ DEBE SER EL ÚLTIMO HIJO PARA QUE EL CSS FUNCIONE) */}
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          
-          {/* AVISO DE ERROR DE CONEXIÓN */}
-          {fetchError && (
-             <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '10px', marginBottom: '20px', border: '2px solid #fecaca' }}>
-                <p style={{ fontWeight: 'bold', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <AlertTriangle size={24}/> Error de Conexión
-                </p>
-                <p style={{ fontSize: '14px' }}>Supabase dice: <strong>{fetchError}</strong></p>
-             </div>
-          )}
-
-          {/* === NUEVO MENÚ DE CATEGORÍAS (SCROLL HORIZONTAL) === */}
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '10px', scrollbarWidth: 'none' }}>
-            {categories.map(cat => (
-              <button 
-                key={cat} 
-                onClick={() => setSelectedCategory(cat)}
-                style={{ 
-                  padding: '10px 20px', 
-                  borderRadius: '20px', 
-                  border: 'none', 
-                  backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', 
-                  color: selectedCategory === cat ? '#ffffff' : '#4a3728', 
-                  fontWeight: 'bold', 
-                  fontSize: '12px',
-                  whiteSpace: 'nowrap', // Para que el texto no se corte
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  boxShadow: selectedCategory === cat ? '0 4px 10px rgba(74, 55, 40, 0.3)' : 'none',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {cat.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          {/* MENSAJE DE LISTA VACÍA */}
-          {!fetchError && filteredProducts.length === 0 && (
-             <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '20px' }}>
-                <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
-                <p style={{ fontSize: '14px' }}>No hay elementos en la categoría "{selectedCategory}"</p>
-             </div>
-          )}
-
-          {/* GRID DE PRODUCTOS FILTRADOS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
             {filteredProducts.map(p => (
               <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '10px', borderRadius: '15px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '140px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

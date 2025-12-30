@@ -67,15 +67,14 @@ button:focus-visible {
   }
 }
 
-/* --- DISEÑO RESPONSIVO PARA MOVILES --- */
+/* --- DISEÑO RESPONSIVO PARA MOVILES (VERTICAL / PORTRAIT) --- */
 @media (max-width: 900px) {
-  /* Arreglo para que el body no centre la app en móviles */
   body {
     display: block !important;
     place-items: unset !important;
   }
 
-  /* Contenedor principal: Cambia de lado-a-lado a columna vertical */
+  /* Contenedor principal: Columna vertical */
   .app-container {
     flex-direction: column !important;
     height: auto !important;
@@ -91,13 +90,12 @@ button:focus-visible {
     padding: 15px !important;
   }
 
-  /* Ajuste de la rejilla de botones para pantallas pequeñas */
   .store-section > div:last-child {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-    overflow-y: visible !important; /* Dejar que la pagina scrollee */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+    overflow-y: visible !important;
   }
 
-  /* Sección del carrito/cobro */
+  /* Sección del carrito */
   .cart-section {
     flex: none !important;
     width: 100% !important;
@@ -105,7 +103,37 @@ button:focus-visible {
     border-top: 4px solid #4a3728 !important;
     padding: 20px !important;
     background-color: #fff !important;
-    /* Aseguramos que el carrito se vea bien al fondo */
-    min-height: 400px; 
+    min-height: 400px; /* Esto causaba el problema en horizontal */
+  }
+}
+
+/* --- CORRECCIÓN PARA MODO HORIZONTAL (LANDSCAPE) --- */
+/* Esta regla sobreescribe la anterior si el celular está acostado */
+@media (max-width: 900px) and (orientation: landscape) {
+  
+  .app-container {
+    flex-direction: row !important; /* Volver a ponerlos lado a lado */
+    height: 100vh !important;
+    overflow: hidden !important; /* Evitar scroll en toda la página */
+  }
+
+  /* La tienda toma el 60% de la pantalla */
+  .store-section {
+    width: 60% !important;
+    height: 100% !important;
+    overflow-y: auto !important; /* Scroll interno solo para productos */
+  }
+
+  /* El carrito toma el 40% restante */
+  .cart-section {
+    width: 40% !important;
+    height: 100% !important;
+    overflow-y: auto !important; /* Scroll interno para el carrito */
+    
+    /* Restaurar bordes estilo PC */
+    border-top: none !important;
+    border-left: 1px solid #eee !important;
+    min-height: 0 !important; /* Quitamos la altura mínima forzada */
+    padding: 15px !important;
   }
 }

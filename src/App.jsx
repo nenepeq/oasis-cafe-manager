@@ -566,23 +566,49 @@ function App() {
           ))}
         </div>
 
-        {/* GRID PRODUCTOS */}
-        {!fetchError && filteredProducts.length === 0 && (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}><p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p></div>
-        )}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
-            {filteredProducts.map(p => (
-              <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '8px', borderRadius: '12px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '130px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
-                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.5', marginBottom: '4px' }}>{p.name}</div>
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '16px' }}>${p.sale_price}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'none' }}></div>
-      </div>
+       {/* GRID PRODUCTOS */}
+{!fetchError && filteredProducts.length === 0 && (
+    <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}><p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p></div>
+)}
+
+{/* Estilo para el efecto 3D sin tocar el JS */}
+<style>{`
+  .btn-producto-3d:active {
+    transform: translateY(4px) !important;
+    box-shadow: none !important;
+  }
+`}</style>
+
+<div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
+    {filteredProducts.map(p => (
+      <button 
+        key={p.id} 
+        onClick={() => addToCart(p)} 
+        className="btn-producto-3d" // Clase para el efecto
+        style={{ 
+          padding: '8px', 
+          borderRadius: '12px', 
+          border: 'none', 
+          backgroundColor: '#fff', 
+          textAlign: 'center', 
+          height: '130px', 
+          boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)', // Sombra base para efecto 3D
+          cursor: 'pointer', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          transition: 'all 0.1s ease' // Transición suave
+        }}
+      >
+        <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
+        <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.5', marginBottom: '4px' }}>{p.name}</div>
+        <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '16px' }}>${p.sale_price}</div>
+      </button>
+    ))}
+  </div>
+</div>
 
       {/* 2. CARRITO */}
       <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>

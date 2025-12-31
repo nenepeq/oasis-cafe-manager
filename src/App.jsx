@@ -4,7 +4,8 @@ import { getProducts } from './api';
 import { 
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart, Trash2, 
   LogOut, List, IceCream, FileText, CheckCircle, Clock, TrendingUp, RefreshCw, User, 
-  CreditCard, Banknote, Calendar, RotateCcw, X, Package, Truck, AlertTriangle, DollarSign, Eye, PieChart, Receipt, ArrowDown, ArrowUp, Activity, Layers
+  CreditCard, Banknote, Calendar, RotateCcw, X, Package, Truck, AlertTriangle, DollarSign, Eye, PieChart, Receipt, ArrowDown, ArrowUp, Activity, Layers,
+  Award // Nuevo Icono
 } from 'lucide-react';
 
 // --- PANTALLA DE LOGIN ---
@@ -45,6 +46,13 @@ function App() {
   const [showReport, setShowReport] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
   const [showFinances, setShowFinances] = useState(false);
+  
+  // NUEVOS ESTADOS PARA PRODUCTOS ESTRELLA
+  const [showStarProducts, setShowStarProducts] = useState(false);
+  const [starStartDate, setStarStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [starEndDate, setStarEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [starData, setStarData] = useState([]);
+
   const [inventoryList, setInventoryList] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
@@ -140,6 +148,43 @@ function App() {
   useEffect(() => { 
     if (showFinances && user && userRole === 'admin') calculateFinances(); 
   }, [showFinances, financeDate]);
+
+  // --- LÓGICA DE PRODUCTOS ESTRELLA ---
+  const fetchStarProducts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sale_items')
+        .select(`
+          quantity,
+          price,
+          products ( name ),
+          sales!inner ( created_at, status )
+        `)
+        .gte('sales.created_at', starStartDate + 'T00:00:00')
+        .lte('sales.created_at', starEndDate + 'T23:59:59')
+        .neq('sales.status', 'cancelado');
+
+      if (error) throw error;
+
+      const grouping = data.reduce((acc, item) => {
+        const pName = item.products?.name || 'Producto Desconocido';
+        if (!acc[pName]) {
+          acc[pName] = { name: pName, totalQty: 0, totalRevenue: 0 };
+        }
+        acc[pName].totalQty += item.quantity;
+        acc[pName].totalRevenue += (item.quantity * item.price);
+        return acc;
+      }, {});
+
+      const sorted = Object.values(grouping).sort((a, b) => b.totalQty - a.totalQty);
+      setStarData(sorted);
+    } catch (err) {
+      console.error(err);
+      alert("Error al cargar productos estrella");
+    }
+    setLoading(false);
+  };
 
   // --- LÓGICA DE REPORTES ---
   const fetchSales = async () => {
@@ -549,7 +594,11 @@ function App() {
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
             {userRole === 'admin' && (
-              <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16}/></button>
+              <>
+                <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16}/></button>
+                {/* BOTÓN NUEVO REPORTE ESTRELLA (SOLO ADMIN) */}
+                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Award size={16}/></button>
+              </>
             )}
             <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><FileText size={16}/></button>
             {userRole === 'admin' && (
@@ -612,7 +661,7 @@ function App() {
           </div>
         </div>
         <div style={{ display: 'none' }}></div>
-      </div> {/* <--- ESTA ES LA ETIQUETA QUE FALTABA PARA CERRAR TU CONTENEDOR PRINCIPAL */}
+      </div>
 
       {/* 2. CARRITO */}
       <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
@@ -651,7 +700,7 @@ function App() {
                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>EXISTENCIAS</h3>
                 <div style={{ border: '1px solid #f0f0f0', borderRadius: '15px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                    <thead style={{ background: '#f8f6f2' }}><tr><th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Prod</th><th style={{ padding: '10px', color: '#000' }}>Cant</th><th style={{ padding: '10px', color: '#000' }}>!</th></tr></thead>
+                    <thead style={{ background: '#f8f6f2' }}><tr><th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Producto</th><th style={{ padding: '10px', color: '#000' }}>Cantidad</th><th style={{ padding: '10px', color: '#000' }}>Estatus</th></tr></thead>
                     <tbody>
                       {inventoryList.map((inv, index) => (
                         <tr key={index} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', color: '#000', fontWeight: '600' }}>{inv.products?.name}</td><td style={{ padding: '10px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td><td style={{ padding: '10px', textAlign: 'center' }}>{inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16}/> : <CheckCircle color="#27ae60" size={16}/>}</td></tr>
@@ -676,7 +725,7 @@ function App() {
   <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
     <input 
       type="number" 
-      placeholder="Cant." 
+      placeholder="Unidades" 
       value={purchaseQty || ''} 
       onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} 
       style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} 
@@ -706,18 +755,26 @@ function App() {
   <div style={{ marginTop: '15px', color: '#000' }}>
     {purchaseCart.map((item, i) => (
       <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
-        <span>📦 {item.name} x{item.qty}</span>
+        <span>📦 {item.name} {item.qty} x ${item.cost}</span>
         <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
       </div>
     ))}
     {purchaseCart.length > 0 && (
-       <button 
-         onClick={handleRegisterPurchase} 
-         disabled={loading} 
-         style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
-       >
-         REGISTRAR COMPRA
-       </button>
+      <>
+         <button 
+           onClick={handleRegisterPurchase} 
+           disabled={loading} 
+           style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
+         >
+           REGISTRAR COMPRA
+         </button>
+         <button 
+           onClick={() => setPurchaseCart([])}
+           style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}
+         >
+           LIMPIAR REGISTRO DE COMPRAS
+         </button>
+      </>
     )}
                 </div>
               </div>
@@ -868,9 +925,6 @@ function App() {
                       </button>
                     )}
                   </div>
-                  
-                  {/* SE ELIMINÓ LA LEYENDA AMARILLA DE ESTADO AQUÍ */}
-
                 </div>
               )}
             </div>
@@ -1042,6 +1096,59 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* MODAL NUEVO: PRODUCTOS ESTRELLA (ÚNICAMENTE ADMIN) */}
+      {showStarProducts && userRole === 'admin' && (
+        <div onClick={() => setShowStarProducts(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <button onClick={() => setShowStarProducts(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}><X size={30}/></button>
+            <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 20px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Award size={30} color="#f1c40f"/> Productos Estrella</h2>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#f8f6f2', padding: '15px', borderRadius: '15px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                <input type="date" value={starStartDate} onChange={(e) => setStarStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                <input type="date" value={starEndDate} onChange={(e) => setStarEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }} />
+              </div>
+              <button onClick={fetchStarProducts} style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}>VER REPORTE</button>
+            </div>
+            <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead style={{ background: '#4a3728', color: '#fff' }}>
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left' }}>Producto</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Cant. Vendida</th>
+                    <th style={{ padding: '12px', textAlign: 'right' }}>Dinero Generado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                 {starData.length === 0 ? (
+  <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay datos</td></tr>
+) : (
+  starData.map((item, idx) => (
+    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+      <td style={{ padding: '12px', color: '#4a3728', fontWeight: 'bold' }}>
+        {idx < 3 ? '⭐ ' : ''}{item.name}
+      </td>
+      {/* CAMBIO AQUÍ: Color de la cantidad a Negro para que sea visible */}
+      <td style={{ padding: '12px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>
+        {item.totalQty}
+      </td>
+      <td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>
+        ${item.totalRevenue.toFixed(2)}
+      </td>
+    </tr>
+  ))
+)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

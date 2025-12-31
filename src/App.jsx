@@ -613,7 +613,7 @@ function App() {
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '60px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Reporte de Stock y Gastos</h2>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Reporte de Stock y Gastosb</h2>
               <button onClick={fetchInventory} disabled={loading} style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}><RefreshCw size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -630,30 +630,65 @@ function App() {
                   </table>
                 </div>
               </div>
-              <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
-                <select value={selectedPurchaseProd} onChange={(e) => setSelectedPurchaseProd(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
-                  <option value="">Seleccionar...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                  <input type="number" placeholder="Cant." value={purchaseQty || ''} onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
-                  <input type="number" placeholder="$ Costo" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
-                </div>
-                <button onClick={() => { 
-                  const p = products.find(x => x.id === selectedPurchaseProd); 
-                  if (p && purchaseQty > 0 && purchaseCost > 0) {
-                    setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
-                    setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0);
-                  } else { alert('Complete campos'); }
-                }} style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>+ AÑADIR</button>
-                <div style={{ marginTop: '15px', color: '#000' }}>
-                  {purchaseCart.map((item, i) => (
-                    <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}><span>📦 {item.name} x{item.qty}</span><span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span></div>
-                  ))}
-                  {purchaseCart.length > 0 && (
-                     <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>REGISTRAR COMPRA</button>
-                  )}
+             <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', boxSizing: 'border-box' }}>
+  <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
+  
+  <select 
+    value={selectedPurchaseProd} 
+    onChange={(e) => setSelectedPurchaseProd(e.target.value)} 
+    style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+  >
+    <option value="">Seleccionar...</option>
+    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+  </select>
+
+  {/* Contenedor de inputs con flex-wrap para que no se desborden en pantallas pequeñas */}
+  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+    <input 
+      type="number" 
+      placeholder="Cant." 
+      value={purchaseQty || ''} 
+      onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} 
+      style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} 
+    />
+    <input 
+      type="number" 
+      placeholder="$ Costo" 
+      value={purchaseCost || ''} 
+      onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} 
+      style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} 
+    />
+  </div>
+
+  <button 
+    onClick={() => { 
+      const p = products.find(x => x.id === selectedPurchaseProd); 
+      if (p && purchaseQty > 0 && purchaseCost > 0) {
+        setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
+        setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0);
+      } else { alert('Complete campos'); }
+    }} 
+    style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
+  >
+    + AÑADIR
+  </button>
+
+  <div style={{ marginTop: '15px', color: '#000' }}>
+    {purchaseCart.map((item, i) => (
+      <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
+        <span>📦 {item.name} x{item.qty}</span>
+        <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
+      </div>
+    ))}
+    {purchaseCart.length > 0 && (
+       <button 
+         onClick={handleRegisterPurchase} 
+         disabled={loading} 
+         style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
+       >
+         REGISTRAR COMPRA
+       </button>
+    )}
                 </div>
               </div>
             </div>

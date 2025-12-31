@@ -298,7 +298,7 @@ function App() {
       
       if (error) throw new Error(error.message);
       else {
-        alert(`✅ Venta actualizada a: ${newStatus.toUpperCase()}`);
+        alert(`✅ Estatus del pedido: ${newStatus.toUpperCase()}`);
         await fetchSales(); 
         await calculateFinances(); 
         await fetchInventory(); 
@@ -613,7 +613,7 @@ function App() {
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '60px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Inventarios y Gastos Operativos</h2>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Reporte de Stock y Gastos</h2>
               <button onClick={fetchInventory} disabled={loading} style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}><RefreshCw size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -677,7 +677,7 @@ function App() {
             <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
             
             {/* TÍTULO DEL REPORTE */}
-            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte Ventas</h2>
+            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte de Ventas</h2>
             
             {/* FILTRO DE FECHA Y TOTAL */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
@@ -761,7 +761,7 @@ function App() {
                       selectedSale.sale_items.map((item, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                           <span>
-                            {item.products?.name} x{item.quantity}
+                            {item.products?.name} {item.quantity} x ${item.price}
                           </span>
                           <span style={{ fontWeight: 'bold' }}>
                             ${(item.price * item.quantity).toFixed(2)}
@@ -822,7 +822,7 @@ function App() {
             {/* ENCABEZADO FINANZAS */}
             <div style={{ marginBottom: '25px', marginTop: '10px' }}>
               <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <PieChart size={28}/> Dashboard Financiero
+                <PieChart size={28}/> Reporte Financiero
               </h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input type="date" value={financeDate} onChange={(e) => setFinanceDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />

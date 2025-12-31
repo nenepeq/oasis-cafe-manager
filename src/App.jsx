@@ -90,8 +90,8 @@ function App() {
   ];
 
   const expenseCategories = [
-    'Insumos', 'Café molido', 'Vegetales', 'Lácteos', 'Embutidos', 'Pan',
-    'Suministros', 'Servilletas', 'Vasos desechables', 'Popotes', 'Crema batida', 'Azúcar',
+    'Café molido', 'Vegetales', 'Lácteos', 'Embutidos', 'Pan',
+    'Insumos', 'Servilletas', 'Vasos desechables', 'Popotes', 'Crema batida', 'Azúcar',
     'Sueldos', 'Servicios', 'Otros'
   ];
 
@@ -387,7 +387,7 @@ function App() {
         }
       }
 
-      alert("✅ Venta Registrada");
+      alert("✅ Venta Satisfactoria");
       setCart([]); 
       setCustomerName('');
       
@@ -575,8 +575,8 @@ function App() {
             {filteredProducts.map(p => (
               <button key={p.id} onClick={() => addToCart(p)} style={{ padding: '8px', borderRadius: '12px', border: 'none', backgroundColor: '#fff', textAlign: 'center', height: '130px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
-                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '12px', lineHeight: '1.2', marginBottom: '4px' }}>{p.name}</div>
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '13px' }}>${p.sale_price}</div>
+                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.5', marginBottom: '4px' }}>{p.name}</div>
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '16px' }}>${p.sale_price}</div>
               </button>
             ))}
           </div>
@@ -586,12 +586,12 @@ function App() {
 
       {/* 2. CARRITO */}
       <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
-        <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Pedido</h2>
-        <input type="text" placeholder="Cliente..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
+        <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
+        <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
-              <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name} x{item.quantity}</div>
+              <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name} {item.quantity} x ${item.sale_price}</div>
               <div style={{ color: '#27ae60', fontWeight: '900' }}>${item.sale_price * item.quantity}</div>
             </div>
           ))}
@@ -602,9 +602,9 @@ function App() {
             <button onClick={() => setPaymentMethod('Tarjeta')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: paymentMethod === 'Tarjeta' ? '2px solid #3498db' : '1px solid #ddd', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', fontWeight: 'bold', color: '#fff', cursor: 'pointer', fontSize: '12px' }}> TARJETA </button>
           </div>
         </div>
-        <div style={{ fontSize: '24px', fontWeight: '900', color: '#4a3728', textAlign: 'right', marginTop: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
-        <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>{loading ? 'PROCESANDO...' : 'COBRAR'}</button>
-        <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '12px' }}><RotateCcw size={14}/> NUEVO</button>
+        <div style={{ fontSize: '26px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginTop: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
+        <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>{loading ? 'PROCESANDO PAGO...' : 'PAGAR'}</button>
+        <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14}/> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
       {/* MODAL INVENTARIO */}
@@ -612,13 +612,13 @@ function App() {
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '40px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Stock</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '60px' }}>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Inventarios y Gastos Operativos</h2>
               <button onClick={fetchInventory} disabled={loading} style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}><RefreshCw size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>Existencias</h3>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>EXISTENCIAS</h3>
                 <div style={{ border: '1px solid #f0f0f0', borderRadius: '15px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                     <thead style={{ background: '#f8f6f2' }}><tr><th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Prod</th><th style={{ padding: '10px', color: '#000' }}>Cant</th><th style={{ padding: '10px', color: '#000' }}>!</th></tr></thead>
@@ -631,7 +631,7 @@ function App() {
                 </div>
               </div>
               <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>Entrada Stock</h3>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
                 <select value={selectedPurchaseProd} onChange={(e) => setSelectedPurchaseProd(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
                   <option value="">Seleccionar...</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -652,13 +652,13 @@ function App() {
                     <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}><span>📦 {item.name} x{item.qty}</span><span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span></div>
                   ))}
                   {purchaseCart.length > 0 && (
-                     <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>GUARDAR COMPRA</button>
+                     <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>REGISTRAR COMPRA</button>
                   )}
                 </div>
               </div>
             </div>
              <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800', marginTop: '20px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>Gastos Operativos</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>GASTOS DE OPERACIÓN</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>{expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}</select>
                   <input type="number" placeholder="$ 0.00" value={expenseMonto || ''} onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
@@ -960,7 +960,7 @@ function App() {
                               <td style={{ padding: '8px 0', color: '#555' }}>
                                 Compra #{purch.id.toString().slice(0,4)} 
                                 <div style={{ fontSize: '10px', color: '#888' }}>
-                                  {purch.purchase_items?.map(i => `${i.products?.name} x${i.quantity}`).join(', ')}
+                                  {purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}
                                 </div>
                               </td>
                               <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${purch.total}</td>

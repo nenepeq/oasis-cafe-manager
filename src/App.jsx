@@ -662,10 +662,22 @@ function App() {
   };
 
   return (
-    <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
+    <div className="app-container" style={{
+      display: 'flex',
+      flexDirection: window.innerWidth < 600 ? 'column' : 'row', // ARREGLO: Fila en escritorio, Columna en celular
+      height: '100vh',
+      width: '100vw',
+      backgroundColor: '#f8f6f2',
+      overflow: window.innerWidth < 600 ? 'auto' : 'hidden' // ARREGLO: Permitir scroll en celular para ver el carrito
+    }}>
 
       {/* 1. SECCIÓN DE TIENDA */}
-      <div className="store-section" style={{ flex: 2, padding: '15px', display: 'flex', flexDirection: 'column' }}>
+      <div className="store-section" style={{
+        flex: window.innerWidth < 600 ? 'none' : 2, // ARREGLO: No forzar flex 2 en celular
+        padding: '15px',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
 
         {/* ENCABEZADO - REVERTIDO A TU FORMATO ORIGINAL */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -711,10 +723,10 @@ function App() {
           }
         `}</style>
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: window.innerWidth < 600 ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // repeat(2, 1fr) fuerza exactamente 2 columnas en móvil
+            // ARREGLO: 2 columnas fijas en celulares (<600px)
             gridTemplateColumns: window.innerWidth < 600 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             padding: '5px'
@@ -764,7 +776,15 @@ function App() {
       </div>
 
       {/* 2. CARRITO - REVERTIDO A TU FORMATO ORIGINAL */}
-      <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+      <div className="cart-section" style={{
+        flex: window.innerWidth < 600 ? 'none' : 0.8, // ARREGLO: No forzar flex en celular
+        backgroundColor: '#ffffff',
+        padding: '15px',
+        borderLeft: window.innerWidth < 600 ? 'none' : '1px solid #eee',
+        borderTop: window.innerWidth < 600 ? '2px solid #eee' : 'none', // ARREGLO: Borde arriba en celular
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -1211,7 +1231,7 @@ function App() {
                 </thead>
                 <tbody>
                   {starData.length === 0 ? (
-                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay datos</td></tr>
+                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay datos</td></tr>
                   ) : (
                     starData.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>

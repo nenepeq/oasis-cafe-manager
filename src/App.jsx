@@ -712,48 +712,53 @@ function App() {
         `}</style>
 
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '5px' }}>
-            {filteredProducts.map(p => (
-              <button
-                key={p.id}
-                onClick={() => addToCart(p)}
-                className="btn-producto-3d"
-                style={{
-                  padding: '5px', // Reducido de 8px a 5px
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: '#fff',
-                  textAlign: 'center',
-                  height: '120px', // Reducido de 130px a 120px para que se vea más compacto
-                  boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.1s ease'
-                }}
-              >
-                {/* Ajuste de icono e iconos dobles */}
-                <div style={{ marginBottom: '3px', transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
+          <div style={{
+            display: 'grid',
+            // repeat(2, 1fr) fuerza exactamente 2 columnas en móvil
+            gridTemplateColumns: window.innerWidth < 600 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            gap: '10px',
+            padding: '5px'
+          }}>            {filteredProducts.map(p => (
+            <button
+              key={p.id}
+              onClick={() => addToCart(p)}
+              className="btn-producto-3d"
+              style={{
+                padding: '5px', // Reducido de 8px a 5px
+                borderRadius: '12px',
+                border: 'none',
+                backgroundColor: '#fff',
+                textAlign: 'center',
+                height: '120px', // Reducido de 130px a 120px para que se vea más compacto
+                boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.1s ease'
+              }}
+            >
+              {/* Ajuste de icono e iconos dobles */}
+              <div style={{ marginBottom: '3px', transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
 
-                <div style={{
-                  fontWeight: 'bold',
-                  color: '#4a3728',
-                  fontSize: '11px', // Reducido de 13px a 11px para móviles
-                  lineHeight: '1.2',
-                  marginBottom: '2px',
-                  display: '-webkit-box',
-                  WebkitLineClamp: '2',
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {p.name}
-                </div>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#4a3728',
+                fontSize: '11px', // Reducido de 13px a 11px para móviles
+                lineHeight: '1.2',
+                marginBottom: '2px',
+                display: '-webkit-box',
+                WebkitLineClamp: '2',
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                {p.name}
+              </div>
 
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
-              </button>
-            ))}
+              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
+            </button>
+          ))}
           </div>
         </div>
       </div>

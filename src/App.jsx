@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { getProducts } from './api';
-import { 
-  Coffee, Snowflake, CupSoda, Utensils, ShoppingCart, Trash2, 
-  LogOut, List, IceCream, FileText, CheckCircle, Clock, TrendingUp, RefreshCw, User, 
+import {
+  Coffee, Snowflake, CupSoda, Utensils, ShoppingCart, Trash2,
+  LogOut, List, IceCream, FileText, CheckCircle, Clock, TrendingUp, RefreshCw, User,
   CreditCard, Banknote, Calendar, RotateCcw, X, Package, Truck, AlertTriangle, DollarSign, Eye, PieChart, Receipt, ArrowDown, ArrowUp, Activity, Layers,
   Award // Nuevo Icono
 } from 'lucide-react';
@@ -46,7 +46,7 @@ function App() {
   const [showReport, setShowReport] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
   const [showFinances, setShowFinances] = useState(false);
-  
+
   // NUEVOS ESTADOS PARA PRODUCTOS ESTRELLA
   const [showStarProducts, setShowStarProducts] = useState(false);
   const [starStartDate, setStarStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -56,9 +56,13 @@ function App() {
   const [inventoryList, setInventoryList] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
-  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Rango de fechas para Reporte de Ventas
+  const [reportStartDate, setReportStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
+
   const [loading, setLoading] = useState(false);
-  
+
   // Estado para el filtro de productos
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
@@ -73,19 +77,20 @@ function App() {
   const [purchaseQty, setPurchaseQty] = useState(0);
   const [purchaseCost, setPurchaseCost] = useState(0);
 
-  // === ESTADOS PARA FINANZAS AVANZADAS ===
-  const [financeDate, setFinanceDate] = useState(new Date().toISOString().split('T')[0]);
+  // === ESTADOS PARA FINANZAS AVANZADAS CON RANGO ===
+  const [financeStartDate, setFinanceStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [financeEndDate, setFinanceEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [finData, setFinData] = useState({
     ingresos: 0,
-    costoProductos: 0, 
+    costoProductos: 0,
     gastosOps: 0,
     gastosStock: 0,
-    totalEgresos: 0,   
+    totalEgresos: 0,
     utilidadNeta: 0,
     margen: 0
   });
-  const [dailyExpensesList, setDailyExpensesList] = useState([]); 
-  const [dailyStockList, setDailyStockList] = useState([]); 
+  const [dailyExpensesList, setDailyExpensesList] = useState([]);
+  const [dailyStockList, setDailyStockList] = useState([]);
 
   // Estados para Gastos Operativos (Formulario)
   const [expenseConcepto, setExpenseConcepto] = useState('');
@@ -93,7 +98,7 @@ function App() {
   const [expenseMonto, setExpenseMonto] = useState(0);
 
   const categories = [
-    'Todos', 'Bebidas Calientes', 'Alimentos', 'Frappés', 
+    'Todos', 'Bebidas Calientes', 'Alimentos', 'Frappés',
     'Bebidas Frías', 'Refrescos', 'Postres', 'Sabritas y Otros'
   ];
 
@@ -141,13 +146,13 @@ function App() {
     }
   }, [user]);
 
-  useEffect(() => { 
-    if (showReport && user) fetchSales(); 
-  }, [showReport, reportDate]);
+  useEffect(() => {
+    if (showReport && user) fetchSales();
+  }, [showReport, reportStartDate, reportEndDate]);
 
-  useEffect(() => { 
-    if (showFinances && user && userRole === 'admin') calculateFinances(); 
-  }, [showFinances, financeDate]);
+  useEffect(() => {
+    if (showFinances && user && userRole === 'admin') calculateFinances();
+  }, [showFinances, financeStartDate, financeEndDate]);
 
   // --- LÓGICA DE PRODUCTOS ESTRELLA ---
   const fetchStarProducts = async () => {
@@ -186,18 +191,15 @@ function App() {
     setLoading(false);
   };
 
-  // --- LÓGICA DE REPORTES ---
+  // --- LÓGICA DE REPORTES CON RANGO ---
   const fetchSales = async () => {
     setLoading(true);
-    
-    // Usar la fecha seleccionada o hoy por defecto
-    const targetDate = reportDate || new Date().toISOString().split('T')[0];
-    
+
     let query = supabase
       .from('sales')
       .select(`*, sale_items (*, products (name, sale_price))`)
-      .gte('created_at', targetDate + 'T00:00:00')
-      .lte('created_at', targetDate + 'T23:59:59')
+      .gte('created_at', reportStartDate + 'T00:00:00')
+      .lte('created_at', reportEndDate + 'T23:59:59')
       .order('created_at', { ascending: false });
 
     const { data, error } = await query;
@@ -207,25 +209,25 @@ function App() {
       setLoading(false);
       return;
     }
-    
+
     setSales(data || []);
-    
+
     // Calcular total de ingresos (excluyendo cancelados)
     const total = (data || []).reduce((acc, sale) => {
       return sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc;
     }, 0);
-    
+
     setTotalIngresosReporte(total);
     setLoading(false);
   };
 
-  // --- LÓGICA MAESTRA DE FINANZAS (CÁLCULO REAL INSTANTÁNEO) ---
+  // --- LÓGICA MAESTRA DE FINANZAS (RANGO DE FECHAS) ---
   const calculateFinances = async () => {
     if (userRole !== 'admin') return;
-    
+
     setLoading(true);
-    
-    // 1. Obtener VENTAS + ÍTEMS + COSTO PRODUCTO (Solo activas)
+
+    // 1. Obtener VENTAS + ÍTEMS + COSTO PRODUCTO
     const { data: salesData } = await supabase
       .from('sales')
       .select(`
@@ -238,43 +240,42 @@ function App() {
           )
         )
       `)
-      .gte('created_at', financeDate + 'T00:00:00')
-      .lte('created_at', financeDate + 'T23:59:59')
+      .gte('created_at', financeStartDate + 'T00:00:00')
+      .lte('created_at', financeEndDate + 'T23:59:59')
       .neq('status', 'cancelado');
-    
+
     let totalIngresos = 0;
     let totalCostoProductos = 0;
 
     if (salesData) {
       salesData.forEach(sale => {
         totalIngresos += sale.total;
-        
-        // Sumar costo de productos de esta venta
         if (sale.sale_items) {
           sale.sale_items.forEach(item => {
-             const unitCost = item.products?.cost_price || 0;
-             totalCostoProductos += (item.quantity * unitCost);
+            const unitCost = item.products?.cost_price || 0;
+            totalCostoProductos += (item.quantity * unitCost);
           });
         }
       });
     }
 
-    // 2. Obtener GASTOS OPERATIVOS del día
+    // 2. Obtener GASTOS OPERATIVOS del rango
     const { data: expensesData } = await supabase
       .from('expenses')
       .select('*')
-      .eq('fecha', financeDate)
+      .gte('fecha', financeStartDate)
+      .lte('fecha', financeEndDate)
       .order('created_at', { ascending: false });
-    
+
     const totalGastosOps = expensesData?.reduce((acc, e) => acc + e.monto, 0) || 0;
     setDailyExpensesList(expensesData || []);
 
-    // 3. Obtener COMPRAS DE STOCK (Entradas) del día
+    // 3. Obtener COMPRAS DE STOCK (Entradas) del rango
     const { data: purchasesData } = await supabase
       .from('purchases')
       .select(`*, purchase_items(*, products(name))`)
-      .gte('created_at', financeDate + 'T00:00:00')
-      .lte('created_at', financeDate + 'T23:59:59')
+      .gte('created_at', financeStartDate + 'T00:00:00')
+      .lte('created_at', financeEndDate + 'T23:59:59')
       .order('created_at', { ascending: false });
 
     const totalGastosStock = purchasesData?.reduce((acc, p) => acc + p.total, 0) || 0;
@@ -300,18 +301,16 @@ function App() {
 
   // --- LÓGICA DE CANCELACIÓN Y DEVOLUCIÓN ---
   const updateSaleStatus = async (saleId, newStatus) => {
-    // MODIFICADO: Solo permitir cancelar al ADMIN. 
-    // Ventas y Admin pueden marcar como entregado.
     if (newStatus === 'cancelado' && userRole !== 'admin') {
       alert("Solo el administrador puede cancelar pedidos");
       return;
     }
-    
+
     if (selectedSale && selectedSale.status === 'cancelado' && newStatus === 'cancelado') {
       alert("Esta venta ya está cancelada.");
       return;
     }
-    
+
     setLoading(true);
     try {
       if (newStatus === 'cancelado') {
@@ -340,14 +339,14 @@ function App() {
       }
 
       const { error } = await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
-      
+
       if (error) throw new Error(error.message);
       else {
         alert(`✅ Estatus del pedido: ${newStatus.toUpperCase()}`);
-        await fetchSales(); 
-        await calculateFinances(); 
-        await fetchInventory(); 
-        setSelectedSale(null); 
+        await fetchSales();
+        await calculateFinances();
+        await fetchInventory();
+        setSelectedSale(null);
       }
     } catch (err) {
       alert('Error al actualizar: ' + err.message);
@@ -357,12 +356,10 @@ function App() {
   };
 
   const fetchInventory = async () => {
-    if (userRole !== 'admin') return;
-    
     const { data, error } = await supabase
       .from('inventory')
       .select('stock, product_id, products:product_id (name)');
-    
+
     if (error) console.error(error);
     else setInventoryList(data || []);
   };
@@ -379,51 +376,76 @@ function App() {
   };
 
   const addToCart = (product) => {
+    // 1. OBTENER STOCK TOTAL DE LA LISTA
+    const inventoryItem = inventoryList.find(inv => inv.product_id === product.id);
+    const totalStock = inventoryItem ? inventoryItem.stock : 0;
+
+    // 2. VERIFICAR CUÁNTOS YA HAY EN EL CARRITO
+    const itemInCart = cart.find(i => i.id === product.id);
+    const qtyInCart = itemInCart ? itemInCart.quantity : 0;
+
+    // 3. VALIDAR STOCK RESTANTE ANTES DE ACTUALIZAR ESTADO (EVITA DOBLE ALERTA)
+    if (qtyInCart + 1 > totalStock) {
+      const stockRestante = totalStock - qtyInCart;
+      alert(`⚠️ FUERA DE STOCK: Solo quedan ${stockRestante} unidades disponibles de ${product.name}`);
+      return;
+    }
+
+    // 4. SI HAY STOCK, PROCEDER
     setCart(prev => {
       const exists = prev.find(i => i.id === product.id);
-      if (exists) return prev.map(i => i.id === product.id ? {...i, quantity: i.quantity + 1} : i);
-      return [...prev, {...product, quantity: 1}];
+      if (exists) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { ...product, quantity: 1 }];
     });
   };
 
   const handleSale = async () => {
     if (cart.length === 0) return;
     if (loading) return;
-    
+
+    for (const item of cart) {
+      const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
+      const realStock = currentInvItem ? currentInvItem.stock : 0;
+      if (item.quantity > realStock) {
+        alert(`⚠️ FUERA DE STOCK: No se puede completar la venta. ${item.name} tiene ${realStock} unidades y quieres vender ${item.quantity}.`);
+        return;
+      }
+    }
+
     const confirmPay = window.confirm(`✅ CONFIRMAR VENTA ✅\n\nMétodo: ${paymentMethod.toUpperCase()}\n\n⚠️ AVISO IMPORTANTE ⚠️\n\nRecuerda que si es pago con 💳 TARJETA, procede a realizar el cobro en la terminal bancaria.`);
     if (!confirmPay) return;
-    
+
     setLoading(true);
     try {
       const totalVenta = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
-      
+
       const { data: sale, error: saleError } = await supabase
         .from('sales')
-        .insert([{ 
-          total: totalVenta, 
-          status: "recibido", 
-          created_by: user.id, 
-          customer_name: customerName.trim() || 'Sin nombre', 
-          payment_method: paymentMethod 
+        .insert([{
+          total: totalVenta,
+          status: "recibido",
+          created_by: user.id,
+          customer_name: customerName.trim() || 'Sin nombre',
+          payment_method: paymentMethod
         }])
         .select()
         .single();
-        
+
       if (saleError) throw saleError;
-      
-      const itemsToInsert = cart.map(item => ({ 
-        sale_id: sale.id, 
-        product_id: item.id, 
-        quantity: item.quantity, 
-        price: item.sale_price 
+
+      const itemsToInsert = cart.map(item => ({
+        sale_id: sale.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.sale_price
       }));
-      
+
       await supabase.from('sale_items').insert(itemsToInsert);
-      
+
       // Actualizar inventario
       for (const item of cart) {
         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
-        if(currentInvItem) {
+        if (currentInvItem) {
           const newStock = currentInvItem.stock - item.quantity;
           await supabase
             .from('inventory')
@@ -433,16 +455,13 @@ function App() {
       }
 
       alert("✅ Venta Satisfactoria");
-      setCart([]); 
+      setCart([]);
       setCustomerName('');
-      
-      // Refrescar inventario si es admin
-      if (userRole === 'admin') {
-        fetchInventory();
-      }
-      
-    } catch (err) { 
-      alert("Error al registrar venta: " + err.message); 
+
+      fetchInventory();
+
+    } catch (err) {
+      alert("Error al registrar venta: " + err.message);
     }
     setLoading(false);
   };
@@ -450,7 +469,7 @@ function App() {
   const handleRegisterPurchase = async () => {
     if (purchaseCart.length === 0) return;
     if (loading) return;
-    
+
     setLoading(true);
     try {
       const totalCompra = purchaseCart.reduce((acc, i) => acc + (i.cost * i.qty), 0);
@@ -459,23 +478,23 @@ function App() {
         .insert([{ total: totalCompra, created_by: user.id }])
         .select()
         .single();
-        
+
       if (pErr) throw pErr;
-      
+
       for (const item of purchaseCart) {
         const { error: itemError } = await supabase
           .from('purchase_items')
-          .insert([{ 
-            purchase_id: purchase.id, 
-            product_id: item.id, 
-            quantity: item.qty, 
-            cost: item.cost 
+          .insert([{
+            purchase_id: purchase.id,
+            product_id: item.id,
+            quantity: item.qty,
+            cost: item.cost
           }]);
-          
+
         if (itemError) throw itemError;
-        
+
         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
-        if(currentInvItem) {
+        if (currentInvItem) {
           const newStock = currentInvItem.stock + item.qty;
           await supabase
             .from('inventory')
@@ -483,74 +502,72 @@ function App() {
             .eq('product_id', item.id);
         }
       }
-      
+
       alert("📦 Stock Actualizado");
-      setPurchaseCart([]); 
-      setSelectedPurchaseProd(''); 
-      setPurchaseQty(0); 
+      setPurchaseCart([]);
+      setSelectedPurchaseProd('');
+      setPurchaseQty(0);
       setPurchaseCost(0);
-      
-      // Refrescar inventario
+
       setTimeout(() => fetchInventory(), 500);
-      
-    } catch (err) { 
-      alert("Error: " + err.message); 
+
+    } catch (err) {
+      alert("Error: " + err.message);
     }
     setLoading(false);
   };
 
   const handleRegisterExpense = async () => {
-    if (!expenseConcepto.trim() || expenseMonto <= 0) { 
-      alert('Por favor completa todos los campos correctamente'); 
-      return; 
+    if (!expenseConcepto.trim() || expenseMonto <= 0) {
+      alert('Por favor completa todos los campos correctamente');
+      return;
     }
-    
+
     if (loading) return;
-    
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('expenses')
-        .insert([{ 
-          concepto: expenseConcepto.trim(), 
-          categoria: expenseCategoria, 
-          monto: expenseMonto, 
-          fecha: new Date().toISOString().split('T')[0], 
-          created_by: user.id 
+        .insert([{
+          concepto: expenseConcepto.trim(),
+          categoria: expenseCategoria,
+          monto: expenseMonto,
+          fecha: new Date().toISOString().split('T')[0],
+          created_by: user.id
         }]);
-        
+
       if (error) throw error;
-      
+
       alert("💰 Gasto Registrado Exitosamente");
-      setExpenseConcepto(''); 
-      setExpenseCategoria('Insumos'); 
+      setExpenseConcepto('');
+      setExpenseCategoria('Insumos');
       setExpenseMonto(0);
-      
-    } catch (err) { 
-      alert("Error: " + err.message); 
+
+    } catch (err) {
+      alert("Error: " + err.message);
     }
     setLoading(false);
   };
 
   const handleNewOrder = () => {
-    if (window.confirm("¿Iniciar pedido nuevo?")) { 
-      setCart([]); 
-      setCustomerName(''); 
-      setPaymentMethod('Efectivo'); 
+    if (window.confirm("¿Iniciar pedido nuevo?")) {
+      setCart([]);
+      setCustomerName('');
+      setPaymentMethod('Efectivo');
     }
   };
 
-  const filteredProducts = selectedCategory === 'Todos' 
-    ? products 
+  const filteredProducts = selectedCategory === 'Todos'
+    ? products
     : products.filter(p => (p.category || '').trim() === selectedCategory);
 
   if (!user) return <Login onLogin={fetchProfile} />;
 
-  // --- GRÁFICA DE PASTEL CSS ---
-  const percentageExpenses = finData.ingresos > 0 
-    ? Math.min((finData.totalEgresos / finData.ingresos) * 100, 100) 
+  const percentageExpenses = finData.ingresos > 0
+    ? Math.min((finData.totalEgresos / finData.ingresos) * 100, 100)
     : (finData.totalEgresos > 0 ? 100 : 0);
-  
+
   const percentageProfit = 100 - percentageExpenses;
 
   const donutStyle = {
@@ -582,10 +599,10 @@ function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: 'hidden' }}>
-      
+
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{ flex: 2, padding: '15px', display: 'flex', flexDirection: 'column' }}>
-        
+
         {/* ENCABEZADO */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -595,14 +612,13 @@ function App() {
           <div style={{ display: 'flex', gap: '5px' }}>
             {userRole === 'admin' && (
               <>
-                <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16}/></button>
-                {/* BOTÓN NUEVO REPORTE ESTRELLA (SOLO ADMIN) */}
-                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Award size={16}/></button>
+                <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16} /></button>
+                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Award size={16} /></button>
               </>
             )}
-            <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><FileText size={16}/></button>
+            <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><FileText size={16} /></button>
             {userRole === 'admin' && (
-              <button onClick={() => setShowFinances(true)} style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><PieChart size={16}/></button>
+              <button onClick={() => setShowFinances(true)} style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><PieChart size={16} /></button>
             )}
             <button onClick={handleLogout} style={{ backgroundColor: '#ffffff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><LogOut size={16} /></button>
           </div>
@@ -615,14 +631,13 @@ function App() {
           ))}
         </div>
 
-       {/* GRID PRODUCTOS */}
+        {/* GRID PRODUCTOS */}
         {!fetchError && filteredProducts.length === 0 && (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
-                <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
-            </div>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
+            <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
+          </div>
         )}
 
-        {/* Estilo para el efecto 3D */}
         <style>{`
           .btn-producto-3d:active {
             transform: translateY(4px) !important;
@@ -633,22 +648,22 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
             {filteredProducts.map(p => (
-              <button 
-                key={p.id} 
-                onClick={() => addToCart(p)} 
+              <button
+                key={p.id}
+                onClick={() => addToCart(p)}
                 className="btn-producto-3d"
-                style={{ 
-                  padding: '8px', 
-                  borderRadius: '12px', 
-                  border: 'none', 
-                  backgroundColor: '#fff', 
-                  textAlign: 'center', 
-                  height: '130px', 
-                  boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
+                style={{
+                  padding: '8px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: '#fff',
+                  textAlign: 'center',
+                  height: '130px',
+                  boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.1s ease'
                 }}
@@ -660,7 +675,6 @@ function App() {
             ))}
           </div>
         </div>
-        <div style={{ display: 'none' }}></div>
       </div>
 
       {/* 2. CARRITO */}
@@ -683,16 +697,16 @@ function App() {
         </div>
         <div style={{ fontSize: '26px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginTop: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
         <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>{loading ? 'PROCESANDO PAGO...' : 'PAGAR'}</button>
-        <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14}/> VACIAR CARRITO DE COMPRAS</button>
+        <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
       {/* MODAL INVENTARIO */}
       {showInventory && userRole === 'admin' && (
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
+            <button onClick={() => setShowInventory(false)} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24} /></button>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingRight: '60px' }}>
-              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24}/> Reporte de Stock y Gastos</h2>
+              <h2 style={{ color: '#000000', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px' }}><Package size={24} /> Reporte de Stock y Gastos</h2>
               <button onClick={fetchInventory} disabled={loading} style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}><RefreshCw size={16} /></button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -703,87 +717,48 @@ function App() {
                     <thead style={{ background: '#f8f6f2' }}><tr><th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Producto</th><th style={{ padding: '10px', color: '#000' }}>Cantidad</th><th style={{ padding: '10px', color: '#000' }}>Estatus</th></tr></thead>
                     <tbody>
                       {inventoryList.map((inv, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', color: '#000', fontWeight: '600' }}>{inv.products?.name}</td><td style={{ padding: '10px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td><td style={{ padding: '10px', textAlign: 'center' }}>{inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16}/> : <CheckCircle color="#27ae60" size={16}/>}</td></tr>
+                        <tr key={index} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', color: '#000', fontWeight: '600' }}>{inv.products?.name}</td><td style={{ padding: '10px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td><td style={{ padding: '10px', textAlign: 'center' }}>{inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16} /> : <CheckCircle color="#27ae60" size={16} />}</td></tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-             <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', boxSizing: 'border-box' }}>
-  <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
-  
-  <select 
-    value={selectedPurchaseProd} 
-    onChange={(e) => setSelectedPurchaseProd(e.target.value)} 
-    style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
-  >
-    <option value="">Seleccionar...</option>
-    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-  </select>
-
-  {/* Contenedor de inputs con flex-wrap para que no se desborden en pantallas pequeñas */}
-  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-    <input 
-      type="number" 
-      placeholder="Unidades" 
-      value={purchaseQty || ''} 
-      onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} 
-      style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} 
-    />
-    <input 
-      type="number" 
-      placeholder="$ Costo" 
-      value={purchaseCost || ''} 
-      onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} 
-      style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} 
-    />
-  </div>
-
-  <button 
-    onClick={() => { 
-      const p = products.find(x => x.id === selectedPurchaseProd); 
-      if (p && purchaseQty > 0 && purchaseCost > 0) {
-        setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
-        setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0);
-      } else { alert('Complete campos'); }
-    }} 
-    style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
-  >
-    + AÑADIR
-  </button>
-
-  <div style={{ marginTop: '15px', color: '#000' }}>
-    {purchaseCart.map((item, i) => (
-      <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
-        <span>📦 {item.name} {item.qty} x ${item.cost}</span>
-        <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
-      </div>
-    ))}
-    {purchaseCart.length > 0 && (
-      <>
-         <button 
-           onClick={handleRegisterPurchase} 
-           disabled={loading} 
-           style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
-         >
-           REGISTRAR COMPRA
-         </button>
-         <button 
-           onClick={() => setPurchaseCart([])}
-           style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}
-         >
-           LIMPIAR REGISTRO DE COMPRAS
-         </button>
-      </>
-    )}
+              <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', boxSizing: 'border-box' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
+                <select
+                  value={selectedPurchaseProd}
+                  onChange={(e) => setSelectedPurchaseProd(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                >
+                  <option value="">Seleccionar...</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                  <input type="number" placeholder="Unidades" value={purchaseQty || ''} onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                  <input type="number" placeholder="$ Costo" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                </div>
+                <button onClick={() => { const p = products.find(x => x.id === selectedPurchaseProd); if (p && purchaseQty > 0 && purchaseCost > 0) { setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]); setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0); } else { alert('Complete campos'); } }} style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>+ AÑADIR</button>
+                <div style={{ marginTop: '15px', color: '#000' }}>
+                  {purchaseCart.map((item, i) => (
+                    <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>📦 {item.name} {item.qty} x ${item.cost}</span>
+                      <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {purchaseCart.length > 0 && (
+                    <>
+                      <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>REGISTRAR COMPRA</button>
+                      <button onClick={() => setPurchaseCart([])} style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}>LIMPIAR REGISTRO DE COMPRAS</button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
-             <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800', marginTop: '20px' }}>
+            <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800', marginTop: '20px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>GASTOS DE OPERACIÓN</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>{expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}</select>
-                  <input type="number" placeholder="$ 0.00" value={expenseMonto || ''} onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
+                <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>{expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}</select>
+                <input type="number" placeholder="$ 0.00" value={expenseMonto || ''} onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }} />
               </div>
               <input type="text" placeholder="Concepto" value={expenseConcepto} onChange={(e) => setExpenseConcepto(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', marginTop: '10px' }} />
               <button onClick={handleRegisterExpense} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>REGISTRAR GASTO</button>
@@ -792,74 +767,59 @@ function App() {
         </div>
       )}
 
-      {/* MODAL REPORTES - COMPARTIDO ENTRE ADMIN Y VENTAS */}
+      {/* MODAL REPORTES - COMPARTIDO CON FILTRO DE RANGO */}
       {showReport && (
         <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24}/></button>
-            
-            {/* TÍTULO DEL REPORTE */}
+            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24} /></button>
+
             <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte de Ventas</h2>
-            
-            {/* FILTRO DE FECHA Y TOTAL */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center' }}>
-              <input 
-                type="date" 
-                value={reportDate} 
-                onChange={(e) => setReportDate(e.target.value)} 
-                style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} 
-              />
+
+            {/* FILTRO DE FECHA (RANGO) */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                <input type="date" value={reportStartDate} onChange={(e) => setReportStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                <input type="date" value={reportEndDate} onChange={(e) => setReportEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+              </div>
+              <button onClick={fetchSales} style={{ padding: '10px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}><RefreshCw size={16} /></button>
+
               <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
                 Total: ${totalIngresosReporte.toFixed(2)}
               </div>
             </div>
-            
-            {/* TABLA DE VENTAS */}
+
             <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
               <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Cargando ventas...</div>
                 ) : sales.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                    No hay ventas para {reportDate}
-                  </div>
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay ventas en este rango</div>
                 ) : (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ borderBottom: '2px solid #000' }}>
-                        <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Hora</th>
+                        <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Fecha/Hora</th>
                         <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th>
                         <th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sales.map(sale => (
-                        <tr 
-                          key={sale.id} 
-                          onClick={() => setSelectedSale(sale)} 
-                          style={{ 
-                            borderBottom: '1px solid #eee', 
-                            cursor: 'pointer', 
-                            backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent',
-                            opacity: sale.status === 'cancelado' ? 0.6 : 1
-                          }}
-                        >
+                        <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent', opacity: sale.status === 'cancelado' ? 0.6 : 1 }}>
                           <td style={{ padding: '10px', color: '#000' }}>
-                            {new Date(sale.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td style={{ padding: '10px', color: '#000' }}>
                             {sale.customer_name}
-                            {sale.payment_method && (
-                              <div style={{ fontSize: '10px', color: '#666' }}>
-                                {sale.payment_method}
-                              </div>
-                            )}
+                            {sale.payment_method && <div style={{ fontSize: '10px', color: '#666' }}>{sale.payment_method}</div>}
                           </td>
                           <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>
                             ${sale.total}
-                            {sale.status === 'cancelado' && (
-                              <div style={{ fontSize: '10px', color: '#e74c3c' }}>CANCELADO</div>
-                            )}
+                            {sale.status === 'cancelado' && <div style={{ fontSize: '10px', color: '#e74c3c' }}>CANCELADO</div>}
                           </td>
                         </tr>
                       ))}
@@ -867,62 +827,33 @@ function App() {
                   </table>
                 )}
               </div>
-              
-              {/* DETALLE DE VENTA SELECCIONADA */}
+
               {selectedSale && (
                 <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
                   <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
-                    Nota #{selectedSale.id.slice(0,4)}
+                    Nota #{selectedSale.id.slice(0, 4)}
                     <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                       {new Date(selectedSale.created_at).toLocaleDateString()} · {new Date(selectedSale.created_at).toLocaleTimeString()}
                     </div>
                   </h3>
-                  
                   <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
-                    {selectedSale.sale_items && selectedSale.sale_items.length > 0 ? (
-                      selectedSale.sale_items.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                          <span>
-                            {item.products?.name} {item.quantity} x ${item.price}
-                          </span>
-                          <span style={{ fontWeight: 'bold' }}>
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div>No hay items en esta venta</div>
-                    )}
+                    {selectedSale.sale_items?.map((item, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span>{item.products?.name} {item.quantity} x ${item.price}</span>
+                        <span style={{ fontWeight: 'bold' }}>${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
                   </div>
-                  
                   <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}>
                     <span>Total</span>
                     <span>${selectedSale.total}</span>
                   </div>
-                  
                   <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {/* BOTÓN ENTREGADO - DISPONIBLE PARA TODOS (Admin y Ventas) */}
                     {selectedSale.status === 'recibido' && (
-                      <button 
-                        onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} 
-                        style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                      >
-                        MARCAR ENTREGADO
-                      </button>
+                      <button onClick={() => updateSaleStatus(selectedSale.id, 'entregado')} style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>MARCAR ENTREGADO</button>
                     )}
-                    
-                    {/* BOTÓN CANCELAR - SOLO ADMIN */}
                     {userRole === 'admin' && selectedSale.status !== 'cancelado' && (
-                      <button 
-                        onClick={() => {
-                          if (window.confirm('¿Estás seguro de cancelar esta venta?')) {
-                            updateSaleStatus(selectedSale.id, 'cancelado');
-                          }
-                        }} 
-                        style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                      >
-                        CANCELAR VENTA
-                      </button>
+                      <button onClick={() => { if (window.confirm('¿Estás seguro de cancelar esta venta?')) updateSaleStatus(selectedSale.id, 'cancelado'); }} style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>CANCELAR VENTA</button>
                     )}
                   </div>
                 </div>
@@ -932,134 +863,89 @@ function App() {
         </div>
       )}
 
-      {/* MODAL FINANZAS AVANZADO (SOLO ADMIN) */}
+      {/* MODAL FINANZAS - CON FILTRO DE RANGO */}
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30}/></button>
-            
-            {/* ENCABEZADO FINANZAS */}
+            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30} /></button>
+
             <div style={{ marginBottom: '25px', marginTop: '10px' }}>
               <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <PieChart size={28}/> Reporte Financiero
+                <PieChart size={28} /> Reporte Financiero
               </h2>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input type="date" value={financeDate} onChange={(e) => setFinanceDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />
-                <button onClick={calculateFinances} disabled={loading} style={{ padding: '10px 20px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><RefreshCw size={20}/></button>
+              {/* FILTRO DE RANGO FINANZAS */}
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                  <input type="date" value={financeStartDate} onChange={(e) => setFinanceStartDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                  <input type="date" value={financeEndDate} onChange={(e) => setFinanceEndDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />
+                </div>
+                <button onClick={calculateFinances} disabled={loading} style={{ padding: '10px 20px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', alignSelf: 'flex-end' }}><RefreshCw size={20} /></button>
               </div>
             </div>
 
             {loading ? <div style={{ textAlign: 'center', padding: '50px', color: '#999', fontSize: '18px' }}>Analizando datos...</div> : (
               <>
-                {/* 1. TARJETAS DE KPIS PRINCIPALES */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '30px' }}>
-                   {/* CARD INGRESOS */}
-                   <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}>
-                        <TrendingUp size={20}/> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span>
-                      </div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
-                   </div>
-                   
-                   {/* CARD COSTO PRODUCTO */}
-                   <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', marginBottom: '5px' }}>
-                        <Layers size={20}/> <span style={{ fontWeight: 'bold' }}>Costo Productos</span>
-                      </div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563eb' }}>-${finData.costoProductos.toFixed(2)}</div>
-                   </div>
-
-                   {/* CARD GASTOS */}
-                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '20px', borderRadius: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', marginBottom: '5px' }}>
-                        <ArrowDown size={20}/> <span style={{ fontWeight: 'bold' }}>Gastos & Stock</span>
-                      </div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>-${(finData.gastosOps + finData.gastosStock).toFixed(2)}</div>
-                   </div>
-
-                   {/* CARD UTILIDAD */}
-                   <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}>
-                        <DollarSign size={20}/> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span>
-                      </div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
-                      <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(1)}%</div>
-                   </div>
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}><TrendingUp size={20} /> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
+                  </div>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', marginBottom: '5px' }}><Layers size={20} /> <span style={{ fontWeight: 'bold' }}>Costo Productos</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563eb' }}>-${finData.costoProductos.toFixed(2)}</div>
+                  </div>
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '20px', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', marginBottom: '5px' }}><ArrowDown size={20} /> <span style={{ fontWeight: 'bold' }}>Gastos & Stock</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>-${(finData.gastosOps + finData.gastosStock).toFixed(2)}</div>
+                  </div>
+                  <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}><DollarSign size={20} /> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
+                    <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(1)}%</div>
+                  </div>
                 </div>
 
-                {/* 2. GRÁFICOS VISUALES */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '30px' }}>
-                  
-                  {/* GRÁFICA DE PASTEL (DONUT) */}
                   <div style={{ flex: 1, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                     <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Distribución de Flujo</h3>
-                     
-                     <div style={donutStyle}>
-                        <div style={innerCircleStyle}>
-                           <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(0) : 0}%</span>
-                           <span style={{ fontSize: '10px', color: '#888' }}>Rentabilidad</span>
-                        </div>
-                     </div>
-
-                     <div style={{ marginTop: '20px', width: '100%' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#27ae60', borderRadius: '50%' }}></div> Ganancia</span>
-                           <span style={{ fontWeight: 'bold' }}>${finData.utilidadNeta.toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
-                           <span style={{ fontWeight: 'bold' }}>${finData.totalEgresos.toFixed(2)}</span>
-                        </div>
-                     </div>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Distribución de Flujo</h3>
+                    <div style={donutStyle}>
+                      <div style={innerCircleStyle}>
+                        <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(0) : 0}%</span>
+                        <span style={{ fontSize: '10px', color: '#888' }}>Rentabilidad</span>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '20px', width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#27ae60', borderRadius: '50%' }}></div> Ganancia</span>
+                        <span style={{ fontWeight: 'bold' }}>${finData.utilidadNeta.toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
+                        <span style={{ fontWeight: 'bold' }}>${finData.totalEgresos.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* BARRAS DE RENTABILIDAD */}
                   <div style={{ flex: 1.5, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px' }}>
-                     <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
-                     
-                     <div style={{ marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
-                           <span>Ingresos Totales</span>
-                           <span>100%</span>
-                        </div>
-                        <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
-                           <div style={{ width: '100%', height: '100%', background: '#3498db' }}></div>
-                        </div>
-                     </div>
-
-                     <div style={{ marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
-                           <span>Costo Productos + Gastos</span>
-                           <span>{percentageExpenses.toFixed(1)}%</span>
-                        </div>
-                        <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
-                           <div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div>
-                        </div>
-                     </div>
-
-                     <div style={{ marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
-                           <span>Margen Neto (Bolsa)</span>
-                           <span>{finData.margen.toFixed(1)}%</span>
-                        </div>
-                        <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
-                           <div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div>
-                        </div>
-                     </div>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
+                    <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Ingresos Totales</span><span>100%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: '100%', height: '100%', background: '#3498db' }}></div></div></div>
+                    <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Costo Productos + Gastos</span><span>{percentageExpenses.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div></div></div>
+                    <div style={{ marginBottom: '10px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Margen Neto (Bolsa)</span><span>{finData.margen.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div></div></div>
                   </div>
                 </div>
 
-                {/* 3. TABLAS DETALLADAS */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                  {/* Tabla Gastos Operativos */}
                   <div>
                     <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
-                    {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos hoy.</p> : (
+                    {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                         <tbody>
                           {dailyExpensesList.map((exp) => (
                             <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                              <td style={{ padding: '8px 0', color: '#555' }}>{exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span></td>
+                              <td style={{ padding: '8px 0', color: '#555' }}>{exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span></td>
                               <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${exp.monto}</td>
                             </tr>
                           ))}
@@ -1067,20 +953,16 @@ function App() {
                       </table>
                     )}
                   </div>
-
-                  {/* Tabla Compras Stock */}
                   <div>
                     <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
-                    {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No se compró stock hoy.</p> : (
+                    {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay compras de stock en este periodo.</p> : (
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                         <tbody>
                           {dailyStockList.map((purch) => (
                             <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
                               <td style={{ padding: '8px 0', color: '#555' }}>
-                                Compra #{purch.id.toString().slice(0,4)} 
-                                <div style={{ fontSize: '10px', color: '#888' }}>
-                                  {purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}
-                                </div>
+                                {new Date(purch.created_at).toLocaleDateString()} - Compra #{purch.id.toString().slice(0, 4)}
+                                <div style={{ fontSize: '10px', color: '#888' }}>{purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}</div>
                               </td>
                               <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${purch.total}</td>
                             </tr>
@@ -1090,19 +972,18 @@ function App() {
                     )}
                   </div>
                 </div>
-
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* MODAL NUEVO: PRODUCTOS ESTRELLA (ÚNICAMENTE ADMIN) */}
+      {/* MODAL PRODUCTOS ESTRELLA */}
       {showStarProducts && userRole === 'admin' && (
         <div onClick={() => setShowStarProducts(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowStarProducts(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}><X size={30}/></button>
-            <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 20px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Award size={30} color="#f1c40f"/> Productos Estrella</h2>
+            <button onClick={() => setShowStarProducts(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}><X size={30} /></button>
+            <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 20px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Award size={30} color="#f1c40f" /> Productos Estrella</h2>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#f8f6f2', padding: '15px', borderRadius: '15px' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
@@ -1124,24 +1005,17 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                 {starData.length === 0 ? (
-  <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay datos</td></tr>
-) : (
-  starData.map((item, idx) => (
-    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-      <td style={{ padding: '12px', color: '#4a3728', fontWeight: 'bold' }}>
-        {idx < 3 ? '⭐ ' : ''}{item.name}
-      </td>
-      {/* CAMBIO AQUÍ: Color de la cantidad a Negro para que sea visible */}
-      <td style={{ padding: '12px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>
-        {item.totalQty}
-      </td>
-      <td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>
-        ${item.totalRevenue.toFixed(2)}
-      </td>
-    </tr>
-  ))
-)}
+                  {starData.length === 0 ? (
+                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay datos</td></tr>
+                  ) : (
+                    starData.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '12px', color: '#4a3728', fontWeight: 'bold' }}>{idx < 3 ? '⭐ ' : ''}{item.name}</td>
+                        <td style={{ padding: '12px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>{item.totalQty}</td>
+                        <td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>${item.totalRevenue.toFixed(2)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

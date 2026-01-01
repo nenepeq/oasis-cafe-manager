@@ -47,6 +47,20 @@ function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [showFinances, setShowFinances] = useState(false);
 
+  // NUEVOS ESTADOS PARA ARQUEO DE CAJA
+  const [showCashArqueo, setShowCashArqueo] = useState(false);
+  const [showArqueoHistory, setShowArqueoHistory] = useState(false);
+  const [cashInitialFund, setCashInitialFund] = useState(0);
+  const [cashPhysicalCount, setCashPhysicalCount] = useState(0);
+  const [cashObservations, setCashObservations] = useState('');
+  const [arqueoHistory, setArqueoHistory] = useState([]);
+  const [cashReportData, setCashReportData] = useState({
+    ventasEfectivo: 0,
+    gastosEfectivo: 0,
+    esperado: 0,
+    diferencia: 0
+  });
+
   // NUEVOS ESTADOS PARA PRODUCTOS ESTRELLA
   const [showStarProducts, setShowStarProducts] = useState(false);
   const [starStartDate, setStarStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -153,6 +167,55 @@ function App() {
   useEffect(() => {
     if (showFinances && user && userRole === 'admin') calculateFinances();
   }, [showFinances, financeStartDate, financeEndDate]);
+
+  // --- LÓGICA DE ARQUEO DE CAJA ---
+  const runCashArqueo = async () => {
+    setLoading(true);
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const { data: vData } = await supabase.from('sales').select('total').eq('payment_method', 'Efectivo').neq('status', 'cancelado').gte('created_at', today + 'T00:00:00').lte('created_at', today + 'T23:59:59');
+      const totalVentasEfec = vData?.reduce((acc, v) => acc + v.total, 0) || 0;
+      const { data: eData } = await supabase.from('expenses').select('monto').eq('fecha', today);
+      const totalGastosEfec = eData?.reduce((acc, e) => acc + e.monto, 0) || 0;
+      const esperado = (parseFloat(cashInitialFund) || 0) + totalVentasEfec - totalGastosEfec;
+      const diferencia = (parseFloat(cashPhysicalCount) || 0) - esperado;
+      setCashReportData({ ventasEfectivo: totalVentasEfec, gastosEfectivo: totalGastosEfec, esperado: esperado, diferencia: diferencia });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo]);
+
+  const handleSaveArqueo = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('cash_reconciliations').insert([{
+        initial_fund: cashInitialFund,
+        sales_cash: cashReportData.ventasEfectivo,
+        expenses_cash: cashReportData.gastosEfectivo,
+        expected_amount: cashReportData.esperado,
+        actual_amount: cashPhysicalCount,
+        difference: cashReportData.diferencia,
+        observations: cashObservations,
+        created_by: user.id
+      }]);
+      if (error) throw error;
+      alert("✅ Arqueo guardado exitosamente");
+      setShowCashArqueo(false);
+    } catch (err) { alert("Error al guardar arqueo. Verifica la tabla en Supabase."); }
+    setLoading(false);
+  };
+
+  const fetchArqueoHistory = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('cash_reconciliations').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setArqueoHistory(data || []);
+      setShowArqueoHistory(true);
+    } catch (err) { alert("Error al cargar historial"); }
+    setLoading(false);
+  };
 
   // --- LÓGICA DE PRODUCTOS ESTRELLA ---
   const fetchStarProducts = async () => {
@@ -364,6 +427,7 @@ function App() {
     else setInventoryList(data || []);
   };
 
+  // --- REVERTIDO A TU LOGICA ORIGINAL DE ICONOS ---
   const getCategoryIcon = (product) => {
     const cat = (product.category || '').trim();
     if (cat === 'Bebidas Calientes') return <Coffee size={35} color="#8b5a2b" />;
@@ -603,7 +667,7 @@ function App() {
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{ flex: 2, padding: '15px', display: 'flex', flexDirection: 'column' }}>
 
-        {/* ENCABEZADO */}
+        {/* ENCABEZADO - REVERTIDO A TU FORMATO ORIGINAL */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
@@ -614,6 +678,8 @@ function App() {
               <>
                 <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16} /></button>
                 <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Award size={16} /></button>
+                {/* BOTON ARQUEO AÑADIDO */}
+                <button onClick={() => setShowCashArqueo(true)} style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Banknote size={16} /></button>
               </>
             )}
             <button onClick={() => setShowReport(true)} style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><FileText size={16} /></button>
@@ -624,7 +690,7 @@ function App() {
           </div>
         </div>
 
-        {/* MENÚ */}
+        {/* MENÚ - REVERTIDO A TU FORMATO ORIGINAL */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
@@ -646,19 +712,19 @@ function App() {
         `}</style>
 
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '5px' }}>
             {filteredProducts.map(p => (
               <button
                 key={p.id}
                 onClick={() => addToCart(p)}
                 className="btn-producto-3d"
                 style={{
-                  padding: '8px',
+                  padding: '5px', // Reducido de 8px a 5px
                   borderRadius: '12px',
                   border: 'none',
                   backgroundColor: '#fff',
                   textAlign: 'center',
-                  height: '130px',
+                  height: '120px', // Reducido de 130px a 120px para que se vea más compacto
                   boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -668,16 +734,31 @@ function App() {
                   transition: 'all 0.1s ease'
                 }}
               >
-                <div style={{ marginBottom: '5px' }}>{getCategoryIcon(p)}</div>
-                <div style={{ fontWeight: 'bold', color: '#4a3728', fontSize: '13px', lineHeight: '1.5', marginBottom: '4px' }}>{p.name}</div>
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '16px' }}>${p.sale_price}</div>
+                {/* Ajuste de icono e iconos dobles */}
+                <div style={{ marginBottom: '3px', transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
+
+                <div style={{
+                  fontWeight: 'bold',
+                  color: '#4a3728',
+                  fontSize: '11px', // Reducido de 13px a 11px para móviles
+                  lineHeight: '1.2',
+                  marginBottom: '2px',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '2',
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  {p.name}
+                </div>
+
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px' }}>${p.sale_price}</div>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 2. CARRITO */}
+      {/* 2. CARRITO - REVERTIDO A TU FORMATO ORIGINAL */}
       <div className="cart-section" style={{ flex: 0.8, backgroundColor: '#ffffff', padding: '15px', borderLeft: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
@@ -762,6 +843,126 @@ function App() {
               </div>
               <input type="text" placeholder="Concepto" value={expenseConcepto} onChange={(e) => setExpenseConcepto(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', marginTop: '10px' }} />
               <button onClick={handleRegisterExpense} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>REGISTRAR GASTO</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ARQUEO DE CAJA (SIGUIENDO TU ESTÉTICA) */}
+      {showCashArqueo && userRole === 'admin' && (
+        <div onClick={() => setShowCashArqueo(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Banknote size={30} color="#e67e22" />
+                  <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '24px' }}>Arqueo de Caja</h2>
+                </div>
+
+                {/* Botón HISTORIAL movido al costado izquierdo */}
+                <button
+                  onClick={fetchArqueoHistory}
+                  style={{
+                    padding: '8px 12px',
+                    background: '#f8f6f2',
+                    color: '#4a3728',
+                    border: '1px solid #ddd',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  <List size={14} /> HISTORIAL
+                </button>
+              </div>
+
+              {/* La X se queda sola en el extremo derecho */}
+              <button
+                onClick={() => setShowCashArqueo(false)}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}
+              >
+                <X size={30} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ backgroundColor: '#fdfbf9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
+                <label style={{ fontSize: '20px', fontWeight: 'bold', color: '#888', display: 'block', marginBottom: '5px' }}>FONDO INICIAL ($)</label>
+                <input type="number" value={cashInitialFund || ''} onChange={(e) => setCashInitialFund(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '18px', fontWeight: 'bold' }} placeholder="0.00" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '15px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10px', color: '#166534', fontWeight: 'bold' }}>VENTAS EFECTIVO</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#15803d' }}>${cashReportData.ventasEfectivo.toFixed(2)}</div>
+                </div>
+                <div style={{ background: '#fef2f2', padding: '15px', borderRadius: '15px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '10px', color: '#991b1b', fontWeight: 'bold' }}>GASTOS HOY</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#dc2626' }}>-${cashReportData.gastosEfectivo.toFixed(2)}</div>
+                </div>
+              </div>
+              <div style={{ background: '#4a3728', padding: '20px', borderRadius: '15px', textAlign: 'center', color: '#fff' }}>
+                <div style={{ fontSize: '12px', opacity: 0.8 }}>SALDO ESPERADO EN CAJA</div>
+                <div style={{ fontSize: '30px', fontWeight: '900' }}>${cashReportData.esperado.toFixed(2)}</div>
+              </div>
+              <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
+                <input type="number" value={cashPhysicalCount || ''} onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#ffffff' }} placeholder="Escribe cuánto dinero hay..." />
+              </div>
+              <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: cashReportData.diferencia === 0 ? '#27ae60' : (cashReportData.diferencia > 0 ? '#3498db' : '#e74c3c') }}>{cashReportData.diferencia >= 0 ? '+' : ''}${cashReportData.diferencia.toFixed(2)}</div>
+              </div>
+              <textarea placeholder="Observaciones..." value={cashObservations} onChange={(e) => setCashObservations(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', minHeight: '60px', fontSize: '13px' }} />
+              <button onClick={handleSaveArqueo} disabled={loading} style={{ width: '100%', padding: '15px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '16px' }}>{loading ? 'GUARDANDO...' : 'FINALIZAR Y GUARDAR CORTE'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HISTORIAL DE ARQUEOS (AUDITORÍA) */}
+      {showArqueoHistory && (
+        <div onClick={() => setShowArqueoHistory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, backdropFilter: 'blur(10px)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Cortes de Caja</h2>
+              <button onClick={() => setShowArqueoHistory(false)} style={{ border: 'none', color: '#000000', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead style={{ background: '#4a3728', color: '#fff' }}>
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left' }}>Fecha</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Fondo</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Esperado</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Real</th>
+                    <th style={{ padding: '12px', textAlign: 'right' }}>Diferencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {arqueoHistory.length === 0 ? (
+                    <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#999' }}>No hay registros guardados</td></tr>
+                  ) : (
+                    arqueoHistory.map((h, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#999' }}>{new Date(h.created_at).toLocaleDateString()}</div>
+                          <div style={{ fontSize: '10px', color: '#999' }}>{new Date(h.created_at).toLocaleTimeString()}</div>
+                        </td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', }}>${h.initial_fund}</td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', fontWeight: 'bold', }}>${h.expected_amount}</td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', fontWeight: 'bold' }}>${h.actual_amount}</td>
+                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: h.difference === 0 ? '#27ae60' : (h.difference > 0 ? '#3498db' : '#e74c3c') }}>
+                          {h.difference > 0 ? '+' : ''}${h.difference}
+                          {h.observations && <div style={{ fontSize: '10px', fontWeight: 'normal', color: '#666', fontStyle: 'italic' }}>{h.observations}</div>}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -920,18 +1121,17 @@ function App() {
                     </div>
                     <div style={{ marginTop: '20px', width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#27ae60', borderRadius: '50%' }}></div> Ganancia</span>
-                        <span style={{ fontWeight: 'bold' }}>${finData.utilidadNeta.toFixed(2)}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#27ae60', fontWeight: 'bold' }}><div style={{ width: '10px', height: '10px', background: '#27ae60', borderRadius: '50%' }}></div> Ganancia</span>
+                        <span style={{ fontWeight: 'bold', color: '#27ae60' }}>${finData.utilidadNeta.toFixed(2)}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
-                        <span style={{ fontWeight: 'bold' }}>${finData.totalEgresos.toFixed(2)}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#e74c3c', fontWeight: 'bold' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
+                        <span style={{ fontWeight: 'bold', color: '#e74c3c' }}>${finData.totalEgresos.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                   <div style={{ flex: 1.5, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px' }}>
                     <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
-                    <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Ingresos Totales</span><span>100%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: '100%', height: '100%', background: '#3498db' }}></div></div></div>
                     <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Costo Productos + Gastos</span><span>{percentageExpenses.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div></div></div>
                     <div style={{ marginBottom: '10px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Margen Neto (Bolsa)</span><span>{finData.margen.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div></div></div>
                   </div>

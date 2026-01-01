@@ -714,7 +714,7 @@ function App() {
 
         {/* GRID PRODUCTOS - 3 COLUMNAS AL ANCHO EN MÓVIL */}
         {!fetchError && filteredProducts.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
+          <div style={{ padding: '30px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
             <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
           </div>
         )}

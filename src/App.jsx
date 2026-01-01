@@ -734,6 +734,7 @@ function App() {
             gap: '10px',
             padding: '5px',
             width: '100%',
+            alignContent: 'start',
             boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
             <button

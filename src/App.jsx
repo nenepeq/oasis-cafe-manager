@@ -708,13 +708,13 @@ function App() {
         {/* MENÚ */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '15px 30px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
+            <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
         {/* GRID PRODUCTOS - 3 COLUMNAS AL ANCHO EN MÓVIL */}
         {!fetchError && filteredProducts.length === 0 && (
-          <div style={{ padding: '30px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
             <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
           </div>
         )}
@@ -730,7 +730,7 @@ function App() {
           <div style={{
             display: 'grid',
             // repeat(3, 1fr) asegura que las 3 columnas cubran el ancho total en móvil
-            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             padding: '5px',
             width: '100%',

@@ -730,11 +730,10 @@ function App() {
           <div style={{
             display: 'grid',
             // repeat(3, 1fr) asegura que las 3 columnas cubran el ancho total en móvil
-            gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             padding: '5px',
             width: '100%',
-            alignContent: 'start',
             boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
             <button

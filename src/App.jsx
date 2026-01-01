@@ -664,22 +664,24 @@ function App() {
   return (
     <div className="app-container" style={{
       display: 'flex',
-      flexDirection: window.innerWidth < 600 ? 'column' : 'row', // ARREGLO: Fila en escritorio, Columna en celular
+      flexDirection: window.innerWidth < 600 ? 'column' : 'row', // CAMBIO: En celular el carrito va abajo
       height: '100vh',
       width: '100vw',
       backgroundColor: '#f8f6f2',
-      overflow: window.innerWidth < 600 ? 'auto' : 'hidden' // ARREGLO: Permitir scroll en celular para ver el carrito
+      overflow: window.innerWidth < 600 ? 'auto' : 'hidden' // CAMBIO: Permitir scroll en celular para llegar al carrito
     }}>
 
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{
-        flex: window.innerWidth < 600 ? 'none' : 2, // ARREGLO: No forzar flex 2 en celular
+        flex: window.innerWidth < 600 ? 'none' : 2,
         padding: '15px',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        width: '100%', // CUBRIR ANCHO TOTAL EN MÓVIL
+        boxSizing: 'border-box'
       }}>
 
-        {/* ENCABEZADO - REVERTIDO A TU FORMATO ORIGINAL */}
+        {/* ENCABEZADO */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
@@ -702,14 +704,14 @@ function App() {
           </div>
         </div>
 
-        {/* MENÚ - REVERTIDO A TU FORMATO ORIGINAL */}
+        {/* MENÚ */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
-        {/* GRID PRODUCTOS */}
+        {/* GRID PRODUCTOS - AJUSTADO A 2 COLUMNAS AL ANCHO EN MÓVIL */}
         {!fetchError && filteredProducts.length === 0 && (
           <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
             <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
@@ -726,29 +728,33 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: window.innerWidth < 600 ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // ARREGLO: 2 columnas fijas en celulares (<600px)
-            gridTemplateColumns: window.innerWidth < 600 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            // CAMBIO: 2 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
+            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
-            padding: '5px'
+            padding: '5px',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
             <button
               key={p.id}
               onClick={() => addToCart(p)}
               className="btn-producto-3d"
               style={{
-                padding: '5px', // Reducido de 8px a 5px
+                padding: '5px',
                 borderRadius: '12px',
                 border: 'none',
                 backgroundColor: '#fff',
                 textAlign: 'center',
-                height: '120px', // Reducido de 130px a 120px para que se vea más compacto
+                height: '130px',
                 boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.1s ease'
+                transition: 'all 0.1s ease',
+                width: '100%', // LLENAR LA COLUMNA
+                boxSizing: 'border-box'
               }}
             >
               {/* Ajuste de icono e iconos dobles */}
@@ -757,7 +763,7 @@ function App() {
               <div style={{
                 fontWeight: 'bold',
                 color: '#4a3728',
-                fontSize: '11px', // Reducido de 13px a 11px para móviles
+                fontSize: '11px',
                 lineHeight: '1.2',
                 marginBottom: '2px',
                 display: '-webkit-box',
@@ -775,18 +781,20 @@ function App() {
         </div>
       </div>
 
-      {/* 2. CARRITO - REVERTIDO A TU FORMATO ORIGINAL */}
+      {/* 2. CARRITO - PASA ABAJO EN MÓVIL */}
       <div className="cart-section" style={{
-        flex: window.innerWidth < 600 ? 'none' : 0.8, // ARREGLO: No forzar flex en celular
+        flex: window.innerWidth < 600 ? 'none' : 0.8,
         backgroundColor: '#ffffff',
         padding: '15px',
         borderLeft: window.innerWidth < 600 ? 'none' : '1px solid #eee',
-        borderTop: window.innerWidth < 600 ? '2px solid #eee' : 'none', // ARREGLO: Borde arriba en celular
+        borderTop: window.innerWidth < 600 ? '2px solid #eee' : 'none', // SEPARACIÓN VISUAL EN MÓVIL
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
-        <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px' }} />
+        <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px', boxSizing: 'border-box' }} />
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
@@ -806,7 +814,7 @@ function App() {
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
-      {/* MODAL INVENTARIO */}
+      {/* MODAL INVENTARIO (INTOCADO) */}
       {showInventory && userRole === 'admin' && (
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -873,7 +881,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL ARQUEO DE CAJA (SIGUIENDO TU ESTÉTICA) */}
+      {/* MODAL ARQUEO DE CAJA (INTOCADO) */}
       {showCashArqueo && userRole === 'admin' && (
         <div onClick={() => setShowCashArqueo(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -947,7 +955,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL HISTORIAL DE ARQUEOS (AUDITORÍA) */}
+      {/* MODAL HISTORIAL DE ARQUEOS (INTOCADO) */}
       {showArqueoHistory && (
         <div onClick={() => setShowArqueoHistory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, backdropFilter: 'blur(10px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -993,7 +1001,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL REPORTES - COMPARTIDO CON FILTRO DE RANGO */}
+      {/* MODAL REPORTES (INTOCADO) */}
       {showReport && (
         <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1089,7 +1097,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL FINANZAS - CON FILTRO DE RANGO */}
+      {/* MODAL FINANZAS (INTOCADO) */}
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1203,7 +1211,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL PRODUCTOS ESTRELLA */}
+      {/* MODAL PRODUCTOS ESTRELLA (INTOCADO) */}
       {showStarProducts && userRole === 'admin' && (
         <div onClick={() => setShowStarProducts(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -1231,7 +1239,7 @@ function App() {
                 </thead>
                 <tbody>
                   {starData.length === 0 ? (
-                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay datos</td></tr>
+                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay datos</td></tr>
                   ) : (
                     starData.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>

@@ -427,6 +427,7 @@ function App() {
     else setInventoryList(data || []);
   };
 
+  // --- REVERTIDO A TU LOGICA ORIGINAL DE ICONOS ---
   const getCategoryIcon = (product) => {
     const cat = (product.category || '').trim();
     if (cat === 'Bebidas Calientes') return <Coffee size={35} color="#8b5a2b" />;
@@ -630,8 +631,7 @@ function App() {
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 2
   };
 
-  // Variable para detectar móvil
-  const isMobile = window.innerWidth < 600;
+  const isMobile = window.innerWidth < 800;
 
   return (
     <div className="app-container" style={{
@@ -669,20 +669,21 @@ function App() {
           </div>
         </div>
 
-        {/* MENÚ */}
+        {/* MENÚ CATEGORÍAS */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', paddingLeft: '10px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
-        {/* GRID PRODUCTOS - AJUSTADO A 3 COLUMNAS QUE CUBREN EL ANCHO */}
+        {/* GRID PRODUCTOS - AJUSTADO A 2 COLUMNAS AL ANCHO TOTAL */}
         <style>{` .btn-producto-3d:active { transform: translateY(4px) !important; box-shadow: none !important; } `}</style>
         <div style={{ flex: 1, minHeight: 0, overflowY: isMobile ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            alignContent: 'start', gap: '8px', padding: '5px 10px', width: '100%', boxSizing: 'border-box'
+            //repeat(2, 1fr) asegura 2 columnas cubriendo el 100%
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            alignContent: 'start', gap: '10px', padding: '5px 10px', width: '100%', boxSizing: 'border-box'
           }}>
             {filteredProducts.map(p => (
               <button
@@ -691,7 +692,7 @@ function App() {
                 className="btn-producto-3d"
                 style={{
                   padding: '10px 5px', borderRadius: '15px', border: 'none', backgroundColor: '#fff',
-                  textAlign: 'center', minHeight: '165px', height: 'auto', // Ajustable al texto
+                  textAlign: 'center', height: isMobile ? '140px' : '130px', // Altura fija
                   boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                   cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
                   justifyContent: 'space-between', transition: 'all 0.1s ease', width: '100%', boxSizing: 'border-box'
@@ -738,7 +739,7 @@ function App() {
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
-      {/* === REPORTES (TODOS RESTAURADOS COMPLETAMENTE) === */}
+      {/* --- REPORTES (MANTENIDOS INTACTOS SEGÚN TU CÓDIGO ORIGINAL) --- */}
 
       {showInventory && userRole === 'admin' && (
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
@@ -907,6 +908,11 @@ function App() {
                         <span style={{ fontWeight: 'bold', color: '#e74c3c' }}>${finData.totalEgresos.toFixed(2)}</span>
                       </div>
                     </div>
+                  </div>
+                  <div style={{ flex: 1.5, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px' }}>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
+                    <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Costo Productos + Gastos</span><span>{percentageExpenses.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div></div></div>
+                    <div style={{ marginBottom: '10px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Margen Neto (Bolsa)</span><span>{finData.margen.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div></div></div>
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>

@@ -728,8 +728,8 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: window.innerWidth < 600 ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // CAMBIO: 2 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
-            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            // CAMBIO: 3 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
+            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             padding: '5px',
             width: '100%',

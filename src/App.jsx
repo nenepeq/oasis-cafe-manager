@@ -730,9 +730,9 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: isMobileView ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // Forzamos 3 columnas que cubran todo el ancho (repeat(3, 1fr))
+            // --- CAMBIO SOLICITADO: 3 columnas simétricas que ocupan todo el ancho ---
             gridTemplateColumns: isMobileView ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            gap: isMobileView ? '10px' : '10px',
+            gap: isMobileView ? '8px' : '10px',
             padding: '5px',
             width: '100%',
             boxSizing: 'border-box',
@@ -748,7 +748,8 @@ function App() {
                 border: 'none',
                 backgroundColor: '#fff',
                 textAlign: 'center',
-                height: isMobileView ? '110px' : '130px',
+                // --- ALTURA SIMÉTRICA PARA MÓVIL ---
+                height: isMobileView ? '120px' : '140px',
                 boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                 cursor: 'pointer',
                 display: 'flex',

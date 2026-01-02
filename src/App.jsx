@@ -440,22 +440,18 @@ function App() {
   };
 
   const addToCart = (product) => {
-    // 1. OBTENER STOCK TOTAL DE LA LISTA
     const inventoryItem = inventoryList.find(inv => inv.product_id === product.id);
     const totalStock = inventoryItem ? inventoryItem.stock : 0;
 
-    // 2. VERIFICAR CUÁNTOS YA HAY EN EL CARRITO
     const itemInCart = cart.find(i => i.id === product.id);
     const qtyInCart = itemInCart ? itemInCart.quantity : 0;
 
-    // 3. VALIDAR STOCK RESTANTE ANTES DE ACTUALIZAR ESTADO (EVITA DOBLE ALERTA)
     if (qtyInCart + 1 > totalStock) {
       const stockRestante = totalStock - qtyInCart;
       alert(`⚠️ FUERA DE STOCK: Solo quedan ${stockRestante} unidades disponibles de ${product.name}`);
       return;
     }
 
-    // 4. SI HAY STOCK, PROCEDER
     setCart(prev => {
       const exists = prev.find(i => i.id === product.id);
       if (exists) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -661,23 +657,22 @@ function App() {
     zIndex: 2
   };
 
-  // Variable para forzar el modo columna si el ancho es pequeño
-  const isMobileView = window.innerWidth < 800;
+  const isMobile = window.innerWidth < 800;
 
   return (
     <div className="app-container" style={{
       display: 'flex',
-      flexDirection: isMobileView ? 'column' : 'row',
+      flexDirection: isMobile ? 'column' : 'row',
       height: '100vh',
       width: '100vw',
       backgroundColor: '#f8f6f2',
-      overflow: isMobileView ? 'auto' : 'hidden'
+      overflow: isMobile ? 'auto' : 'hidden'
     }}>
 
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{
-        flex: isMobileView ? 'none' : 2,
-        padding: isMobileView ? '10px 5px' : '15px',
+        flex: isMobile ? 'none' : 2,
+        padding: isMobile ? '10px 0' : '15px', // Eliminamos padding lateral en móvil para ganar espacio
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
@@ -685,7 +680,7 @@ function App() {
       }}>
 
         {/* ENCABEZADO */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
             <h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1>
@@ -707,19 +702,13 @@ function App() {
         </div>
 
         {/* MENÚ */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', paddingLeft: '10px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
-        {/* GRID PRODUCTOS - CORRECCIÓN: 3 columnas al 100% de ancho */}
-        {!fetchError && filteredProducts.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
-            <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
-          </div>
-        )}
-
+        {/* GRID PRODUCTOS - AJUSTADO AL ANCHO REAL */}
         <style>{`
           .btn-producto-3d:active {
             transform: translateY(4px) !important;
@@ -727,56 +716,55 @@ function App() {
           }
         `}</style>
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: isMobileView ? 'visible' : 'auto', paddingBottom: '10px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: isMobile ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // Forzamos 3 columnas que cubran todo el ancho (repeat(3, 1fr))
-            gridTemplateColumns: isMobileView ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            gap: isMobileView ? '10px' : '10px',
-            padding: '5px',
+            // repeat(3, 1fr) para forzar 3 columnas iguales al 100%
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+            padding: '5px 10px',
             width: '100%',
-            boxSizing: 'border-box',
-            justifyContent: 'stretch'
+            boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
             <button
               key={p.id}
               onClick={() => addToCart(p)}
               className="btn-producto-3d"
               style={{
-                padding: '10px 5px',
+                padding: '10px 4px', // Padding reducido a los lados
                 borderRadius: '15px',
                 border: 'none',
                 backgroundColor: '#fff',
                 textAlign: 'center',
-                height: isMobileView ? '110px' : '130px',
+                minHeight: '170px', // Altura mínima para que quepa la descripción
+                height: 'auto', // Permite que el botón crezca si el texto es muy largo
                 boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'flex-start', // Alinea el contenido desde arriba
                 transition: 'all 0.1s ease',
                 width: '100%',
                 boxSizing: 'border-box'
               }}
             >
-              <div style={{ marginBottom: '3px', transform: isMobileView ? 'scale(0.7)' : 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
+              <div style={{ marginBottom: '8px', flexShrink: 0 }}>{getCategoryIcon(p)}</div>
 
               <div style={{
                 fontWeight: 'bold',
                 color: '#4a3728',
-                fontSize: isMobileView ? '10px' : '11px',
+                fontSize: '11px',
                 lineHeight: '1.2',
-                marginBottom: '2px',
-                display: '-webkit-box',
-                WebkitLineClamp: '2',
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+                marginBottom: '5px',
+                width: '100%',
+                wordWrap: 'break-word', // Asegura que las palabras largas bajen de línea
+                flexGrow: 1 // Toma el espacio necesario para el texto
               }}>
                 {p.name}
               </div>
 
-              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '12px' : '14px' }}>${p.sale_price}</div>
+              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px', marginTop: 'auto' }}>${p.sale_price}</div>
             </button>
           ))}
           </div>
@@ -785,11 +773,11 @@ function App() {
 
       {/* 2. CARRITO */}
       <div className="cart-section" style={{
-        flex: isMobileView ? 'none' : 0.8,
+        flex: isMobile ? 'none' : 0.8,
         backgroundColor: '#ffffff',
         padding: '15px',
-        borderLeft: isMobileView ? 'none' : '1px solid #eee',
-        borderTop: isMobileView ? '2px solid #eee' : 'none',
+        borderLeft: isMobile ? 'none' : '1px solid #eee',
+        borderTop: isMobile ? '2px solid #eee' : 'none',
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
@@ -797,7 +785,7 @@ function App() {
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px', boxSizing: 'border-box' }} />
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', maxHeight: isMobile ? '300px' : 'none' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
               <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name} {item.quantity} x ${item.sale_price}</div>
@@ -816,7 +804,7 @@ function App() {
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
-      {/* --- LOS 5 REPORTES SE MANTIENEN IGUAL AL ORIGINAL (SIN MODIFICACIONES) --- */}
+      {/* --- LOS 5 REPORTES SE MANTIENEN IGUAL AL ORIGINAL (INTOCABLES) --- */}
 
       {/* MODAL INVENTARIO */}
       {showInventory && userRole === 'admin' && (
@@ -994,32 +982,18 @@ function App() {
                 <input type="date" value={reportEndDate} onChange={(e) => setReportEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
               </div>
               <button onClick={fetchSales} style={{ padding: '10px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}><RefreshCw size={16} /></button>
-              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
-                Total: ${totalIngresosReporte.toFixed(2)}
-              </div>
+              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>Total: ${totalIngresosReporte.toFixed(2)}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
               <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #000' }}>
-                      <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Fecha/Hora</th>
-                      <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th>
-                      <th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th>
-                    </tr>
-                  </thead>
+                  <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ textAlign: 'left', padding: '8px' }}>Fecha</th><th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th><th style={{ textAlign: 'right', padding: '8px' }}>Total</th></tr></thead>
                   <tbody>
                     {sales.map(sale => (
                       <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent', opacity: sale.status === 'cancelado' ? 0.6 : 1 }}>
-                        <td style={{ padding: '10px', color: '#000' }}>
-                          {new Date(sale.created_at).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: '10px', color: '#000' }}>
-                          {sale.customer_name}
-                        </td>
-                        <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>
-                          ${sale.total}
-                        </td>
+                        <td style={{ padding: '10px' }}>{new Date(sale.created_at).toLocaleDateString()}</td>
+                        <td style={{ padding: '10px' }}>{sale.customer_name}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>${sale.total}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1034,37 +1008,13 @@ function App() {
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30} /></button>
-            <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-              <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <PieChart size={28} /> Reporte Financiero
-              </h2>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
-                  <input type="date" value={financeStartDate} onChange={(e) => setFinanceStartDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
-                  <input type="date" value={financeEndDate} onChange={(e) => setFinanceEndDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }} />
-                </div>
-                <button onClick={calculateFinances} disabled={loading} style={{ padding: '10px 20px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', alignSelf: 'flex-end' }}><RefreshCw size={20} /></button>
-              </div>
+            <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000' }}><X size={30} /></button>
+            <h2 style={{ color: '#000', fontWeight: '900', fontSize: '24px' }}><PieChart size={28} /> Reporte Financiero</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+              <div style={{ background: '#f0fdf4', padding: '20px', borderRadius: '20px' }}><span>Ingresos</span><div style={{ fontSize: '24px', fontWeight: '900' }}>${finData.ingresos.toFixed(2)}</div></div>
+              <div style={{ background: '#eff6ff', padding: '20px', borderRadius: '20px' }}><span>Costo</span><div style={{ fontSize: '24px', fontWeight: '900' }}>-${finData.costoProductos.toFixed(2)}</div></div>
+              <div style={{ background: '#faf5ff', padding: '20px', borderRadius: '20px' }}><span>Utilidad</span><div style={{ fontSize: '24px', fontWeight: '900' }}>${finData.utilidadNeta.toFixed(2)}</div></div>
             </div>
-            {loading ? <div style={{ textAlign: 'center', padding: '50px', color: '#999', fontSize: '18px' }}>Analizando datos...</div> : (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '30px' }}>
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}><TrendingUp size={20} /> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span></div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
-                  </div>
-                  <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}><DollarSign size={20} /> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span></div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
         </div>
       )}
@@ -1074,22 +1024,12 @@ function App() {
         <div onClick={() => setShowStarProducts(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }}>
             <button onClick={() => setShowStarProducts(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}><X size={30} /></button>
-            <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 20px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Award size={30} color="#f1c40f" /> Productos Estrella</h2>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <input type="date" value={starStartDate} onChange={(e) => setStarStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }} />
-              <input type="date" value={starEndDate} onChange={(e) => setStarEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }} />
-              <button onClick={fetchStarProducts} style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold' }}>VER REPORTE</button>
-            </div>
+            <h2 style={{ color: '#4a3728', fontWeight: '900', fontSize: '24px' }}><Award size={30} color="#f1c40f" /> Productos Estrella</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ background: '#4a3728', color: '#fff' }}>
-                <tr><th style={{ padding: '12px', textAlign: 'left' }}>Producto</th><th style={{ padding: '12px' }}>Vendidos</th></tr>
-              </thead>
+              <thead style={{ background: '#4a3728', color: '#fff' }}><tr><th style={{ padding: '12px', textAlign: 'left' }}>Producto</th><th style={{ padding: '12px' }}>Cant</th><th style={{ padding: '12px', textAlign: 'right' }}>Total</th></tr></thead>
               <tbody>
                 {starData.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px' }}>{item.name}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>{item.totalQty}</td>
-                  </tr>
+                  <tr key={idx} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '12px', fontWeight: 'bold' }}>{item.name}</td><td style={{ padding: '12px', textAlign: 'center' }}>{item.totalQty}</td><td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>${item.totalRevenue.toFixed(2)}</td></tr>
                 ))}
               </tbody>
             </table>

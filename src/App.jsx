@@ -729,9 +729,9 @@ function App() {
           <div style={{
             display: 'grid',
             // CAMBIO: 2 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
-            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr 1fr 1fr' : 'repeat(auto-fill, minmax(135px, 1fr))',
+            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr 1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
-            padding: '5px',
+            padding: '10px',
             width: '100%',
             boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
@@ -740,7 +740,7 @@ function App() {
               onClick={() => addToCart(p)}
               className="btn-producto-3d"
               style={{
-                padding: '5px',
+                padding: '10px',
                 borderRadius: '12px',
                 border: 'none',
                 backgroundColor: '#fff',

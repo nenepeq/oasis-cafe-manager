@@ -729,7 +729,7 @@ function App() {
           <div style={{
             display: 'grid',
             // CAMBIO: 3 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
-            gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            gridTemplateColumns: window.innerWidth < 600 ? '2fr 2fr' : 'repeat(auto-fill, minmax(130px, 2fr))',
             gap: '10px',
             padding: '5px',
             width: '100%',

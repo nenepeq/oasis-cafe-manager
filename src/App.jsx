@@ -731,7 +731,7 @@ function App() {
             // CAMBIO: 2 COLUMNAS QUE OCUPAN EL ANCHO TOTAL (1fr 1fr)
             gridTemplateColumns: window.innerWidth < 600 ? '1fr 1fr 1fr 1fr' : 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
-            padding: '10px',
+            padding: '5px',
             width: '100%',
             boxSizing: 'border-box'
           }}>            {filteredProducts.map(p => (
@@ -745,7 +745,7 @@ function App() {
                 border: 'none',
                 backgroundColor: '#fff',
                 textAlign: 'center',
-                height: '130px',
+                height: '120px',
                 boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                 cursor: 'pointer',
                 display: 'flex',

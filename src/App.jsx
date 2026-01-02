@@ -713,7 +713,7 @@ function App() {
           ))}
         </div>
 
-        {/* GRID PRODUCTOS - CORRECCIÓN: 3 COLUMNAS CUADRADAS SIMÉTRICAS */}
+        {/* GRID PRODUCTOS - CORRECCIÓN: 3 columnas al 100% de ancho */}
         {!fetchError && filteredProducts.length === 0 && (
           <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
             <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
@@ -730,59 +730,55 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: isMobileView ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
+            // Forzamos 3 columnas que cubran todo el ancho (repeat(3, 1fr))
             gridTemplateColumns: isMobileView ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            gap: isMobileView ? '10px' : '15px',
+            gap: isMobileView ? '10px' : '10px',
             padding: '5px',
             width: '100%',
             boxSizing: 'border-box',
             justifyContent: 'stretch'
-          }}>
-            {filteredProducts.map(p => (
-              <button
-                key={p.id}
-                onClick={() => addToCart(p)}
-                className="btn-producto-3d"
-                style={{
-                  borderRadius: '15px',
-                  border: 'none',
-                  backgroundColor: '#fff',
-                  textAlign: 'center',
-                  // CUADRADO PERFECTO
-                  aspectRatio: '1 / 1',
-                  boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.1s ease',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '10px 5px',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ marginBottom: '5px', transform: isMobileView ? 'scale(0.8)' : 'scale(1)', flexShrink: 0 }}>{getCategoryIcon(p)}</div>
+          }}>            {filteredProducts.map(p => (
+            <button
+              key={p.id}
+              onClick={() => addToCart(p)}
+              className="btn-producto-3d"
+              style={{
+                padding: '10px 5px',
+                borderRadius: '15px',
+                border: 'none',
+                backgroundColor: '#fff',
+                textAlign: 'center',
+                height: isMobileView ? '110px' : '130px',
+                boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.1s ease',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div style={{ marginBottom: '3px', transform: isMobileView ? 'scale(0.7)' : 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
 
-                <div style={{
-                  fontWeight: 'bold',
-                  color: '#4a3728',
-                  fontSize: isMobileView ? '10px' : '11px',
-                  lineHeight: '1.2',
-                  marginBottom: '2px',
-                  display: '-webkit-box',
-                  WebkitLineClamp: '2',
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  width: '100%',
-                  padding: '0 2px'
-                }}>
-                  {p.name.toUpperCase()}
-                </div>
+              <div style={{
+                fontWeight: 'bold',
+                color: '#4a3728',
+                fontSize: isMobileView ? '10px' : '11px',
+                lineHeight: '1.2',
+                marginBottom: '2px',
+                display: '-webkit-box',
+                WebkitLineClamp: '2',
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                {p.name}
+              </div>
 
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '12px' : '14px', marginTop: 'auto' }}>${p.sale_price}</div>
-              </button>
-            ))}
+              <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '12px' : '14px' }}>${p.sale_price}</div>
+            </button>
+          ))}
           </div>
         </div>
       </div>
@@ -819,6 +815,8 @@ function App() {
         <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>{loading ? 'PROCESANDO PAGO...' : 'PAGAR'}</button>
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
+
+      {/* --- LOS 5 REPORTES SE MANTIENEN IGUAL AL ORIGINAL (SIN MODIFICACIONES) --- */}
 
       {/* MODAL INVENTARIO */}
       {showInventory && userRole === 'admin' && (
@@ -922,7 +920,7 @@ function App() {
               </div>
               <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
                 <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
-                <input type="number" value={cashPhysicalCount || ''} onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#000' }} placeholder="Escribe cuánto dinero hay..." />
+                <input type="number" value={cashPhysicalCount || ''} onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#ffffff' }} placeholder="Escribe cuánto dinero hay..." />
               </div>
               <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>

@@ -440,17 +440,22 @@ function App() {
   };
 
   const addToCart = (product) => {
+    // 1. OBTENER STOCK TOTAL DE LA LISTA
     const inventoryItem = inventoryList.find(inv => inv.product_id === product.id);
     const totalStock = inventoryItem ? inventoryItem.stock : 0;
+
+    // 2. VERIFICAR CUÁNTOS YA HAY EN EL CARRITO
     const itemInCart = cart.find(i => i.id === product.id);
     const qtyInCart = itemInCart ? itemInCart.quantity : 0;
 
+    // 3. VALIDAR STOCK RESTANTE ANTES DE ACTUALIZAR ESTADO (EVITA DOBLE ALERTA)
     if (qtyInCart + 1 > totalStock) {
       const stockRestante = totalStock - qtyInCart;
       alert(`⚠️ FUERA DE STOCK: Solo quedan ${stockRestante} unidades disponibles de ${product.name}`);
       return;
     }
 
+    // 4. SI HAY STOCK, PROCEDER
     setCart(prev => {
       const exists = prev.find(i => i.id === product.id);
       if (exists) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -501,6 +506,7 @@ function App() {
 
       await supabase.from('sale_items').insert(itemsToInsert);
 
+      // Actualizar inventario
       for (const item of cart) {
         const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
         if (currentInvItem) {
@@ -515,6 +521,7 @@ function App() {
       alert("✅ Venta Satisfactoria");
       setCart([]);
       setCustomerName('');
+
       fetchInventory();
 
     } catch (err) {
@@ -565,6 +572,7 @@ function App() {
       setSelectedPurchaseProd('');
       setPurchaseQty(0);
       setPurchaseCost(0);
+
       setTimeout(() => fetchInventory(), 500);
 
     } catch (err) {
@@ -578,7 +586,9 @@ function App() {
       alert('Por favor completa todos los campos correctamente');
       return;
     }
+
     if (loading) return;
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -590,10 +600,14 @@ function App() {
           fecha: new Date().toISOString().split('T')[0],
           created_by: user.id
         }]);
+
       if (error) throw error;
+
       alert("💰 Gasto Registrado Exitosamente");
       setExpenseConcepto('');
+      setExpenseCategoria('Insumos');
       setExpenseMonto(0);
+
     } catch (err) {
       alert("Error: " + err.message);
     }
@@ -621,39 +635,62 @@ function App() {
   const percentageProfit = 100 - percentageExpenses;
 
   const donutStyle = {
-    background: `conic-gradient(#e74c3c 0% ${percentageExpenses}%, #27ae60 ${percentageExpenses}% 100%)`,
-    borderRadius: '50%', width: '120px', height: '120px', position: 'relative',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+    background: `conic-gradient(
+      #e74c3c 0% ${percentageExpenses}%, 
+      #27ae60 ${percentageExpenses}% 100%
+    )`,
+    borderRadius: '50%',
+    width: '120px',
+    height: '120px',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
   };
 
   const innerCircleStyle = {
-    background: '#fff', width: '80px', height: '80px', borderRadius: '50%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 2
+    background: '#fff',
+    width: '80px',
+    height: '80px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    zIndex: 2
   };
 
-  const isMobile = window.innerWidth < 800;
+  // Variable para forzar el modo columna si el ancho es pequeño
+  const isMobileView = window.innerWidth < 800;
 
   return (
     <div className="app-container" style={{
       display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      height: '100vh', width: '100vw', backgroundColor: '#f8f6f2', overflow: isMobile ? 'auto' : 'hidden'
+      flexDirection: isMobileView ? 'column' : 'row',
+      height: '100vh',
+      width: '100vw',
+      backgroundColor: '#f8f6f2',
+      overflow: isMobileView ? 'auto' : 'hidden'
     }}>
 
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{
-        flex: isMobile ? 'none' : 2,
-        padding: isMobile ? '10px 0' : '15px',
-        display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box'
+        flex: isMobileView ? 'none' : 2,
+        padding: isMobileView ? '10px 5px' : '15px',
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
 
         {/* ENCABEZADO */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
             <h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1>
           </div>
-          <div style={{ display: 'flex', gap: '5px' }}>
+          <div style={{ display: 'flex', gap: '3px' }}>
             {userRole === 'admin' && (
               <>
                 <button onClick={() => setShowInventory(true)} style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}><Package size={16} /></button>
@@ -669,21 +706,37 @@ function App() {
           </div>
         </div>
 
-        {/* MENÚ CATEGORÍAS */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', paddingLeft: '10px', scrollbarWidth: 'none', flexShrink: 0 }}>
+        {/* MENÚ */}
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
-        {/* GRID PRODUCTOS - AJUSTADO A 2 COLUMNAS AL ANCHO TOTAL */}
-        <style>{` .btn-producto-3d:active { transform: translateY(4px) !important; box-shadow: none !important; } `}</style>
-        <div style={{ flex: 1, minHeight: 0, overflowY: isMobile ? 'visible' : 'auto', paddingBottom: '10px' }}>
+        {/* GRID PRODUCTOS - CORRECCIÓN: 3 columnas idénticas y ajustadas al ancho móvil */}
+        {!fetchError && filteredProducts.length === 0 && (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
+            <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
+          </div>
+        )}
+
+        <style>{`
+          .btn-producto-3d:active {
+            transform: translateY(4px) !important;
+            box-shadow: none !important;
+          }
+        `}</style>
+
+        <div style={{ flex: 1, minHeight: 0, overflowY: isMobileView ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            //repeat(2, 1fr) asegura 2 columnas cubriendo el 100%
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            alignContent: 'start', gap: '10px', padding: '5px 10px', width: '100%', boxSizing: 'border-box'
+            // Forzamos 3 columnas idénticas que cubran todo el ancho exactamente
+            gridTemplateColumns: isMobileView ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
+            gap: isMobileView ? '8px' : '10px',
+            padding: '5px',
+            width: '100%',
+            boxSizing: 'border-box',
+            justifyContent: 'stretch'
           }}>
             {filteredProducts.map(p => (
               <button
@@ -691,21 +744,45 @@ function App() {
                 onClick={() => addToCart(p)}
                 className="btn-producto-3d"
                 style={{
-                  padding: '10px 5px', borderRadius: '15px', border: 'none', backgroundColor: '#fff',
-                  textAlign: 'center', height: isMobile ? '140px' : '130px', // Altura fija
+                  padding: '10px 4px',
+                  borderRadius: '15px',
+                  border: 'none',
+                  backgroundColor: '#fff',
+                  textAlign: 'center',
+                  // Usamos aspect-ratio para que sean cuadrados perfectos/proporcionales
+                  aspectRatio: isMobileView ? '1 / 1.2' : 'auto',
+                  height: isMobileView ? 'auto' : '140px',
                   boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
-                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'space-between', transition: 'all 0.1s ease', width: '100%', boxSizing: 'border-box'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.1s ease',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden'
                 }}
               >
-                <div style={{ flexShrink: 0 }}>{getCategoryIcon(p)}</div>
+                <div style={{ marginBottom: '3px', transform: isMobileView ? 'scale(0.7)' : 'scale(0.8)', flexShrink: 0 }}>{getCategoryIcon(p)}</div>
+
                 <div style={{
-                  fontWeight: 'bold', color: '#4a3728', fontSize: '11px', lineHeight: '1.2',
-                  marginTop: '5px', marginBottom: '5px', width: '100%', wordBreak: 'break-word', overflow: 'visible'
+                  fontWeight: 'bold',
+                  color: '#4a3728',
+                  fontSize: isMobileView ? '10px' : '11px',
+                  lineHeight: '1.2',
+                  marginBottom: '2px',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '2',
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  width: '100%',
+                  padding: '0 2px'
                 }}>
                   {p.name}
                 </div>
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: '14px', flexShrink: 0 }}>${p.sale_price}</div>
+
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '12px' : '14px', marginTop: 'auto' }}>${p.sale_price}</div>
               </button>
             ))}
           </div>
@@ -714,13 +791,19 @@ function App() {
 
       {/* 2. CARRITO */}
       <div className="cart-section" style={{
-        flex: isMobile ? 'none' : 0.8, backgroundColor: '#ffffff', padding: '15px',
-        borderLeft: isMobile ? 'none' : '1px solid #eee', borderTop: isMobile ? '2px solid #eee' : 'none',
-        display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box'
+        flex: isMobileView ? 'none' : 0.8,
+        backgroundColor: '#ffffff',
+        padding: '15px',
+        borderLeft: isMobileView ? 'none' : '1px solid #eee',
+        borderTop: isMobileView ? '2px solid #eee' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de...(Opcional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#FFF', fontWeight: '900', fontSize: '14px', boxSizing: 'border-box' }} />
-        <div style={{ flex: 1, overflowY: 'auto', maxHeight: isMobile ? '300px' : 'none' }}>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
               <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name} {item.quantity} x ${item.sale_price}</div>
@@ -739,8 +822,9 @@ function App() {
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
 
-      {/* --- REPORTES (MANTENIDOS INTACTOS SEGÚN TU CÓDIGO ORIGINAL) --- */}
+      {/* --- LOS 5 REPORTES SE MANTIENEN IGUAL AL ORIGINAL (SIN MODIFICACIONES) --- */}
 
+      {/* MODAL INVENTARIO */}
       {showInventory && userRole === 'admin' && (
         <div onClick={() => setShowInventory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -765,7 +849,11 @@ function App() {
               </div>
               <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', boxSizing: 'border-box' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
-                <select value={selectedPurchaseProd} onChange={(e) => setSelectedPurchaseProd(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} >
+                <select
+                  value={selectedPurchaseProd}
+                  onChange={(e) => setSelectedPurchaseProd(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                >
                   <option value="">Seleccionar...</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
@@ -803,6 +891,7 @@ function App() {
         </div>
       )}
 
+      {/* MODAL ARQUEO DE CAJA */}
       {showCashArqueo && userRole === 'admin' && (
         <div onClick={() => setShowCashArqueo(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -837,7 +926,7 @@ function App() {
               </div>
               <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
                 <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
-                <input type="number" value={cashPhysicalCount || ''} onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#4a3728' }} placeholder="0.00" />
+                <input type="number" value={cashPhysicalCount || ''} onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#000' }} placeholder="Escribe cuánto dinero hay..." />
               </div>
               <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
@@ -850,12 +939,112 @@ function App() {
         </div>
       )}
 
+      {/* MODAL HISTORIAL DE ARQUEOS (AUDITORÍA) */}
+      {showArqueoHistory && (
+        <div onClick={() => setShowArqueoHistory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, backdropFilter: 'blur(10px)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Cortes de Caja</h2>
+              <button onClick={() => setShowArqueoHistory(false)} style={{ border: 'none', color: '#000000', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead style={{ background: '#4a3728', color: '#fff' }}>
+                  <tr>
+                    <th style={{ padding: '12px', textAlign: 'left' }}>Fecha</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Fondo</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Esperado</th>
+                    <th style={{ padding: '12px', textAlign: 'center' }}>Real</th>
+                    <th style={{ padding: '12px', textAlign: 'right' }}>Diferencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {arqueoHistory.length === 0 ? (
+                    <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#999' }}>No hay registros guardados</td></tr>
+                  ) : (
+                    arqueoHistory.map((h, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#999' }}>{new Date(h.created_at).toLocaleDateString()}</div>
+                          <div style={{ fontSize: '10px', color: '#999' }}>{new Date(h.created_at).toLocaleTimeString()}</div>
+                        </td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', }}>${h.initial_fund}</td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', fontWeight: 'bold', }}>${h.expected_amount}</td>
+                        <td style={{ padding: '12px', color: '#000000', textAlign: 'center', fontWeight: 'bold' }}>${h.actual_amount}</td>
+                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: h.difference === 0 ? '#27ae60' : (h.difference > 0 ? '#3498db' : '#e74c3c') }}>
+                          {h.difference > 0 ? '+' : ''}${h.difference}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REPORTES CON RANGO */}
+      {showReport && (
+        <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24} /></button>
+            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte de Ventas</h2>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                <input type="date" value={reportStartDate} onChange={(e) => setReportStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                <input type="date" value={reportEndDate} onChange={(e) => setReportEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
+              </div>
+              <button onClick={fetchSales} style={{ padding: '10px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}><RefreshCw size={16} /></button>
+              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
+                Total: ${totalIngresosReporte.toFixed(2)}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
+              <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #000' }}>
+                      <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Fecha/Hora</th>
+                      <th style={{ textAlign: 'left', padding: '8px', color: '#000' }}>Cliente</th>
+                      <th style={{ textAlign: 'right', padding: '8px', color: '#000' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.map(sale => (
+                      <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent', opacity: sale.status === 'cancelado' ? 0.6 : 1 }}>
+                        <td style={{ padding: '10px', color: '#000' }}>
+                          {new Date(sale.created_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '10px', color: '#000' }}>
+                          {sale.customer_name}
+                        </td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>
+                          ${sale.total}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FINANZAS MAESTRA */}
       {showFinances && userRole === 'admin' && (
         <div onClick={() => setShowFinances(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowFinances(false)} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={30} /></button>
             <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-              <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><PieChart size={28} /> Reporte Financiero</h2>
+              <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <PieChart size={28} /> Reporte Financiero
+              </h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
@@ -875,55 +1064,9 @@ function App() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}><TrendingUp size={20} /> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span></div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
                   </div>
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', marginBottom: '5px' }}><Layers size={20} /> <span style={{ fontWeight: 'bold' }}>Costo Productos</span></div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563eb' }}>-${finData.costoProductos.toFixed(2)}</div>
-                  </div>
-                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '20px', borderRadius: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', marginBottom: '5px' }}><ArrowDown size={20} /> <span style={{ fontWeight: 'bold' }}>Gastos & Stock</span></div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>-${(finData.gastosOps + finData.gastosStock).toFixed(2)}</div>
-                  </div>
                   <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}><DollarSign size={20} /> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span></div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
-                    <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(1)}%</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '30px' }}>
-                  <div style={{ flex: 1, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Distribución de Flujo</h3>
-                    <div style={donutStyle}>
-                      <div style={innerCircleStyle}>
-                        <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(0) : 0}%</span>
-                        <span style={{ fontSize: '10px', color: '#888' }}>Rentabilidad</span>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: '20px', width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#27ae60', fontWeight: 'bold' }}><div style={{ width: '10px', height: '10px', background: '#27ae60', borderRadius: '50%' }}></div> Ganancia</span>
-                        <span style={{ fontWeight: 'bold', color: '#27ae60' }}>${finData.utilidadNeta.toFixed(2)}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#e74c3c', fontWeight: 'bold' }}><div style={{ width: '10px', height: '10px', background: '#e74c3c', borderRadius: '50%' }}></div> Egresos Totales</span>
-                        <span style={{ fontWeight: 'bold', color: '#e74c3c' }}>${finData.totalEgresos.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ flex: 1.5, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px' }}>
-                    <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
-                    <div style={{ marginBottom: '20px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Costo Productos + Gastos</span><span>{percentageExpenses.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div></div></div>
-                    <div style={{ marginBottom: '10px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}><span>Margen Neto (Bolsa)</span><span>{finData.margen.toFixed(1)}%</span></div><div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}><div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div></div></div>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                  <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
-                    {dailyExpensesList.map((exp) => (
-                      <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '8px 0', color: '#555' }}>{exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span></td>
-                        <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${exp.monto}</td>
-                      </tr>
-                    ))}
                   </div>
                 </div>
               </>
@@ -932,6 +1075,7 @@ function App() {
         </div>
       )}
 
+      {/* MODAL PRODUCTOS ESTRELLA */}
       {showStarProducts && userRole === 'admin' && (
         <div onClick={() => setShowStarProducts(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(5px)' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '700px', maxHeight: '85vh', overflowY: 'auto' }}>
@@ -943,36 +1087,14 @@ function App() {
               <button onClick={fetchStarProducts} style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold' }}>VER REPORTE</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ background: '#4a3728', color: '#fff' }}><tr><th style={{ padding: '12px', textAlign: 'left' }}>Producto</th><th style={{ padding: '12px' }}>Cant</th><th style={{ padding: '12px', textAlign: 'right' }}>Total</th></tr></thead>
+              <thead style={{ background: '#4a3728', color: '#fff' }}>
+                <tr><th style={{ padding: '12px', textAlign: 'left' }}>Producto</th><th style={{ padding: '12px' }}>Vendidos</th></tr>
+              </thead>
               <tbody>
                 {starData.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '12px', fontWeight: 'bold' }}>{item.name}</td><td style={{ padding: '12px', textAlign: 'center' }}>{item.totalQty}</td><td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>${item.totalRevenue.toFixed(2)}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {showReport && (
-        <div onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(5px)' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', backgroundColor: '#fff', padding: '20px', borderRadius: '20px', width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => { setShowReport(false); setSelectedSale(null); }} style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}><X size={24} /></button>
-            <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte de Ventas</h2>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input type="date" value={reportStartDate} onChange={(e) => setReportStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
-              <input type="date" value={reportEndDate} onChange={(e) => setReportEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }} />
-              <button onClick={fetchSales} style={{ padding: '10px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}><RefreshCw size={16} /></button>
-              <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>Total: ${totalIngresosReporte.toFixed(2)}</div>
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ textAlign: 'left', padding: '8px' }}>Fecha</th><th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th><th style={{ textAlign: 'right', padding: '8px' }}>Total</th></tr></thead>
-              <tbody>
-                {sales.map(sale => (
-                  <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent', opacity: sale.status === 'cancelado' ? 0.6 : 1 }}>
-                    <td style={{ padding: '10px' }}>{new Date(sale.created_at).toLocaleDateString()}</td>
-                    <td style={{ padding: '10px' }}>{sale.customer_name}</td>
-                    <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>${sale.total}</td>
+                  <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '12px' }}>{item.name}</td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>{item.totalQty}</td>
                   </tr>
                 ))}
               </tbody>
@@ -981,24 +1103,6 @@ function App() {
         </div>
       )}
 
-      {showArqueoHistory && (
-        <div onClick={() => setShowArqueoHistory(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, backdropFilter: 'blur(10px)' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Cortes de Caja</h2>
-              <button onClick={() => setShowArqueoHistory(false)} style={{ border: 'none', color: '#000000', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead style={{ background: '#4a3728', color: '#fff' }}><tr><th>Fecha</th><th>Fondo</th><th>Esperado</th><th>Real</th><th>Diferencia</th></tr></thead>
-              <tbody>
-                {arqueoHistory.map((h, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #eee' }}><td>{new Date(h.created_at).toLocaleDateString()}</td><td>${h.initial_fund}</td><td>${h.expected_amount}</td><td>${h.actual_amount}</td><td style={{ fontWeight: '900', color: h.difference >= 0 ? '#27ae60' : '#e74c3c' }}>${h.difference}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

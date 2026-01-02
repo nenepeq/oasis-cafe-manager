@@ -740,7 +740,7 @@ function App() {
               onClick={() => addToCart(p)}
               className="btn-producto-3d"
               style={{
-                padding: '10px',
+                padding: '8px',
                 borderRadius: '12px',
                 border: 'none',
                 backgroundColor: '#fff',

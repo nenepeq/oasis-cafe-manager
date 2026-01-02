@@ -677,7 +677,7 @@ function App() {
       {/* 1. SECCIÓN DE TIENDA */}
       <div className="store-section" style={{
         flex: isMobileView ? 'none' : 2,
-        padding: isMobileView ? '10px 2px' : '15px', // Reducido el padding lateral en móvil para ganar espacio
+        padding: isMobileView ? '10px 5px' : '15px',
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
@@ -685,7 +685,7 @@ function App() {
       }}>
 
         {/* ENCABEZADO */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: isMobileView ? '0 5px' : '0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
             <h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1>
@@ -707,13 +707,13 @@ function App() {
         </div>
 
         {/* MENÚ */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0, paddingLeft: isMobileView ? '5px' : '0' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px', marginBottom: '5px', scrollbarWidth: 'none', flexShrink: 0 }}>
           {categories.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)} style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#ffffff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, boxShadow: selectedCategory === cat ? '0 2px 5px rgba(74, 55, 40, 0.3)' : 'none', transition: 'all 0.2s ease' }}>{cat.toUpperCase()}</button>
           ))}
         </div>
 
-        {/* GRID PRODUCTOS - AJUSTADO A 3 COLUMNAS MÁS GRANDES */}
+        {/* GRID PRODUCTOS - CORRECCIÓN: 3 COLUMNAS CUADRADAS SIMÉTRICAS */}
         {!fetchError && filteredProducts.length === 0 && (
           <div style={{ padding: '20px', textAlign: 'center', color: '#888', marginTop: '10px' }}>
             <p style={{ fontWeight: 'bold', fontSize: '18px' }}>⚠️ No hay productos</p>
@@ -730,10 +730,9 @@ function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: isMobileView ? 'visible' : 'auto', paddingBottom: '10px' }}>
           <div style={{
             display: 'grid',
-            // 3 columnas exactas que ocupan todo el ancho disponible
             gridTemplateColumns: isMobileView ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))',
-            gap: isMobileView ? '6px' : '10px', // Gap reducido para maximizar tamaño de botón
-            padding: isMobileView ? '2px' : '5px',
+            gap: isMobileView ? '10px' : '15px',
+            padding: '5px',
             width: '100%',
             boxSizing: 'border-box',
             justifyContent: 'stretch'
@@ -744,14 +743,12 @@ function App() {
                 onClick={() => addToCart(p)}
                 className="btn-producto-3d"
                 style={{
-                  padding: '15px 4px', // Más padding vertical para hacerlo más alto
                   borderRadius: '15px',
                   border: 'none',
                   backgroundColor: '#fff',
                   textAlign: 'center',
-                  // Aspect Ratio de 1 / 1.35 para que el botón sea más alto y "grande" visualmente
-                  aspectRatio: isMobileView ? '1 / 1.35' : 'auto',
-                  height: isMobileView ? 'auto' : '150px',
+                  // CUADRADO PERFECTO
+                  aspectRatio: '1 / 1',
                   boxShadow: '0 4px 0px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -761,28 +758,29 @@ function App() {
                   transition: 'all 0.1s ease',
                   width: '100%',
                   boxSizing: 'border-box',
+                  padding: '10px 5px',
                   overflow: 'hidden'
                 }}
               >
-                <div style={{ marginBottom: '5px', transform: isMobileView ? 'scale(0.85)' : 'scale(0.9)', flexShrink: 0 }}>{getCategoryIcon(p)}</div>
+                <div style={{ marginBottom: '5px', transform: isMobileView ? 'scale(0.8)' : 'scale(1)', flexShrink: 0 }}>{getCategoryIcon(p)}</div>
 
                 <div style={{
                   fontWeight: 'bold',
                   color: '#4a3728',
-                  fontSize: isMobileView ? '10.5px' : '11px',
+                  fontSize: isMobileView ? '10px' : '11px',
                   lineHeight: '1.2',
-                  marginBottom: '4px',
+                  marginBottom: '2px',
                   display: '-webkit-box',
                   WebkitLineClamp: '2',
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                   width: '100%',
-                  padding: '0 3px'
+                  padding: '0 2px'
                 }}>
-                  {p.name}
+                  {p.name.toUpperCase()}
                 </div>
 
-                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '13px' : '15px', marginTop: 'auto' }}>${p.sale_price}</div>
+                <div style={{ color: '#27ae60', fontWeight: '900', fontSize: isMobileView ? '12px' : '14px', marginTop: 'auto' }}>${p.sale_price}</div>
               </button>
             ))}
           </div>
@@ -821,8 +819,6 @@ function App() {
         <button onClick={handleSale} disabled={loading} style={{ width: '100%', padding: '15px', backgroundColor: loading ? '#999' : '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', fontSize: '14px' }}>{loading ? 'PROCESANDO PAGO...' : 'PAGAR'}</button>
         <button onClick={handleNewOrder} style={{ width: '100%', padding: '10px', backgroundColor: '#ff4d4d', color: '#fff', borderRadius: '12px', fontWeight: '900', marginTop: '5px', border: 'none', cursor: 'pointer', fontSize: '14px' }}><RotateCcw size={14} /> VACIAR CARRITO DE COMPRAS</button>
       </div>
-
-      {/* --- LOS 5 REPORTES SE MANTIENEN IGUAL AL ORIGINAL (SIN MODIFICACIONES) --- */}
 
       {/* MODAL INVENTARIO */}
       {showInventory && userRole === 'admin' && (

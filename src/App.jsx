@@ -118,7 +118,7 @@ function App() {
 
   const expenseCategories = [
     'Café molido', 'Vegetales', 'Lácteos', 'Embutidos', 'Pan',
-    'Insumos', 'Servilletas', 'Vasos desechables', 'Popotes', 'Crema batida', 'Azúcar',
+    'Insumos', 'Servilletas', 'Vasos desechables', 'Vasos Cristal', 'Vaso de Papel', 'Tapa Traveler Negra 100 pz 12, 14 16 oz', 'Tapa Plana para vaso 16 oz 50 pz', 'Fajitas para Café 50 pz', 'Popotes', 'Crema batida', 'Azúcar',
     'Sueldos', 'Servicios', 'Otros'
   ];
 

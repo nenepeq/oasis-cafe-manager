@@ -457,8 +457,20 @@ function App() {
       .from('inventory')
       .select('stock, product_id, products:product_id (name)');
 
-    if (error) console.error(error);
-    else setInventoryList(data || []);
+    if (error) {
+      console.error(error);
+    } else {
+      // --- LÓGICA DE ORDENAMIENTO ALFABÉTICO ---
+      const sortedData = (data || []).sort((a, b) => {
+        const nameA = a.products?.name || "";
+        const nameB = b.products?.name || "";
+        // localeCompare es la forma profesional de comparar strings, 
+        // manejando correctamente acentos y eñes.
+        return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+      });
+
+      setInventoryList(sortedData);
+    }
   };
 
   // --- REVERTIDO A TU LOGICA ORIGINAL DE ICONOS ---

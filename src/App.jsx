@@ -849,7 +849,7 @@ function App() {
                 </select>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
                   <input type="number" placeholder="Unidades" value={purchaseQty || ''} onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)} style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} />
-                  <input type="number" placeholder="$ Costo" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                  <input type="number" placeholder="$ Costo unitario" value={purchaseCost || ''} onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)} style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }} />
                 </div>
                 <button onClick={() => { const p = products.find(x => x.id === selectedPurchaseProd); if (p && purchaseQty > 0 && purchaseCost > 0) { setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]); setSelectedPurchaseProd(''); setPurchaseQty(0); setPurchaseCost(0); } else { alert('Complete campos'); } }} style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}>+ AÑADIR</button>
                 <div style={{ marginTop: '15px', color: '#000' }}>

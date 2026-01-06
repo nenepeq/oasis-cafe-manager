@@ -5,55 +5,77 @@
   padding: 0;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+/* Ocultar barra de desplazamiento manteniendo funcionalidad */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE y Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-/* Efecto de presionado para botones */
+/* Efecto 3D de presionado universal */
 .btn-active-effect {
-  transition: transform 0.1s ease, filter 0.1s ease;
+  transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
   user-select: none;
-  /* Evita que se seleccione el texto al hacer clic */
+  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
 }
 
 .btn-active-effect:active {
-  transform: scale(0.92) translateY(2px);
-  /* Un poco más de reducción y desplazamiento */
-  filter: brightness(0.85) contrast(1.1);
-  /* Más contraste y oscuridad */
+  transform: scale(0.95) translateY(2px);
+  filter: brightness(0.9);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
-.read-the-docs {
-  color: #888;
+/* Tarjetas de productos uniformes y centradas */
+.product-card {
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  background-color: #fff;
+  text-align: center;
+  height: 120px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.product-card:active {
+  transform: scale(0.95) translateY(2px);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.product-name {
+  font-weight: bold;
+  font-size: 11px;
+  color: #4a3728;
+  margin: 5px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 26px;
+  width: 100%;
+  text-align: center;
+}
+
+.product-price {
+  color: #27ae60;
+  font-weight: 900;
+  text-align: center;
 }

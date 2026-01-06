@@ -86,7 +86,12 @@ const InventoryModal = ({
                     {/* SECCIÓN: EXISTENCIAS */}
                     <div>
                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>EXISTENCIAS</h3>
-                        <div style={{ border: '1px solid #f0f0f0', borderRadius: '15px', overflow: 'hidden' }}>
+                        <div style={{
+                            border: '1px solid #f0f0f0',
+                            borderRadius: '15px',
+                            overflowY: 'auto',
+                            maxHeight: '600px'
+                        }} className="no-scrollbar">
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                                 <thead style={{ background: '#f8f6f2' }}>
                                     <tr>
@@ -110,99 +115,110 @@ const InventoryModal = ({
                         </div>
                     </div>
 
-                    {/* SECCIÓN: ENTRADA DE MERCANCÍAS */}
-                    <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', boxSizing: 'border-box' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
-                        <select
-                            value={selectedPurchaseProd}
-                            onChange={(e) => setSelectedPurchaseProd(e.target.value)}
-                            style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
-                        >
-                            <option value="">Seleccionar...</option>
-                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                            <input
-                                type="number"
-                                placeholder="Unidades"
-                                value={purchaseQty || ''}
-                                onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
-                                style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
-                            />
-                            <input
-                                type="number"
-                                placeholder="$ Costo unitario"
-                                value={purchaseCost || ''}
-                                onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
-                                style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
-                            />
+                    {/* COLUMNA DERECHA: ENTRADAS Y GASTOS */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {/* SECCIÓN: ENTRADA DE MERCANCÍAS */}
+                        <div style={{
+                            background: '#fdfbf9',
+                            padding: '20px',
+                            borderRadius: '15px',
+                            border: '1px solid #f1ece6',
+                            boxSizing: 'border-box',
+                            maxHeight: '400px',
+                            overflowY: 'auto'
+                        }} className="no-scrollbar">
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>ENTRADA DE MERCANCÍAS</h3>
+                            <select
+                                value={selectedPurchaseProd}
+                                onChange={(e) => setSelectedPurchaseProd(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                            >
+                                <option value="">Seleccionar...</option>
+                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            </select>
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                <input
+                                    type="number"
+                                    placeholder="Unidades"
+                                    value={purchaseQty || ''}
+                                    onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
+                                    style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="$ Costo unitario"
+                                    value={purchaseCost || ''}
+                                    onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
+                                    style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                                />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const p = products.find(x => x.id === selectedPurchaseProd);
+                                    if (p && purchaseQty > 0 && purchaseCost > 0) {
+                                        setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
+                                        setSelectedPurchaseProd('');
+                                        setPurchaseQty(0);
+                                        setPurchaseCost(0);
+                                    } else {
+                                        alert('Complete campos');
+                                    }
+                                }}
+                                style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
+                            >
+                                + AÑADIR
+                            </button>
+                            <div style={{ marginTop: '15px', color: '#000' }}>
+                                {purchaseCart.map((item, i) => (
+                                    <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>📦 {item.name} {item.qty} x ${item.cost}</span>
+                                        <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                                {purchaseCart.length > 0 && (
+                                    <>
+                                        <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                                            REGISTRAR COMPRA
+                                        </button>
+                                        <button onClick={() => setPurchaseCart([])} style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}>
+                                            LIMPIAR REGISTRO DE COMPRAS
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                        <button
-                            onClick={() => {
-                                const p = products.find(x => x.id === selectedPurchaseProd);
-                                if (p && purchaseQty > 0 && purchaseCost > 0) {
-                                    setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
-                                    setSelectedPurchaseProd('');
-                                    setPurchaseQty(0);
-                                    setPurchaseCost(0);
-                                } else {
-                                    alert('Complete campos');
-                                }
-                            }}
-                            style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
-                        >
-                            + AÑADIR
-                        </button>
-                        <div style={{ marginTop: '15px', color: '#000' }}>
-                            {purchaseCart.map((item, i) => (
-                                <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>📦 {item.name} {item.qty} x ${item.cost}</span>
-                                    <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
-                                </div>
-                            ))}
-                            {purchaseCart.length > 0 && (
-                                <>
-                                    <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                        REGISTRAR COMPRA
-                                    </button>
-                                    <button onClick={() => setPurchaseCart([])} style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}>
-                                        LIMPIAR REGISTRO DE COMPRAS
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
 
-                {/* SECCIÓN: GASTOS DE OPERACIÓN */}
-                <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800', marginTop: '20px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>GASTOS DE OPERACIÓN</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
-                            {expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
-                        </select>
-                        <input
-                            type="number"
-                            placeholder="$ 0.00"
-                            value={expenseMonto || ''}
-                            onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)}
-                            style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}
-                        />
+                        {/* SECCIÓN: GASTOS DE OPERACIÓN */}
+                        <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '10px' }}>GASTOS DE OPERACIÓN</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}>
+                                    {expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
+                                </select>
+                                <input
+                                    type="number"
+                                    placeholder="$ 0.00"
+                                    value={expenseMonto || ''}
+                                    onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Concepto"
+                                value={expenseConcepto}
+                                onChange={(e) => setExpenseConcepto(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', marginTop: '10px' }}
+                            />
+                            <button
+                                onClick={handleRegisterExpense}
+                                disabled={loading}
+                                style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
+                            >
+                                REGISTRAR GASTO
+                            </button>
+                        </div>
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Concepto"
-                        value={expenseConcepto}
-                        onChange={(e) => setExpenseConcepto(e.target.value)}
-                        style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', marginTop: '10px' }}
-                    />
-                    <button
-                        onClick={handleRegisterExpense}
-                        disabled={loading}
-                        style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
-                    >
-                        REGISTRAR GASTO
-                    </button>
                 </div>
             </div>
         </div>

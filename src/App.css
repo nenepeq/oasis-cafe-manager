@@ -1,12 +1,8 @@
-html,
-body,
 #root {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f8f6f2;
-  /* Color crema Oasis de fondo base */
 }
 
 /* Ocultar barra de desplazamiento manteniendo funcionalidad */
@@ -157,8 +153,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f6f2;
-  /* Uniformamos con el fondo crema */
+  background-color: #ffffff;
   overflow: hidden;
 }
 

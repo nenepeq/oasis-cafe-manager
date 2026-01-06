@@ -628,11 +628,11 @@ function App() {
   return (
     <div className="main-container" style={{
       display: 'flex',
-      height: '100vh',
+      height: '100dvh', // Altura dinámica para móviles
       width: '100vw',
       backgroundColor: '#f8f6f2',
       overflowX: 'hidden',
-      overflowY: 'auto' // Permitimos scroll vertical para móviles
+      overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
     }}>
 
       {/* SECCIÓN TIENDA */}

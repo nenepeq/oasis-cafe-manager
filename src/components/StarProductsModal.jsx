@@ -1,5 +1,4 @@
-import React from 'react';
-import { Award, X } from 'lucide-react';
+import { Award, X, Download } from 'lucide-react';
 
 /**
  * Modal de Productos Estrella (Ranking de Ventas)
@@ -16,6 +15,35 @@ const StarProductsModal = ({
     starData
 }) => {
     if (!showStarProducts || userRole !== 'admin') return null;
+
+    const handleExportCSV = () => {
+        if (starData.length === 0) return;
+
+        const headers = ["Producto", "Cantidad Vendida", "Dinero Generado"];
+        const rows = starData.map(item => [
+            item.name,
+            item.totalQty,
+            item.totalRevenue.toFixed(2)
+        ]);
+
+        const csvContent = [
+            `Reporte de Productos Estrella`,
+            `Rango de fechas: ${starStartDate} al ${starEndDate}`,
+            ``, // Línea vacía para separar el encabezado de los datos
+            headers.join(","),
+            ...rows.map(row => row.map(val => `"${val}"`).join(","))
+        ].join("\n");
+
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Productos_Estrella_${starStartDate}_a_${starEndDate}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div
@@ -77,12 +105,24 @@ const StarProductsModal = ({
                             style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }}
                         />
                     </div>
-                    <button
-                        onClick={fetchStarProducts}
-                        style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}
-                    >
-                        VER REPORTE
-                    </button>
+                    <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end' }}>
+                        <button
+                            onClick={fetchStarProducts}
+                            className="btn-active-effect"
+                            style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            VER REPORTE
+                        </button>
+                        {starData.length > 0 && (
+                            <button
+                                onClick={handleExportCSV}
+                                className="btn-active-effect"
+                                style={{ padding: '10px 20px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                            >
+                                <Download size={18} /> EXCEL
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>

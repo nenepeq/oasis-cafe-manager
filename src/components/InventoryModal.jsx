@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, RefreshCw, X, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react';
 
 /**
  * Modal de Gestión de Inventario, Compras y Gastos
@@ -76,9 +76,10 @@ const InventoryModal = ({
                     <button
                         onClick={fetchInventory}
                         disabled={loading}
+                        className="btn-active-effect"
                         style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}
                     >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={16} className={loading ? 'spin' : ''} />
                     </button>
                 </div>
 
@@ -160,30 +161,73 @@ const InventoryModal = ({
                                         setSelectedPurchaseProd('');
                                         setPurchaseQty(0);
                                         setPurchaseCost(0);
-                                    } else {
-                                        alert('Complete campos');
                                     }
                                 }}
-                                style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' }}
+                                disabled={!selectedPurchaseProd || !purchaseQty || !purchaseCost}
+                                className={selectedPurchaseProd && purchaseQty && purchaseCost ? "btn-active-effect" : ""}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    background: '#3498db',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontWeight: '900',
+                                    cursor: (selectedPurchaseProd && purchaseQty && purchaseCost) ? 'pointer' : 'not-allowed',
+                                    opacity: (selectedPurchaseProd && purchaseQty && purchaseCost) ? 1 : 0.5
+                                }}
                             >
                                 + AÑADIR
                             </button>
                             <div style={{ marginTop: '15px', color: '#000' }}>
                                 {purchaseCart.map((item, i) => (
-                                    <div key={i} style={{ fontSize: '12px', marginBottom: '5px', display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>📦 {item.name} {item.qty} x ${item.cost}</span>
-                                        <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                                    <div key={i} style={{
+                                        fontSize: '12px',
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: '#fff',
+                                        padding: '5px 10px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #eee'
+                                    }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: '600' }}>📦 {item.name}</span>
+                                            <span style={{ color: '#666' }}>{item.qty} x ${item.cost}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                                            <button
+                                                onClick={() => setPurchaseCart(purchaseCart.filter((_, idx) => idx !== i))}
+                                                style={{ border: 'none', background: 'none', color: '#dc2626', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                className="btn-active-effect"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={16} strokeWidth={2} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 {purchaseCart.length > 0 && (
-                                    <>
-                                        <button onClick={handleRegisterPurchase} disabled={loading} style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-                                            REGISTRAR COMPRA
-                                        </button>
-                                        <button onClick={() => setPurchaseCart([])} style={{ width: '100%', padding: '10px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '5px', cursor: 'pointer' }}>
-                                            LIMPIAR REGISTRO DE COMPRAS
-                                        </button>
-                                    </>
+                                    <button
+                                        onClick={handleRegisterPurchase}
+                                        disabled={loading}
+                                        className="btn-active-effect"
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px',
+                                            background: loading ? '#ccc' : '#27ae60',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            fontWeight: '900',
+                                            marginTop: '10px',
+                                            cursor: loading ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        {loading ? <RefreshCw className="spin" size={16} /> : 'REGISTRAR COMPRA'}
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -213,9 +257,20 @@ const InventoryModal = ({
                             <button
                                 onClick={handleRegisterExpense}
                                 disabled={loading}
-                                style={{ width: '100%', padding: '10px', background: loading ? '#999' : '#ff9800', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', marginTop: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}
+                                className="btn-active-effect"
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    background: loading ? '#ccc' : '#ff9800',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontWeight: '900',
+                                    marginTop: '10px',
+                                    cursor: loading ? 'not-allowed' : 'pointer'
+                                }}
                             >
-                                REGISTRAR GASTO
+                                {loading ? <RefreshCw className="spin" size={16} /> : 'REGISTRAR GASTO'}
                             </button>
                         </div>
                     </div>

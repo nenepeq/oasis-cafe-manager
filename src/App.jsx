@@ -626,7 +626,7 @@ function App() {
   if (!user) return <Login onLogin={fetchProfile} />;
 
   return (
-    <div className="main-container" style={{
+    <div className="app-container" style={{
       display: 'flex',
       height: '100dvh', // Altura dinámica para móviles
       width: '100vw',
@@ -636,7 +636,7 @@ function App() {
     }}>
 
       {/* SECCIÓN TIENDA */}
-      <div className="shop-section" style={{
+      <div className="store-section" style={{
         flex: 2,
         padding: '5px 15px 15px 15px', // Reducimos padding superior
         display: 'flex',
@@ -703,7 +703,7 @@ function App() {
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold' }} />
-        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -743,16 +743,20 @@ function App() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
-          <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <Banknote size={16} /> EFECTIVO
-          </button>
-          <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <CreditCard size={16} /> TARJETA
-          </button>
+
+        {/* CONTENEDOR DE PAGO FIJO ABAJO */}
+        <div style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+            <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Banknote size={16} /> EFECTIVO
+            </button>
+            <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <CreditCard size={16} /> TARJETA
+            </button>
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
+          <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
         </div>
-        <div style={{ fontSize: '26px', fontWeight: '900', color: '#00913f', textAlign: 'center', margin: '10px 0' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
-        <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
       </div>
 
       {/* MODALES MODULARIZADOS */}

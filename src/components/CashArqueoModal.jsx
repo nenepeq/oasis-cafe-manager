@@ -64,18 +64,16 @@ const CashArqueoModal = ({
                             </div>
                             <button
                                 onClick={fetchArqueoHistory}
+                                className="btn-active-effect"
                                 style={{
-                                    padding: '8px 12px',
-                                    background: '#f8f6f2',
-                                    color: '#4a3728',
-                                    border: '1px solid #ddd',
+                                    padding: '8px 16px',
+                                    background: '#4a3728',
+                                    color: '#fff',
+                                    border: 'none',
                                     borderRadius: '10px',
                                     fontSize: '12px',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '5px'
+                                    fontWeight: '900',
+                                    cursor: 'pointer'
                                 }}
                             >
                                 <List size={14} /> HISTORIAL
@@ -96,7 +94,7 @@ const CashArqueoModal = ({
                                 type="number"
                                 value={cashInitialFund || ''}
                                 onChange={(e) => setCashInitialFund(parseFloat(e.target.value) || 0)}
-                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '18px', fontWeight: 'bold' }}
+                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '18px', fontWeight: 'bold', backgroundColor: '#fff', color: '#333' }}
                                 placeholder="0.00"
                             />
                         </div>
@@ -123,7 +121,7 @@ const CashArqueoModal = ({
                                 type="number"
                                 value={cashPhysicalCount || ''}
                                 onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)}
-                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#333' }}
+                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#333', backgroundColor: '#fff' }}
                                 placeholder="Escribe cuánto dinero hay..."
                             />
                         </div>
@@ -139,7 +137,7 @@ const CashArqueoModal = ({
                             placeholder="Observaciones..."
                             value={cashObservations}
                             onChange={(e) => setCashObservations(e.target.value)}
-                            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', minHeight: '60px', fontSize: '13px' }}
+                            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', minHeight: '60px', fontSize: '13px', backgroundColor: '#fff', color: '#333' }}
                         />
 
                         <button
@@ -174,7 +172,7 @@ const CashArqueoModal = ({
                             </button>
                         </div>
                         <div className="table-container">
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '13px' }}>
                                 <thead style={{ background: '#4a3728', color: '#fff' }}>
                                     <tr>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Fecha</th>

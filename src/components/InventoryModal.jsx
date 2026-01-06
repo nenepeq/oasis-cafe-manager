@@ -1,5 +1,4 @@
-import React from 'react';
-import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2 } from 'lucide-react';
+import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download } from 'lucide-react';
 
 /**
  * Modal de Gestión de Inventario, Compras y Gastos
@@ -31,6 +30,39 @@ const InventoryModal = ({
     handleRegisterExpense
 }) => {
     if (!showInventory || userRole !== 'admin') return null;
+
+    const handleExportInventoryCSV = () => {
+        if (inventoryList.length === 0) return;
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+
+        const headers = ["Producto", "Stock Actual", "Estatus"];
+        const rows = inventoryList.map(inv => [
+            inv.products?.name || 'N/A',
+            inv.stock,
+            inv.stock <= 5 ? "STOCK BAJO" : "DISPONIBLE"
+        ]);
+
+        const csvContent = [
+            `Reporte de Existencias en Inventario`,
+            `Fecha y hora de generación: ${dateStr} ${timeStr}`,
+            ``,
+            headers.join(","),
+            ...rows.map(row => row.map(val => `"${val}"`).join(","))
+        ].join("\n");
+
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Inventario_Oasis_${now.toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div
@@ -87,12 +119,23 @@ const InventoryModal = ({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                     {/* SECCIÓN: EXISTENCIAS */}
                     <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>EXISTENCIAS</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000', margin: 0 }}>EXISTENCIAS</h3>
+                            {inventoryList.length > 0 && (
+                                <button
+                                    onClick={handleExportInventoryCSV}
+                                    className="btn-active-effect"
+                                    style={{ padding: '6px 12px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                >
+                                    <Download size={14} /> EXCEL
+                                </button>
+                            )}
+                        </div>
                         <div className="table-container no-scrollbar" style={{
                             maxHeight: '600px',
                             overflowY: 'auto'
                         }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                            <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
                                 <thead style={{ background: '#f8f6f2' }}>
                                     <tr>
                                         <th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Producto</th>

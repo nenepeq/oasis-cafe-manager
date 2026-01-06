@@ -127,7 +127,7 @@ const StarProductsModal = ({
                 </div>
 
                 <div className="table-container">
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
                         <thead style={{ background: '#4a3728', color: '#fff' }}>
                             <tr>
                                 <th style={{ padding: '12px', textAlign: 'left' }}>Producto</th>

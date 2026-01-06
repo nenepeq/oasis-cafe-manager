@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, RefreshCw } from 'lucide-react';
+import { X, RefreshCw, Download } from 'lucide-react';
 
 /**
  * Modal de Historial de Ventas y Detalles de Pedido
@@ -20,6 +20,29 @@ const SalesModal = ({
     userRole,
     updateSaleStatus
 }) => {
+    const handleExportSalesCSV = () => {
+        if (!sales || sales.length === 0) return;
+
+        let csv = 'ID,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
+        sales.forEach(s => {
+            const date = new Date(s.created_at).toLocaleString();
+            const productsList = s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '';
+            csv += `${s.id},"${date}","${s.customer_name}","${productsList}","${s.payment_method || ''}",${s.total},${s.status}\n`;
+        });
+
+        // Agregar fila de TOTAL al final
+        csv += `\n,,,,,TOTAL,$${totalIngresosReporte.toFixed(2)}\n`;
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Reporte_Ventas_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (!showReport) return null;
 
     return (
@@ -81,12 +104,50 @@ const SalesModal = ({
                             style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
                         />
                     </div>
-                    <button
-                        onClick={fetchSales}
-                        style={{ padding: '10px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end' }}
-                    >
-                        <RefreshCw size={16} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
+                        <button
+                            onClick={fetchSales}
+                            className="btn-active-effect"
+                            style={{
+                                padding: '10px 15px',
+                                background: '#4a3728',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 0 #2a1f17'
+                            }}
+                            title="Actualizar"
+                        >
+                            <RefreshCw size={18} className={loading ? 'spin' : ''} />
+                        </button>
+
+                        {sales.length > 0 && (
+                            <button
+                                onClick={handleExportSalesCSV}
+                                className="btn-active-effect"
+                                style={{
+                                    padding: '10px 15px',
+                                    background: '#27ae60',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    boxShadow: '0 4px 0 #1e7e46'
+                                }}
+                            >
+                                <Download size={18} /> EXCEL
+                            </button>
+                        )}
+                    </div>
 
                     <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
                         Total: ${totalIngresosReporte.toFixed(2)}

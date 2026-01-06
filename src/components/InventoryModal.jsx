@@ -192,15 +192,24 @@ const InventoryModal = ({
                                 <input
                                     type="number"
                                     placeholder="Unidades"
+                                    min="1"
                                     value={purchaseQty || ''}
-                                    onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        setPurchaseQty(isNaN(val) ? 0 : Math.max(0, val));
+                                    }}
                                     style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
                                 />
                                 <input
                                     type="number"
-                                    placeholder="$ Costo unitario"
+                                    placeholder="$ Costo"
+                                    min="0.01"
+                                    step="0.01"
                                     value={purchaseCost || ''}
-                                    onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value);
+                                        setPurchaseCost(isNaN(val) ? 0 : Math.max(0, val));
+                                    }}
                                     style={{ flex: 1, minWidth: '0', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box' }}
                                 />
                             </div>
@@ -214,8 +223,8 @@ const InventoryModal = ({
                                         setPurchaseCost(0);
                                     }
                                 }}
-                                disabled={!selectedPurchaseProd || !purchaseQty || !purchaseCost}
-                                className={selectedPurchaseProd && purchaseQty && purchaseCost ? "btn-active-effect" : ""}
+                                disabled={!selectedPurchaseProd || purchaseQty <= 0 || purchaseCost <= 0}
+                                className={selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0 ? "btn-active-effect" : ""}
                                 style={{
                                     width: '100%',
                                     padding: '10px',
@@ -224,8 +233,8 @@ const InventoryModal = ({
                                     border: 'none',
                                     borderRadius: '10px',
                                     fontWeight: '900',
-                                    cursor: (selectedPurchaseProd && purchaseQty && purchaseCost) ? 'pointer' : 'not-allowed',
-                                    opacity: (selectedPurchaseProd && purchaseQty && purchaseCost) ? 1 : 0.5
+                                    cursor: (selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0) ? 'pointer' : 'not-allowed',
+                                    opacity: (selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0) ? 1 : 0.5
                                 }}
                             >
                                 + AÑADIR
@@ -293,8 +302,13 @@ const InventoryModal = ({
                                 <input
                                     type="number"
                                     placeholder="$ 0.00"
+                                    min="0.01"
+                                    step="0.01"
                                     value={expenseMonto || ''}
-                                    onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value);
+                                        setExpenseMonto(isNaN(val) ? 0 : Math.max(0, val));
+                                    }}
                                     style={{ width: '100%', padding: '10px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd' }}
                                 />
                             </div>
@@ -307,18 +321,19 @@ const InventoryModal = ({
                             />
                             <button
                                 onClick={handleRegisterExpense}
-                                disabled={loading}
-                                className="btn-active-effect"
+                                disabled={loading || expenseMonto <= 0 || !expenseConcepto.trim()}
+                                className={(expenseMonto > 0 && expenseConcepto.trim()) ? "btn-active-effect" : ""}
                                 style={{
                                     width: '100%',
                                     padding: '10px',
-                                    background: loading ? '#ccc' : '#ff9800',
+                                    background: loading ? '#ccc' : (expenseMonto > 0 && expenseConcepto.trim() ? '#ff9800' : '#ddd'),
                                     color: '#fff',
                                     border: 'none',
                                     borderRadius: '10px',
                                     fontWeight: '900',
                                     marginTop: '10px',
-                                    cursor: loading ? 'not-allowed' : 'pointer'
+                                    cursor: (loading || expenseMonto <= 0 || !expenseConcepto.trim()) ? 'not-allowed' : 'pointer',
+                                    opacity: (expenseMonto > 0 && expenseConcepto.trim()) ? 1 : 0.6
                                 }}
                             >
                                 {loading ? <RefreshCw className="spin" size={16} /> : 'REGISTRAR GASTO'}

@@ -320,12 +320,20 @@ function App() {
   };
 
   const handleSaveArqueo = async () => {
+    if (cashInitialFund < 0 || cashPhysicalCount <= 0 || loading) {
+      return alert("El Fondo Inicial debe ser 0 o más, y el Efectivo Contado mayor a cero.");
+    }
     setLoading(true);
     const { error } = await supabase.from('cash_reconciliations').insert([{
       initial_fund: cashInitialFund, sales_cash: cashReportData.ventasEfectivo, expenses_cash: cashReportData.gastosEfectivo,
       expected_amount: cashReportData.esperado, actual_amount: cashPhysicalCount, difference: cashReportData.diferencia, observations: cashObservations, created_by: user.id
     }]);
-    if (!error) { alert("✅ Arqueo guardado"); setShowCashArqueo(false); }
+    if (!error) {
+      alert("✅ Arqueo guardado");
+      setShowCashArqueo(false);
+      setCashObservations('');
+      setCashPhysicalCount(0);
+    }
     setLoading(false);
   };
 
@@ -364,7 +372,7 @@ function App() {
   };
 
   const handleRegisterExpense = async () => {
-    if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos');
+    if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos: Concepto y Monto > 0');
     setLoading(true);
     const { error } = await supabase.from('expenses').insert([{ concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto, fecha: getMXDate(), created_by: user.id }]);
     if (!error) { alert("💰 Gasto Registrado"); setExpenseConcepto(''); setExpenseMonto(0); }
@@ -443,7 +451,7 @@ function App() {
               <>
                 <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
                 <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
-                <button onClick={() => setShowCashArqueo(true)} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
+                <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
               </>
             )}
             <button onClick={() => setShowReport(true)} className="btn-active-effect" style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></button>

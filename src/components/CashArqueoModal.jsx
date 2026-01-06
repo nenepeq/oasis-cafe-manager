@@ -1,5 +1,5 @@
 import React from 'react';
-import { Banknote, List, X } from 'lucide-react';
+import { Banknote, List, X, Download } from 'lucide-react';
 
 /**
  * Modal de Arqueo de Caja y Historial de Conciliaciones
@@ -22,6 +22,64 @@ const CashArqueoModal = ({
     setShowArqueoHistory,
     arqueoHistory
 }) => {
+    const handleExportHistoryCSV = () => {
+        if (!arqueoHistory || arqueoHistory.length === 0) return;
+
+        const now = new Date();
+        const genDate = now.toLocaleDateString();
+        const genTime = now.toLocaleTimeString();
+
+        let csv = `OASIS CAFÉ - HISTORIAL COMPLETO DE ARQUEOS\n`;
+        csv += `Fecha de generación: ${genDate} ${genTime}\n\n`;
+        csv += `Fecha,Fondo Inicial,Ventas Efectivo,Gastos Efectivo,Esperado,Real,Diferencia,Observaciones\n`;
+
+        arqueoHistory.forEach(h => {
+            const date = new Date(h.created_at).toLocaleString();
+            csv += `"${date}",${h.initial_fund},${h.sales_cash},${h.expenses_cash},${h.expected_amount},${h.actual_amount},${h.difference},"${h.observations || ''}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Cortes_Caja_Completo_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportSingleArqueoCSV = (h) => {
+        const now = new Date();
+        const genDate = now.toLocaleDateString();
+        const genTime = now.toLocaleTimeString();
+        const arqueoDate = new Date(h.created_at).toLocaleString();
+
+        let csv = `OASIS CAFÉ - REPORTE DE CIERRE DE CAJA\n`;
+        csv += `Fecha del Arqueo: ${arqueoDate}\n`;
+        csv += `Generado el: ${genDate} ${genTime}\n\n`;
+
+        csv += `CONCEPTO,MONTO\n`;
+        csv += `Fondo Inicial,$${h.initial_fund.toFixed(2)}\n`;
+        csv += `(+) Ventas Efectivo,$${h.sales_cash.toFixed(2)}\n`;
+        csv += `(-) Gastos Efectivo,-$${h.expenses_cash.toFixed(2)}\n`;
+        csv += `SALDO ESPERADO,$${h.expected_amount.toFixed(2)}\n`;
+        csv += `EFECTIVO FÍSICO,$${h.actual_amount.toFixed(2)}\n`;
+        csv += `DIFERENCIA,$${h.difference.toFixed(2)}\n\n`;
+
+        if (h.observations) {
+            csv += `OBSERVACIONES: "${h.observations}"\n`;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Corte_Caja_${new Date(h.created_at).toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (!showCashArqueo || userRole !== 'admin') return null;
 
     return (
@@ -92,8 +150,12 @@ const CashArqueoModal = ({
                             <label style={{ fontSize: '20px', fontWeight: 'bold', color: '#888', display: 'block', marginBottom: '5px' }}>FONDO INICIAL ($)</label>
                             <input
                                 type="number"
+                                min="0"
                                 value={cashInitialFund || ''}
-                                onChange={(e) => setCashInitialFund(parseFloat(e.target.value) || 0)}
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    setCashInitialFund(isNaN(val) ? 0 : Math.max(0, val));
+                                }}
                                 style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '18px', fontWeight: 'bold', backgroundColor: '#fff', color: '#333' }}
                                 placeholder="0.00"
                             />
@@ -119,8 +181,12 @@ const CashArqueoModal = ({
                             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
                             <input
                                 type="number"
+                                min="0"
                                 value={cashPhysicalCount || ''}
-                                onChange={(e) => setCashPhysicalCount(parseFloat(e.target.value) || 0)}
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    setCashPhysicalCount(isNaN(val) ? 0 : Math.max(0, val));
+                                }}
                                 style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#333', backgroundColor: '#fff' }}
                                 placeholder="Escribe cuánto dinero hay..."
                             />
@@ -142,8 +208,19 @@ const CashArqueoModal = ({
 
                         <button
                             onClick={handleSaveArqueo}
-                            disabled={loading}
-                            style={{ width: '100%', padding: '15px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '16px' }}
+                            disabled={loading || cashInitialFund < 0 || cashPhysicalCount <= 0}
+                            style={{
+                                width: '100%',
+                                padding: '15px',
+                                background: (loading || cashInitialFund < 0 || cashPhysicalCount <= 0) ? '#ddd' : '#27ae60',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '12px',
+                                fontWeight: '900',
+                                cursor: (loading || cashInitialFund < 0 || cashPhysicalCount <= 0) ? 'not-allowed' : 'pointer',
+                                fontSize: '16px',
+                                opacity: (cashInitialFund >= 0 && cashPhysicalCount > 0) ? 1 : 0.7
+                            }}
                         >
                             {loading ? 'GUARDANDO...' : 'FINALIZAR Y GUARDAR CORTE'}
                         </button>
@@ -162,8 +239,31 @@ const CashArqueoModal = ({
                         className="modal-content-responsive"
                         style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Cortes de Caja</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Cortes de Caja</h2>
+                                {arqueoHistory.length > 0 && (
+                                    <button
+                                        onClick={handleExportHistoryCSV}
+                                        className="btn-active-effect"
+                                        style={{
+                                            padding: '8px 16px',
+                                            background: '#27ae60',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            fontSize: '11px',
+                                            fontWeight: '900',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}
+                                    >
+                                        <Download size={14} /> EXCEL (COMPLETO)
+                                    </button>
+                                )}
+                            </div>
                             <button
                                 onClick={() => setShowArqueoHistory(false)}
                                 style={{ border: 'none', color: '#000000', background: 'none', cursor: 'pointer' }}
@@ -179,7 +279,8 @@ const CashArqueoModal = ({
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Fondo</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Esperado</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Real</th>
-                                        <th style={{ padding: '12px', textAlign: 'right' }}>Diferencia</th>
+                                        <th style={{ padding: '12px', textAlign: 'center' }}>Diferencia</th>
+                                        <th style={{ padding: '12px', textAlign: 'right' }}>Excel</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -195,9 +296,29 @@ const CashArqueoModal = ({
                                                 <td style={{ padding: '12px', color: '#333', textAlign: 'center', }}>${h.initial_fund}</td>
                                                 <td style={{ padding: '12px', color: '#333', textAlign: 'center', fontWeight: 'bold', }}>${h.expected_amount}</td>
                                                 <td style={{ padding: '12px', color: '#333', textAlign: 'center', fontWeight: 'bold' }}>${h.actual_amount}</td>
-                                                <td style={{ padding: '12px', textAlign: 'right', fontWeight: '900', color: h.difference === 0 ? '#27ae60' : (h.difference > 0 ? '#3498db' : '#e74c3c') }}>
+                                                <td style={{ padding: '12px', textAlign: 'center', fontWeight: '900', color: h.difference === 0 ? '#27ae60' : (h.difference > 0 ? '#3498db' : '#e74c3c') }}>
                                                     {h.difference > 0 ? '+' : ''}${h.difference}
                                                     {h.observations && <div style={{ fontSize: '10px', fontWeight: 'normal', color: '#666', fontStyle: 'italic' }}>{h.observations}</div>}
+                                                </td>
+                                                <td style={{ padding: '12px', textAlign: 'right' }}>
+                                                    <button
+                                                        onClick={() => handleExportSingleArqueoCSV(h)}
+                                                        className="btn-active-effect"
+                                                        style={{
+                                                            background: '#27ae60',
+                                                            color: '#fff',
+                                                            border: 'none',
+                                                            padding: '6px',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                        title="Exportar a Excel"
+                                                    >
+                                                        <Download size={14} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))

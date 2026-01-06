@@ -51,6 +51,7 @@ const InventoryModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
+                className="modal-content-responsive"
                 style={{
                     position: 'relative',
                     backgroundColor: '#fff',
@@ -87,12 +88,10 @@ const InventoryModal = ({
                     {/* SECCIÓN: EXISTENCIAS */}
                     <div>
                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000' }}>EXISTENCIAS</h3>
-                        <div style={{
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '15px',
-                            overflowY: 'auto',
-                            maxHeight: '600px'
-                        }} className="no-scrollbar">
+                        <div className="table-container no-scrollbar" style={{
+                            maxHeight: '600px',
+                            overflowY: 'auto'
+                        }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                                 <thead style={{ background: '#f8f6f2' }}>
                                     <tr>

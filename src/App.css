@@ -74,6 +74,54 @@
   text-align: center;
 }
 
+/* --- RESPONSIVIDAD PROFESIONAL --- */
+
+/* Contenedor de tablas responsivo */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Layout Principal Media Queries */
+@media (max-width: 600px) {
+  .main-container {
+    flex-direction: column !important;
+  }
+
+  .shop-section {
+    flex: none !important;
+    height: 60vh !important;
+  }
+
+  .cart-section {
+    flex: 1 !important;
+    height: 40vh !important;
+    border-left: none !important;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .modal-content-responsive {
+    width: 98% !important;
+    padding: 15px !important;
+    border-radius: 20px !important;
+  }
+
+  /* Ajuste de fuentes para tablas en móvil */
+  table {
+    font-size: 12px !important;
+  }
+
+  th,
+  td {
+    padding: 8px 4px !important;
+  }
+}
+
 .product-price {
   color: #27ae60;
   font-weight: 900;

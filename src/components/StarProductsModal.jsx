@@ -64,6 +64,7 @@ const StarProductsModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
+                className="modal-content-responsive"
                 style={{
                     position: 'relative',
                     backgroundColor: '#fff',
@@ -125,7 +126,7 @@ const StarProductsModal = ({
                     </div>
                 </div>
 
-                <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>
+                <div className="table-container">
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                         <thead style={{ background: '#4a3728', color: '#fff' }}>
                             <tr>

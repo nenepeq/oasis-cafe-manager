@@ -366,9 +366,8 @@ function App() {
   if (!user) return <Login onLogin={fetchProfile} />;
 
   return (
-    <div style={{
+    <div className="main-container" style={{
       display: 'flex',
-      flexDirection: window.innerWidth < 600 ? 'column' : 'row',
       height: '100vh',
       width: '100vw',
       backgroundColor: '#f8f6f2',
@@ -376,13 +375,12 @@ function App() {
     }}>
 
       {/* SECCIÓN TIENDA */}
-      <div style={{
-        flex: window.innerWidth < 600 ? 'none' : 2,
+      <div className="shop-section" style={{
+        flex: 2,
         padding: '15px',
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        height: window.innerWidth < 600 ? '60vh' : '100%',
         boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -408,7 +406,7 @@ function App() {
         </div>
 
         <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 600 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
+          <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
             {filteredProducts.map(p => (
               <button key={p.id} onClick={() => addToCart(p)} className="product-card">
                 <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
@@ -421,17 +419,15 @@ function App() {
       </div>
 
       {/* SECCIÓN CARRITO */}
-      <div style={{
-        flex: window.innerWidth < 600 ? 1 : 0.8,
+      <div className="cart-section" style={{
+        flex: 0.8,
         backgroundColor: '#fff',
         padding: '15px',
-        borderLeft: window.innerWidth < 600 ? 'none' : '1px solid #eee',
+        borderLeft: '1px solid #eee',
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        height: window.innerWidth < 600 ? '40vh' : '100%',
-        boxSizing: 'border-box',
-        boxShadow: window.innerWidth < 600 ? '0 -4px 10px rgba(0,0,0,0.05)' : 'none'
+        boxSizing: 'border-box'
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
         <input type="text" placeholder="Pedido a nombre de..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold' }} />

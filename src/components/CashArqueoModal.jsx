@@ -44,6 +44,7 @@ const CashArqueoModal = ({
             >
                 <div
                     onClick={(e) => e.stopPropagation()}
+                    className="modal-content-responsive"
                     style={{
                         position: 'relative',
                         backgroundColor: '#fff',
@@ -160,6 +161,7 @@ const CashArqueoModal = ({
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
+                        className="modal-content-responsive"
                         style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -171,7 +173,7 @@ const CashArqueoModal = ({
                                 <X size={24} />
                             </button>
                         </div>
-                        <div style={{ border: '1px solid #eee', borderRadius: '15px', overflow: 'hidden' }}>
+                        <div className="table-container">
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                 <thead style={{ background: '#4a3728', color: '#fff' }}>
                                     <tr>

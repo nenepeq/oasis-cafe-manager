@@ -9,7 +9,9 @@ import { supabase } from '../supabaseClient';
 function Login({ onLogin }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -33,13 +35,32 @@ function Login({ onLogin }) {
                         required
                     />
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Contraseña"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="login-input"
                         required
                     />
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '15px',
+                        fontSize: '14px',
+                        color: '#4a3728',
+                        cursor: 'pointer',
+                        alignSelf: 'flex-start'
+                    }} onClick={() => setShowPassword(!showPassword)}>
+                        <input
+                            type="checkbox"
+                            checked={showPassword}
+                            onChange={() => { }} // Manejado por el div para mejor área de toque
+                            style={{ cursor: 'pointer' }}
+                        />
+                        <span>Mostrar contraseña</span>
+                    </div>
+
                     {error && <p className="login-error">{error}</p>}
                     <button type="submit" className="login-button">
                         ENTRAR

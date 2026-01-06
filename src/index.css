@@ -1,5 +1,7 @@
 /* === REGLA DE ORO: Evita que el padding rompa los anchos === */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -23,14 +25,14 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -51,9 +53,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -64,9 +68,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
@@ -102,12 +108,13 @@ button:focus-visible {
     display: flex !important;
     flex-direction: column !important;
   }
-  
+
   /* Contenedor de productos en vertical */
-  .store-section > div:last-child {
+  .store-section>div:last-child {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
-    overflow-y: visible !important; /* Scroll natural de la página */
+    overflow-y: visible !important;
+    /* Scroll natural de la página */
   }
 
   .cart-section {
@@ -126,13 +133,15 @@ button:focus-visible {
   .app-container {
     flex-direction: row !important;
     height: 100vh !important;
-    overflow: hidden !important; /* Evitamos scroll en el body */
+    overflow: hidden !important;
+    /* Evitamos scroll en el body */
     align-items: stretch !important;
   }
 
   /* --- TIENDA (IZQUIERDA) --- */
   .store-section {
-    flex: 1.8 !important; /* Ocupa más espacio (aprox 65%) */
+    flex: 1.8 !important;
+    /* Ocupa más espacio (aprox 65%) */
     width: auto !important;
     height: 100% !important;
     overflow: hidden !important;
@@ -140,56 +149,70 @@ button:focus-visible {
     display: flex !important;
     flex-direction: column !important;
   }
-  
+
   /* HEADER MINI: Hacemos todo pequeño para dejar espacio a los productos */
-  .store-section > div:first-child {
+  .store-section>div:first-child {
     margin-bottom: 5px !important;
     padding-bottom: 5px !important;
     border-bottom: 1px solid #eee;
-    flex-shrink: 0 !important; /* No permitimos que el header se aplaste */
+    flex-shrink: 0 !important;
+    /* No permitimos que el header se aplaste */
   }
-  .store-section > div:first-child img {
-    height: 25px !important; /* Logo pequeño */
+
+  .store-section>div:first-child img {
+    height: 25px !important;
+    /* Logo pequeño */
   }
-  .store-section > div:first-child h1 {
-    font-size: 14px !important; /* Título pequeño */
+
+  .store-section>div:first-child h1 {
+    font-size: 14px !important;
+    /* Título pequeño */
   }
+
   /* Botones del menú (Inventario, Reportes...) */
-  .store-section > div:first-child button {
+  .store-section>div:first-child button {
     padding: 4px 8px !important;
     font-size: 9px !important;
     border-radius: 6px !important;
     margin-left: 2px !important;
   }
-  .store-section > div:first-child svg {
+
+  .store-section>div:first-child svg {
     width: 12px !important;
     height: 12px !important;
   }
 
   /* CONTENEDOR DE PRODUCTOS (GRID) */
   /* Forzamos que ocupe el espacio restante */
-  .store-section > div:last-child {
+  .store-section>div:last-child {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important; /* Tarjetas más chicas */
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
+    /* Tarjetas más chicas */
     gap: 8px !important;
-    overflow-y: auto !important; /* Scroll interno solo aquí */
-    padding-bottom: 50px !important; /* Espacio extra al final */
-    flex: 1 !important; /* ESTO ES CLAVE: Estírate para llenar el hueco */
+    overflow-y: auto !important;
+    /* Scroll interno solo aquí */
+    padding-bottom: 50px !important;
+    /* Espacio extra al final */
+    flex: 1 !important;
+    /* ESTO ES CLAVE: Estírate para llenar el hueco */
     min-height: 0 !important;
   }
 
   /* Tarjetas de productos individuales */
-  .store-section > div:last-child button {
+  .store-section>div:last-child button {
     height: 110px !important;
     padding: 5px !important;
   }
-  .store-section > div:last-child button div {
-    font-size: 11px !important; /* Letra más chica */
+
+  .store-section>div:last-child button div {
+    font-size: 11px !important;
+    /* Letra más chica */
   }
 
   /* --- CARRITO (DERECHA) --- */
   .cart-section {
-    flex: 1 !important; /* Ocupa menos espacio (aprox 35%) */
+    flex: 1 !important;
+    /* Ocupa menos espacio (aprox 35%) */
     width: auto !important;
     height: 100% !important;
     overflow-y: auto !important;

@@ -231,8 +231,30 @@ function App() {
   };
 
   // --- LÓGICA DE REPORTES Y MODALES ---
-  useEffect(() => { if (showReport && user) fetchSales(); }, [showReport, reportStartDate, reportEndDate]);
-  useEffect(() => { if (showFinances && user && userRole === 'admin') calculateFinances(); }, [showFinances, financeStartDate, financeEndDate]);
+  useEffect(() => {
+    if (showReport && user) {
+      if (reportStartDate <= reportEndDate) {
+        fetchSales();
+      } else {
+        setSales([]);
+        setTotalIngresosReporte(0);
+      }
+    }
+  }, [showReport, reportStartDate, reportEndDate]);
+  useEffect(() => {
+    if (showFinances && user && userRole === 'admin') {
+      if (financeStartDate <= financeEndDate) {
+        calculateFinances();
+      } else {
+        setFinData({
+          ingresos: 0, costoProductos: 0, gastosOps: 0, gastosStock: 0,
+          totalEgresos: 0, utilidadNeta: 0, margen: 0
+        });
+        setDailyExpensesList([]);
+        setDailyStockList([]);
+      }
+    }
+  }, [showFinances, financeStartDate, financeEndDate]);
   useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo]);
 
   const fetchSales = async () => {

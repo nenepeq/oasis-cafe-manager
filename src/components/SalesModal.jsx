@@ -23,7 +23,11 @@ const SalesModal = ({
     const handleExportSalesCSV = () => {
         if (!sales || sales.length === 0) return;
 
-        let csv = 'ID,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
+        const now = new Date().toLocaleString();
+        let csv = `OASIS CAFÉ - REPORTE DE VENTAS\n`;
+        csv += `Periodo: ${reportStartDate} al ${reportEndDate}\n`;
+        csv += `Generado el: ${now}\n\n`;
+        csv += 'ID,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
         sales.forEach(s => {
             const date = new Date(s.created_at).toLocaleString();
             const productsList = s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '';
@@ -105,27 +109,6 @@ const SalesModal = ({
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
-                        <button
-                            onClick={fetchSales}
-                            className="btn-active-effect"
-                            style={{
-                                padding: '10px 15px',
-                                background: '#4a3728',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 4px 0 #2a1f17'
-                            }}
-                            title="Actualizar"
-                        >
-                            <RefreshCw size={18} className={loading ? 'spin' : ''} />
-                        </button>
-
                         {sales.length > 0 && (
                             <button
                                 onClick={handleExportSalesCSV}
@@ -153,6 +136,22 @@ const SalesModal = ({
                         Total: ${totalIngresosReporte.toFixed(2)}
                     </div>
                 </div>
+
+                {reportStartDate > reportEndDate && (
+                    <div style={{
+                        background: '#f8d7da',
+                        color: '#721c24',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        marginBottom: '15px',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        border: '1px solid #f5c6cb'
+                    }}>
+                        ⚠️ La fecha "Desde" no puede ser mayor a la fecha "Hasta".
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
                     <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>

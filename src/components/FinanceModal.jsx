@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    X, PieChart, RefreshCw, TrendingUp, Layers, ArrowDown, DollarSign
+    X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download
 } from 'lucide-react';
 
 /**
@@ -20,6 +20,50 @@ const FinanceModal = ({
     dailyExpensesList,
     dailyStockList
 }) => {
+    const handleExportFinanceCSV = () => {
+        if (!finData) return;
+
+        const now = new Date().toLocaleString();
+        let csv = `OASIS CAFÉ - REPORTE FINANCIERO\n`;
+        csv += `Periodo: ${financeStartDate} al ${financeEndDate}\n`;
+        csv += `Generado el: ${now}\n\n`;
+
+        // RESUMEN
+        csv += `--- RESUMEN GENERAL ---\n`;
+        csv += `Ingresos Brutos, $${finData.ingresos.toFixed(2)}\n`;
+        csv += `Costo Productos, -$${finData.costoProductos.toFixed(2)}\n`;
+        csv += `Gastos Operativos, -$${finData.gastosOps.toFixed(2)}\n`;
+        csv += `Inversion Stock, -$${finData.gastosStock.toFixed(2)}\n`;
+        csv += `Utilidad Neta, $${finData.utilidadNeta.toFixed(2)}\n`;
+        csv += `Margen Real, ${finData.margen.toFixed(1)}%\n\n`;
+
+        // GASTOS OPERATIVOS
+        csv += `--- DESGLOSE DE GASTOS OPERATIVOS ---\n`;
+        csv += `Fecha,Concepto,Categoria,Monto\n`;
+        dailyExpensesList.forEach(e => {
+            csv += `"${e.fecha}","${e.concepto}","${e.categoria}",-${e.monto}\n`;
+        });
+        csv += `\n`;
+
+        // ENTRADAS DE STOCK
+        csv += `--- DESGLOSE DE ENTRADAS DE STOCK (INVERSION) ---\n`;
+        csv += `Fecha,ID Compra,Productos,Total\n`;
+        dailyStockList.forEach(p => {
+            const date = new Date(p.created_at).toLocaleDateString();
+            const prods = p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '';
+            csv += `"${date}","#${p.id.toString().slice(0, 4)}","${prods}",-${p.total}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Reporte_Financiero_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (!showFinances || userRole !== 'admin') return null;
 
     const percentageExpenses = finData.ingresos > 0
@@ -116,14 +160,46 @@ const FinanceModal = ({
                                 style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }}
                             />
                         </div>
-                        <button
-                            onClick={calculateFinances}
-                            disabled={loading}
-                            style={{ padding: '10px 20px', background: '#9b59b6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', alignSelf: 'flex-end' }}
-                        >
-                            <RefreshCw size={20} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
+                            {!loading && finData.ingresos >= 0 && (
+                                <button
+                                    onClick={handleExportFinanceCSV}
+                                    className="btn-active-effect"
+                                    style={{
+                                        padding: '10px 15px',
+                                        background: '#27ae60',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        boxShadow: '0 4px 0 #1e7e46'
+                                    }}
+                                >
+                                    <Download size={18} /> EXCEL
+                                </button>
+                            )}
+                        </div>
                     </div>
+
+                    {financeStartDate > financeEndDate && (
+                        <div style={{
+                            background: '#f8d7da',
+                            color: '#721c24',
+                            padding: '10px',
+                            borderRadius: '10px',
+                            marginTop: '15px',
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            border: '1px solid #f5c6cb'
+                        }}>
+                            ⚠️ La fecha "Desde" no puede ser mayor a la fecha "Hasta".
+                        </div>
+                    )}
                 </div>
 
                 {loading ? (

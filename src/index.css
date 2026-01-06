@@ -138,15 +138,17 @@ button:focus-visible {
   }
 
   .product-card {
-    height: 100px !important;
-    /* Tarjetas más compactas */
+    height: 115px !important;
+    /* Más espacio para el texto */
     padding: 5px !important;
   }
 
   .product-name {
-    font-size: 9px !important;
-    /* Fuente más pequeña para que quepa */
-    min-height: 20px !important;
+    font-size: 11px !important;
+    /* Texto más grande */
+    min-height: 30px !important;
+    /* Espacio para dos renglones */
+    line-height: 1.2 !important;
   }
 
   .cart-section {

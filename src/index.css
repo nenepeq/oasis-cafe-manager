@@ -121,11 +121,19 @@ button:focus-visible {
   }
 
   /* Contenedor de productos en vertical */
-  .store-section>div:last-child {
+  /* Grid de productos en vertical */
+  .product-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 4px !important;
-    /* Gap mínimo */
+    gap: 6px !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Asegurar que el contenedor padre no limite el ancho */
+  .store-section>div:last-child {
+    display: block !important;
+    width: 100% !important;
     overflow-y: visible !important;
   }
 

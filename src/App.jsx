@@ -15,6 +15,11 @@ import FinanceModal from './components/FinanceModal';
 import SalesModal from './components/SalesModal';
 import CashArqueoModal from './components/CashArqueoModal';
 import StarProductsModal from './components/StarProductsModal';
+import { logActivity } from './utils/logger';
+import { savePendingSale, savePendingExpense, getAllPendingItems, clearPendingItem } from './utils/db';
+import { Wifi, WifiOff, CloudSync } from 'lucide-react';
+
+
 
 // Función Helper para obtener la fecha actual en formato YYYY-MM-DD (Zona México)
 const getMXDate = () => {
@@ -47,6 +52,9 @@ function App() {
   const [showFinances, setShowFinances] = useState(false);
   const [showCashArqueo, setShowCashArqueo] = useState(false);
   const [showStarProducts, setShowStarProducts] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isSyncing, setIsSyncing] = useState(false);
+
 
   // --- ESTADOS DE ARQUEO DE CAJA ---
   const [showArqueoHistory, setShowArqueoHistory] = useState(false);
@@ -65,6 +73,13 @@ function App() {
   const [starStartDate, setStarStartDate] = useState(getMXDate());
   const [starEndDate, setStarEndDate] = useState(getMXDate());
   const [starData, setStarData] = useState([]);
+  const [kpiData, setKpiData] = useState({
+    ticketPromedio: 0,
+    horaPico: '00:00',
+    margenReal: 0,
+    totalVentas: 0
+  });
+
 
   // --- ESTADOS DE REPORTES DE VENTAS ---
   const [sales, setSales] = useState([]);
@@ -107,7 +122,70 @@ function App() {
 
   // --- EFECTOS INICIALES Y CARGA DE DATOS ---
   useEffect(() => {
+    const handleOnline = () => { setIsOnline(true); syncOfflineData(); };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Intento inicial de sync si estamos online
+    if (navigator.onLine) syncOfflineData();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const syncOfflineData = async () => {
+    if (isSyncing || !navigator.onLine) return;
+    const { sales, expenses } = await getAllPendingItems();
+    if (sales.length === 0 && expenses.length === 0) return;
+
+    setIsSyncing(true);
+    console.log('Sincronizando datos offline...');
+
+    // Sync Ventas
+    for (const s of sales) {
+      try {
+        const { data: sale, error: saleError } = await supabase.from('sales').insert([{
+          total: s.total, status: s.status, created_by: s.created_by,
+          customer_name: s.customer_name, payment_method: s.payment_method,
+          created_at: s.timestamp // Mantener la hora real del registro
+        }]).select().single();
+
+        if (!saleError) {
+          await supabase.from('sale_items').insert(s.items.map(item => ({
+            sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price
+          })));
+          await clearPendingItem('pending_sales', s.id);
+          await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
+        }
+      } catch (e) { console.error('Error sync venta:', e); }
+    }
+
+    // Sync Gastos
+    for (const e of expenses) {
+      try {
+        const { error } = await supabase.from('expenses').insert([{
+          concepto: e.concepto, categoria: e.categoria, monto: e.monto,
+          fecha: e.fecha, created_by: e.created_by
+        }]);
+        if (!error) {
+          await clearPendingItem('pending_expenses', e.id);
+          await logActivity(e.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { concepto: e.concepto });
+        }
+      } catch (err) { console.error('Error sync gasto:', err); }
+    }
+
+    setIsSyncing(false);
+    alert("✅ Datos offline sincronizados con éxito");
+    fetchInventory(); // Refrescar stock
+  };
+
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+
       if (session) fetchProfile(session.user);
     });
   }, []);
@@ -205,7 +283,24 @@ function App() {
 
     setLoading(true);
     try {
+      // SI ESTAMOS OFFLINE, GUARDAR LOCALMENTE
+      if (!navigator.onLine) {
+        await savePendingSale({
+          total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
+          status: "recibido",
+          created_by: user.id,
+          customer_name: customerName.trim() || 'Sin nombre',
+          payment_method: paymentMethod,
+          items: cart
+        });
+        alert("💾 Sin internet. Venta guardada localmente.");
+        setCart([]); setCustomerName(''); fetchInventory();
+        setLoading(false);
+        return;
+      }
+
       const { data: sale, error: saleError } = await supabase.from('sales').insert([{
+
         total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
         status: "recibido", created_by: user.id, customer_name: customerName.trim() || 'Sin nombre', payment_method: paymentMethod
       }]).select().single();
@@ -221,7 +316,18 @@ function App() {
       }
 
       alert("✅ Venta Satisfactoria");
+
+      // LOG DE ACTIVIDAD
+      await logActivity(user.id, 'CREACION_VENTA', 'VENTAS', {
+        sale_id: sale.id,
+        total: sale.total,
+        customer: sale.customer_name,
+        payment_method: sale.payment_method,
+        items_count: cart.length
+      });
+
       setCart([]); setCustomerName(''); fetchInventory();
+
     } catch (err) { alert("Error: " + err.message); }
     setLoading(false);
   };
@@ -281,7 +387,15 @@ function App() {
       }
       await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
       alert(`✅ Estatus: ${newStatus.toUpperCase()}`);
+
+      // LOG DE ACTIVIDAD
+      await logActivity(user.id, `CAMBIO_ESTATUS_${newStatus.toUpperCase()}`, 'VENTAS', {
+        sale_id: saleId,
+        new_status: newStatus
+      });
+
       fetchSales(); calculateFinances(); fetchInventory(); setSelectedSale(null);
+
     } catch (err) { alert('Error: ' + err.message); }
     setLoading(false);
   };
@@ -330,7 +444,17 @@ function App() {
     }]);
     if (!error) {
       alert("✅ Arqueo guardado");
+
+      // LOG DE ACTIVIDAD
+      await logActivity(user.id, 'REGISTRO_ARQUEO', 'FINANZAS', {
+        initial_fund: cashInitialFund,
+        expected: cashReportData.esperado,
+        actual: cashPhysicalCount,
+        difference: cashReportData.diferencia
+      });
+
       setShowCashArqueo(false);
+
       setCashObservations('');
       setCashPhysicalCount(0);
     }
@@ -344,17 +468,54 @@ function App() {
 
   const fetchStarProducts = async () => {
     setLoading(true);
-    const { data } = await supabase.from('sale_items').select(`quantity, price, products ( name ), sales!inner ( created_at, status )`)
+    // Incluimos cost_price de los productos en la consulta
+    const { data } = await supabase.from('sale_items').select(`quantity, price, products ( name, cost_price ), sales!inner ( id, created_at, status )`)
       .gte('sales.created_at', starStartDate + 'T00:00:00').lte('sales.created_at', starEndDate + 'T23:59:59').neq('sales.status', 'cancelado');
+
     const grouping = (data || []).reduce((acc, item) => {
       const name = item.products?.name || 'Desconocido';
-      if (!acc[name]) acc[name] = { name, totalQty: 0, totalRevenue: 0 };
-      acc[name].totalQty += item.quantity; acc[name].totalRevenue += (item.quantity * item.price);
+      if (!acc[name]) acc[name] = { name, totalQty: 0, totalRevenue: 0, totalCost: 0 };
+      acc[name].totalQty += item.quantity;
+      acc[name].totalRevenue += (item.quantity * item.price);
+      acc[name].totalCost += (item.quantity * (item.products?.cost_price || 0));
       return acc;
     }, {});
+
+    // --- CÁLCULO DE KPIs ---
+    const salesIds = new Set();
+    const hourlyDistribution = {}; // Para Hora Pico
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    (data || []).forEach(item => {
+      salesIds.add(item.sales.id);
+      totalRevenue += (item.quantity * item.price);
+      totalCost += (item.quantity * (item.products?.cost_price || 0));
+
+      const hour = new Date(item.sales.created_at).getHours();
+      hourlyDistribution[hour] = (hourlyDistribution[hour] || 0) + 1;
+    });
+
+    // Encontrar hora con más items vendidos
+    let peakHour = 0, maxSales = 0;
+    Object.entries(hourlyDistribution).forEach(([hr, count]) => {
+      if (count > maxSales) { maxSales = count; peakHour = hr; }
+    });
+
+    const ticketPromedio = salesIds.size > 0 ? totalRevenue / salesIds.size : 0;
+    const margenReal = totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
+
+    setKpiData({
+      ticketPromedio,
+      horaPico: `${peakHour}:00`,
+      margenReal,
+      totalVentas: salesIds.size
+    });
+
     setStarData(Object.values(grouping).sort((a, b) => b.totalQty - a.totalQty));
     setLoading(false);
   };
+
 
   const handleRegisterPurchase = async () => {
     if (purchaseCart.length === 0 || loading) return;
@@ -366,7 +527,17 @@ function App() {
         const currentInv = inventoryList.find(inv => inv.product_id === item.id);
         await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
       }
-      alert("📦 Stock Actualizado"); setPurchaseCart([]); fetchInventory();
+      alert("📦 Stock Actualizado");
+
+      // LOG DE ACTIVIDAD
+      await logActivity(user.id, 'REGISTRO_COMPRA_INVENTARIO', 'INVENTARIO', {
+        purchase_id: purchase.id,
+        total: purchase.total,
+        items_count: purchaseCart.length
+      });
+
+      setPurchaseCart([]); fetchInventory();
+
     } catch (err) { alert("Error: " + err.message); }
     setLoading(false);
   };
@@ -374,8 +545,36 @@ function App() {
   const handleRegisterExpense = async () => {
     if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos: Concepto y Monto > 0');
     setLoading(true);
+
+    if (!navigator.onLine) {
+      await savePendingExpense({
+        concepto: expenseConcepto.trim(),
+        categoria: expenseCategoria,
+        monto: expenseMonto,
+        fecha: getMXDate(),
+        created_by: user.id
+      });
+      alert("💰 Sin internet. Gasto guardado localmente.");
+      setExpenseConcepto(''); setExpenseMonto(0);
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from('expenses').insert([{ concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto, fecha: getMXDate(), created_by: user.id }]);
-    if (!error) { alert("💰 Gasto Registrado"); setExpenseConcepto(''); setExpenseMonto(0); }
+
+    if (!error) {
+      alert("💰 Gasto Registrado");
+
+      // LOG DE ACTIVIDAD
+      await logActivity(user.id, 'REGISTRO_GASTO', 'FINANZAS', {
+        concepto: expenseConcepto.trim(),
+        categoria: expenseCategoria,
+        monto: expenseMonto
+      });
+
+      setExpenseConcepto(''); setExpenseMonto(0);
+    }
+
     setLoading(false);
   };
 
@@ -445,9 +644,20 @@ function App() {
         boxSizing: 'border-box'
       }}>
         <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="/logo.png" alt="Oasis" style={{ height: '35px' }} /><h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
+          </div>
           <div style={{ display: 'flex', gap: '5px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px',
+              borderRadius: '10px', background: isOnline ? '#def7ec' : '#fde8e8',
+              color: isOnline ? '#03543f' : '#9b1c1c', fontSize: '10px', fontWeight: 'bold'
+            }}>
+              {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+              {isOnline ? (isSyncing ? <CloudSync size={14} className="spin" /> : 'ONLINE') : 'OFFLINE'}
+            </div>
             {userRole === 'admin' && (
+
               <>
                 <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
                 <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
@@ -571,8 +781,9 @@ function App() {
       />
       <StarProductsModal
         showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts} userRole={userRole} starStartDate={starStartDate} setStarStartDate={setStarStartDate}
-        starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData}
+        starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData} kpiData={kpiData}
       />
+
     </div>
   );
 }

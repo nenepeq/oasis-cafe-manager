@@ -127,12 +127,12 @@ const StarProductsModal = ({
                 </div>
 
                 <div className="table-container">
-                    <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
                         <thead style={{ background: '#4a3728', color: '#fff' }}>
                             <tr>
-                                <th style={{ padding: '12px', textAlign: 'left' }}>Producto</th>
-                                <th style={{ padding: '12px', textAlign: 'center' }}>Cant. Vendida</th>
-                                <th style={{ padding: '12px', textAlign: 'right' }}>Dinero Generado</th>
+                                <th style={{ padding: '10px 5px', textAlign: 'left' }}>Producto</th>
+                                <th style={{ padding: '10px 5px', textAlign: 'center', width: '60px' }}>Cant.</th>
+                                <th style={{ padding: '10px 5px', textAlign: 'right', width: '85px' }}>Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -141,11 +141,18 @@ const StarProductsModal = ({
                             ) : (
                                 starData.map((item, idx) => (
                                     <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '12px', color: '#4a3728', fontWeight: 'bold' }}>
+                                        <td style={{
+                                            padding: '10px 5px',
+                                            color: '#4a3728',
+                                            fontWeight: 'bold',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }} title={item.name}>
                                             {idx < 3 ? '⭐ ' : ''}{item.name}
                                         </td>
-                                        <td style={{ padding: '12px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>{item.totalQty}</td>
-                                        <td style={{ padding: '12px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>
+                                        <td style={{ padding: '10px 5px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>{item.totalQty}</td>
+                                        <td style={{ padding: '10px 5px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>
                                             ${item.totalRevenue.toFixed(2)}
                                         </td>
                                     </tr>

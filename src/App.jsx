@@ -5,19 +5,20 @@ import { getProducts } from './api';
 import {
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart,
   LogOut, IceCream, FileText, RefreshCw, CakeSlice,
-  Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard
+  Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard,
+  Wifi, WifiOff, CloudSync
 } from 'lucide-react';
+import { logActivity } from './utils/logger';
+import { savePendingSale, savePendingExpense, getAllPendingItems, clearPendingItem } from './utils/db';
 
-// Importación de Componentes Modularizados
+// Componentes
 import Login from './components/Login';
 import InventoryModal from './components/InventoryModal';
 import FinanceModal from './components/FinanceModal';
 import SalesModal from './components/SalesModal';
 import CashArqueoModal from './components/CashArqueoModal';
 import StarProductsModal from './components/StarProductsModal';
-import { logActivity } from './utils/logger';
-import { savePendingSale, savePendingExpense, getAllPendingItems, clearPendingItem } from './utils/db';
-import { Wifi, WifiOff, CloudSync } from 'lucide-react';
+
 
 
 

@@ -138,16 +138,16 @@ button:focus-visible {
   }
 
   .product-card {
-    height: 120px !important;
-    /* Un poco más de altura para el texto más grande */
+    height: 125px !important;
+    /* Altura incrementada para 13px */
     padding: 5px !important;
   }
 
   .product-name {
-    font-size: 12px !important;
-    /* Texto aún más grande */
-    min-height: 32px !important;
-    /* Espacio para dos renglones */
+    font-size: 13px !important;
+    /* Texto a 13px solicitado */
+    min-height: 34px !important;
+    /* Ajuste para los dos renglones */
     line-height: 1.2 !important;
   }
 

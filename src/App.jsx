@@ -436,7 +436,7 @@ function App() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><img src="/logo.png" alt="Oasis" style={{ height: '35px' }} /><h1 style={{ color: '#4a3728', margin: 0, fontSize: '20px', fontWeight: '900' }}>Oasis Café</h1></div>
           <div style={{ display: 'flex', gap: '5px' }}>
             {userRole === 'admin' && (

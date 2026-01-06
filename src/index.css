@@ -99,6 +99,15 @@ button:focus-visible {
     height: auto !important;
     min-height: 100vh !important;
     overflow-y: auto !important;
+    position: relative !important;
+    /* Permite scroll natural */
+  }
+
+  html,
+  body {
+    overflow-y: auto !important;
+    height: auto !important;
+    position: relative !important;
   }
 
   .store-section {
@@ -114,9 +123,22 @@ button:focus-visible {
   /* Contenedor de productos en vertical */
   .store-section>div:last-child {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    /* 3 columnas */
+    gap: 8px !important;
     overflow-y: visible !important;
-    /* Scroll natural de la página */
+  }
+
+  .product-card {
+    height: 100px !important;
+    /* Tarjetas más compactas */
+    padding: 5px !important;
+  }
+
+  .product-name {
+    font-size: 9px !important;
+    /* Fuente más pequeña para que quepa */
+    min-height: 20px !important;
   }
 
   .cart-section {

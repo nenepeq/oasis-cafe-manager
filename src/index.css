@@ -114,8 +114,8 @@ button:focus-visible {
     flex: none !important;
     width: 100% !important;
     height: auto !important;
-    padding: 15px !important;
-    /* Dejar que la altura se ajuste al contenido */
+    padding: 8px 5px !important;
+    /* Padding mínimo lateral */
     display: flex !important;
     flex-direction: column !important;
   }
@@ -124,8 +124,8 @@ button:focus-visible {
   .store-section>div:last-child {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    /* 3 columnas */
-    gap: 8px !important;
+    gap: 4px !important;
+    /* Gap mínimo */
     overflow-y: visible !important;
   }
 

@@ -371,7 +371,8 @@ function App() {
       height: '100vh',
       width: '100vw',
       backgroundColor: '#f8f6f2',
-      overflow: 'hidden' // Bloqueamos el scroll global
+      overflowX: 'hidden',
+      overflowY: 'auto' // Permitimos scroll vertical para móviles
     }}>
 
       {/* SECCIÓN TIENDA */}

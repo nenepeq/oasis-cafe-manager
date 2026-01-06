@@ -91,14 +91,17 @@
 
   .shop-section {
     flex: none !important;
-    height: 60vh !important;
+    height: auto !important;
+    min-height: 50vh !important;
   }
 
   .cart-section {
-    flex: 1 !important;
-    height: 40vh !important;
+    flex: none !important;
+    height: auto !important;
     border-left: none !important;
-    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05) !important;
+    border-top: 2px solid #eee !important;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05) !important;
+    padding-bottom: 20px !important;
   }
 
   .product-grid {

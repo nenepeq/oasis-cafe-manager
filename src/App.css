@@ -147,7 +147,8 @@
 
 /* --- LOGIN STYLES --- */
 .login-container {
-  height: 100vh;
+  height: 100dvh;
+  /* Altura dinámica para evitar scroll por barras del navegador */
   width: 100vw;
   display: flex;
   align-items: center;
@@ -217,29 +218,36 @@
 
 @media (max-width: 600px) {
   .login-card {
-    width: 90%;
-    padding: 20px;
-    border-radius: 20px;
+    width: 85%;
+    padding: 15px 20px;
+    border-radius: 25px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
   }
 
   .login-logo {
-    height: 60px;
-    margin-bottom: 10px;
+    height: 120px;
+    /* Logo más grande según petición */
+    margin-bottom: 5px;
   }
 
   .login-title {
-    font-size: 20px;
-    margin-bottom: 20px;
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+
+  .login-form {
+    gap: 10px;
+    /* Reducción de gap para ganar espacio */
   }
 
   .login-input {
-    padding: 12px;
+    padding: 10px;
     font-size: 14px;
   }
 
   .login-button {
     padding: 12px;
     font-size: 14px;
+    margin-top: 5px;
   }
 }

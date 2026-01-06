@@ -91,8 +91,9 @@
 
   .shop-section {
     flex: none !important;
-    height: auto !important;
-    min-height: 50vh !important;
+    height: 55vh !important;
+    overflow-y: auto !important;
+    border-bottom: 2px solid #eee !important;
   }
 
   .cart-section {

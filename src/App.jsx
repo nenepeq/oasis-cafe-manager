@@ -753,7 +753,6 @@ function App() {
         </div>
         <div style={{ fontSize: '26px', fontWeight: '900', color: '#00913f', textAlign: 'center', margin: '10px 0' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
         <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
-        <button onClick={handleNewOrder} className="btn-active-effect" style={{ width: '100%', padding: '10px', background: '#ff4d4d', color: '#fff', borderRadius: '12px', border: 'none', marginTop: '5px', cursor: 'pointer' }}><RotateCcw size={14} /> VACIAR CARRITO</button>
       </div>
 
       {/* MODALES MODULARIZADOS */}

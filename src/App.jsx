@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 import { getProducts } from './api';
 import {
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart,
-  LogOut, IceCream, FileText, RefreshCw,
+  LogOut, IceCream, FileText, RefreshCw, CakeSlice,
   Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard
 } from 'lucide-react';
 
@@ -355,9 +355,39 @@ function App() {
     if (cat === 'Bebidas Calientes') return <Coffee size={35} color="#8b5a2b" />;
     if (cat === 'Alimentos') return <Utensils size={35} color="#27ae60" />;
     if (cat === 'Frappés') return <Snowflake size={35} color="#3498db" />;
-    if (cat === 'Bebidas Frías') return <div style={{ display: 'flex', gap: '4px' }}><CupSoda size={28} color="#3498db" /><Snowflake size={28} color="#3498db" /></div>;
-    if (cat === 'Refrescos') return <CupSoda size={35} color="#3498db" />;
-    if (cat === 'Postres' || cat === 'Sabritas y Otros') return <IceCream size={35} color="#e67e22" />;
+    if (cat === 'Bebidas Frías') return (
+      <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="10" width="9" height="9" rx="2" />
+        <path d="M4 14h9" strokeOpacity="0.3" />
+        <path d="M8 10v9" strokeOpacity="0.3" />
+        <rect x="11" y="5" width="9" height="9" rx="2" />
+        <path d="M11 9h9" strokeOpacity="0.3" />
+        <path d="M15 5v9" strokeOpacity="0.3" />
+      </svg>
+    );
+    if (cat === 'Refrescos') return (
+      <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 2h4" />
+        <path d="M10 2v4c0 1.5-3 2.5-3 5v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-8c0-2.5-3-3.5-3-5V2" />
+        <path d="M7 11h10" strokeOpacity="0.3" />
+        <path d="M7 15h10" strokeOpacity="0.3" />
+        <path d="M10 5h4" strokeOpacity="0.5" />
+      </svg>
+    );
+    if (cat === 'Postres' || cat === 'Sabritas y Otros') {
+      if (cat === 'Postres') return <CakeSlice size={35} color="#e67e22" />;
+      // Icono de bolsa de Sabritas (Chips Bag)
+      return (
+        <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#e67e22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {/* Bolsa con bordes dentados (zigzag) */}
+          <path d="M6 5 L8 3 L10 5 L12 3 L14 5 L16 3 L18 5 v14 L16 21 L14 19 L12 21 L10 19 L8 21 L6 19 v-14 Z" />
+          {/* Detalles de la bolsa */}
+          <path d="M9 8h6" strokeOpacity="0.4" strokeWidth="1" />
+          <circle cx="12" cy="13" r="2.5" strokeOpacity="0.3" />
+          <path d="M10 17h4" strokeOpacity="0.4" strokeWidth="1" />
+        </svg>
+      );
+    }
     return <Coffee size={35} color="#8b5a2b" />;
   };
 

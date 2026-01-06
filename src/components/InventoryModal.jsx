@@ -135,20 +135,29 @@ const InventoryModal = ({
                             maxHeight: '600px',
                             overflowY: 'auto'
                         }}>
-                            <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '14px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
                                 <thead style={{ background: '#f8f6f2' }}>
                                     <tr>
-                                        <th style={{ padding: '10px', textAlign: 'left', color: '#000' }}>Producto</th>
-                                        <th style={{ padding: '10px', color: '#000' }}>Cantidad</th>
-                                        <th style={{ padding: '10px', color: '#000' }}>Estatus</th>
+                                        <th style={{ padding: '8px 5px', textAlign: 'left', color: '#000' }}>Producto</th>
+                                        <th style={{ padding: '8px 5px', color: '#000', width: '70px', textAlign: 'center' }}>Stock</th>
+                                        <th style={{ padding: '8px 5px', color: '#000', width: '50px', textAlign: 'center' }}>Info</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {inventoryList.map((inv, index) => (
                                         <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                                            <td style={{ padding: '10px', color: '#000', fontWeight: '600' }}>{inv.products?.name}</td>
-                                            <td style={{ padding: '10px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td>
-                                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                            <td style={{
+                                                padding: '8px 5px',
+                                                color: '#000',
+                                                fontWeight: '600',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }} title={inv.products?.name}>
+                                                {inv.products?.name}
+                                            </td>
+                                            <td style={{ padding: '8px 5px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td>
+                                            <td style={{ padding: '8px 5px', textAlign: 'center' }}>
                                                 {inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16} /> : <CheckCircle color="#27ae60" size={16} />}
                                             </td>
                                         </tr>

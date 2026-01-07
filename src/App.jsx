@@ -852,7 +852,6 @@ function App() {
         padding: '5px 15px 15px 15px', // Reducimos padding superior
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
         boxSizing: 'border-box'
       }}>
         <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -909,7 +908,6 @@ function App() {
         borderLeft: '1px solid #eee',
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
         boxSizing: 'border-box'
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>

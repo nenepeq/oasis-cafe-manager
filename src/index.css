@@ -174,21 +174,21 @@ button:focus-visible {
 
   .store-section {
     flex: 2 !important;
-    /* Volvemos al flex de PC */
     width: auto !important;
+    min-width: 0 !important;
+    /* Permite que la sección se encoja correctamente */
     height: 100% !important;
     padding: 10px 15px !important;
   }
 
   .cart-section {
     flex: 0.8 !important;
-    /* Volvemos al flex de PC */
     width: auto !important;
+    min-width: 300px !important;
+    /* Asegura un ancho mínimo para el carrito al estar de lado */
     height: 100% !important;
     padding: 15px !important;
     border-left: 1px solid #eee !important;
     border-top: none !important;
   }
-
-  /* Quitamos los forzados de tamaños mini que había antes */
 }

@@ -27,11 +27,12 @@ const SalesModal = ({
         let csv = `OASIS CAFÉ - REPORTE DE VENTAS\n`;
         csv += `Periodo: ${reportStartDate} al ${reportEndDate}\n`;
         csv += `Generado el: ${now}\n\n`;
-        csv += 'ID,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
+        csv += 'Folio,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
         sales.forEach(s => {
             const date = new Date(s.created_at).toLocaleString();
             const productsList = s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '';
-            csv += `${s.id},"${date}","${s.customer_name}","${productsList}","${s.payment_method || ''}",${s.total},${s.status}\n`;
+            const folio = `#${s.id.slice(0, 4).toUpperCase()}`;
+            csv += `${folio},"${date}","${s.customer_name}","${productsList}","${s.payment_method || ''}",${s.total},${s.status}\n`;
         });
 
         // Agregar fila de TOTAL al final

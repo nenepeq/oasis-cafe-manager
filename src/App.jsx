@@ -18,6 +18,7 @@ import FinanceModal from './components/FinanceModal';
 import SalesModal from './components/SalesModal';
 import CashArqueoModal from './components/CashArqueoModal';
 import StarProductsModal from './components/StarProductsModal';
+import { generateTicketPDF } from './utils/ticketGenerator';
 
 
 
@@ -341,7 +342,26 @@ function App() {
         return;
       }
     }
-    if (!window.confirm(`✅ CONFIRMAR VENTA (${paymentMethod})\nSi es tarjeta, recuerda usar la terminal.`)) return;
+    const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
+    let changeInfo = "";
+
+    if (paymentMethod === 'Efectivo') {
+      const receivedInput = window.prompt(`Total a cobrar: $${total}\n\nIngresa el monto recibido del cliente:`);
+      if (receivedInput === null) return;
+
+      const receivedAmount = parseFloat(receivedInput);
+      if (isNaN(receivedAmount) || receivedAmount < total) {
+        alert("⚠️ Monto recibido insuficiente o inválido.");
+        return;
+      }
+      changeInfo = `\n\nRecibido: $${receivedAmount.toFixed(2)}\nCambio: $${(receivedAmount - total).toFixed(2)}`;
+    }
+
+    const confirmMsg = paymentMethod === 'Tarjeta'
+      ? `✅ CONFIRMAR VENTA (Tarjeta)\n\nProcede a realizar el cargo en la terminal bancaria.`
+      : `✅ CONFIRMAR VENTA (${paymentMethod})${changeInfo}`;
+
+    if (!window.confirm(confirmMsg)) return;
 
     setLoading(true);
     try {
@@ -388,15 +408,54 @@ function App() {
         items_count: cart.length
       });
 
-      // --- LÓGICA DE TICKET POR WHATSAPP ---
-      if (customerPhone.trim()) {
-        const wantTicket = window.confirm("¿Deseas enviar el ticket de compra por WhatsApp?");
-        if (wantTicket) {
-          const encodedMessage = generateWhatsAppMessage(sale, cart);
-          const phoneClean = customerPhone.replace(/\D/g, '');
-          // Usamos api.whatsapp.com que a veces es más robusto con la codificación de caracteres especiales
-          const waUrl = `https://api.whatsapp.com/send?phone=52${phoneClean}&text=${encodedMessage}`;
-          window.open(waUrl, '_blank');
+
+      // --- LÓGICA DE TICKET PDF Y WHATSAPP ---
+      const wantTicket = window.confirm("¿Deseas enviar el Ticket Digital (PDF) por WhatsApp?");
+      if (wantTicket) {
+        let activePhone = customerPhone;
+        if (!activePhone) {
+          activePhone = window.prompt("Ingresa el número de WhatsApp del cliente (10 dígitos):");
+        }
+
+        if (activePhone && activePhone.trim()) {
+          try {
+            // 1. Generar Blob del PDF
+            const pdfBlob = await generateTicketPDF(sale, cart);
+
+            // 2. Subir a Supabase Storage
+            const fileName = `ticket_${sale.id}_${Date.now()}.pdf`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('customer_tickets')
+              .upload(fileName, pdfBlob, {
+                contentType: 'application/pdf',
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (uploadError) throw uploadError;
+
+            // 3. Obtener URL Pública
+            const { data: { publicUrl } } = supabase.storage
+              .from('customer_tickets')
+              .getPublicUrl(fileName);
+
+            // 4. Formatear Mensaje de WhatsApp
+            let waMessage = `☕ *Oasis Café - Ticket Digital* ☕\n\n`;
+            waMessage += `¡Hola *${sale.customer_name}*! Gracias por tu compra. ✨\n\n`;
+            waMessage += `Puedes ver y descargar tu ticket oficial aquí:\n`;
+            waMessage += `📄 ${publicUrl}\n\n`;
+            waMessage += `_¡Esperamos verte pronto!_ 🧉`;
+
+            const encodedMessage = encodeURIComponent(waMessage);
+            const phoneClean = activePhone.replace(/\D/g, '');
+            const waUrl = `https://api.whatsapp.com/send?phone=52${phoneClean}&text=${encodedMessage}`;
+            window.open(waUrl, '_blank');
+
+          } catch (err) {
+            console.error("Error al generar/enviar ticket PDF:", err);
+            console.log("Datos de la venta intentados:", sale);
+            alert("No se pudo enviar el ticket PDF. Error: " + (err.message || 'Error desconocido'));
+          }
         }
       }
 
@@ -482,7 +541,7 @@ function App() {
   const calculateFinances = async () => {
     if (userRole !== 'admin') return;
     setLoading(true);
-    const { data: salesData } = await supabase.from('sales').select(`total, created_at, status, sale_items (quantity, products (cost_price))`)
+    const { data: salesData } = await supabase.from('sales').select(`id, total, created_at, status, customer_name, payment_method, sale_items (quantity, products (cost_price))`)
       .gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59').neq('status', 'cancelado');
 
     let ingresos = 0, costoProds = 0;
@@ -862,13 +921,6 @@ function App() {
             onChange={(e) => setCustomerName(e.target.value)}
             style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
           />
-          <input
-            type="tel"
-            placeholder="Teléfono WhatsApp (10 dígitos)"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#27ae60', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
-          />
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>
           {cart.map((item, idx) => (
@@ -922,7 +974,24 @@ function App() {
             </button>
           </div>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
-          <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
+          <button
+            onClick={handleSale}
+            disabled={loading || cart.length === 0}
+            className={cart.length > 0 ? "btn-active-effect" : ""}
+            style={{
+              width: '100%',
+              padding: '15px',
+              background: cart.length > 0 ? '#e74c3c' : '#999',
+              color: '#fff',
+              borderRadius: '12px',
+              fontWeight: '900',
+              border: 'none',
+              cursor: cart.length > 0 ? 'pointer' : 'default',
+              transition: 'background-color 0.3s ease'
+            }}
+          >
+            {loading ? 'PROCESANDO...' : 'PAGAR'}
+          </button>
         </div>
       </div>
 

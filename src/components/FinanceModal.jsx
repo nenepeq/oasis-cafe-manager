@@ -5,7 +5,6 @@ import {
 import AdminDashboard from './AdminDashboard';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { toPng } from 'html-to-image';
 
 /**
  * Modal de Reporte Financiero Avanzado con Tablero de Gráficas
@@ -65,7 +64,7 @@ const FinanceModal = ({
                 cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
             });
 
-            // Datos Resumen (Filas 5-9)
+            // Datos Resumen (Filas 5-8)
             const resumenData = [
                 ['Ingresos Brutos', finData.ingresos, 'Total Ventas'],
                 ['Costo Productos', -finData.costoProductos, 'Insumos Vendidos'],
@@ -79,11 +78,34 @@ const FinanceModal = ({
                     const cell = worksheet.getCell(rowNum, cIdx + 1);
                     cell.value = val;
                     cell.fill = blueFill;
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
                 });
             });
 
-            // Fila UTILIDAD (Fila 9)
-            const rowUtil = 9;
+            // Resumen de Métodos de Pago (Filas 9-10)
+            const salesByMethod = dailySalesList.reduce((acc, s) => {
+                acc[s.payment_method] = (acc[s.payment_method] || 0) + s.total;
+                return acc;
+            }, {});
+
+            worksheet.getCell(9, 1).value = 'Efectivo';
+            worksheet.getCell(9, 2).value = salesByMethod['Efectivo'] || 0;
+            worksheet.getCell(9, 3).value = 'Recaudado en Caja';
+
+            worksheet.getCell(10, 1).value = 'Tarjeta / Transf';
+            worksheet.getCell(10, 2).value = (salesByMethod['Tarjeta'] || 0) + (salesByMethod['Transferencia'] || 0);
+            worksheet.getCell(10, 3).value = 'Terminal / Cuenta';
+
+            [9, 10].forEach(r => {
+                [1, 2, 3].forEach(c => {
+                    const cell = worksheet.getCell(r, c);
+                    cell.fill = blueFill;
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
+                });
+            });
+
+            // Fila UTILIDAD (Fila 11)
+            const rowUtil = 11;
             worksheet.getCell(rowUtil, 1).value = 'UTILIDAD NETA';
             worksheet.getCell(rowUtil, 2).value = finData.utilidadNeta;
             worksheet.getCell(rowUtil, 3).value = `Margen: ${finData.margen.toFixed(1)}%`;
@@ -92,11 +114,12 @@ const FinanceModal = ({
                 const cell = worksheet.getCell(rowUtil, c);
                 cell.fill = blueFill;
                 cell.font = { bold: true, color: { argb: 'FF27AE60' } };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
             });
             worksheet.getCell(rowUtil, 3).alignment = { horizontal: 'right' };
 
             // Formatear moneda Resumen
-            ['B5', 'B6', 'B7', 'B8', 'B9'].forEach(cell => {
+            ['B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11'].forEach(cell => {
                 worksheet.getCell(cell).numFmt = '"$"#,##0.00';
             });
 
@@ -104,6 +127,7 @@ const FinanceModal = ({
             const startColDetalle = 5; // Columna E
             const pinkFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2DEDE' } };
             const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDFF0D8' } };
+            const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
 
             // Título Gastos (Fila 4)
             let rG = 4;
@@ -132,7 +156,11 @@ const FinanceModal = ({
                 row.getCell(startColDetalle + 2).value = e.categoria;
                 row.getCell(startColDetalle + 3).value = -e.monto;
                 row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
-                for (let i = 0; i < 4; i++) row.getCell(startColDetalle + i).fill = pinkFill;
+                for (let i = 0; i < 4; i++) {
+                    const cell = row.getCell(startColDetalle + i);
+                    cell.fill = pinkFill;
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
+                }
             });
 
             // Título Stock
@@ -162,11 +190,52 @@ const FinanceModal = ({
                 const prods = p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '';
 
                 row.getCell(startColDetalle).value = date;
-                row.getCell(startColDetalle + 1).value = `#${p.id.toString().slice(0, 4)}`;
+                row.getCell(startColDetalle + 1).value = p.id ? `#${p.id.toString().slice(0, 4).toUpperCase()}` : 'N/A';
                 row.getCell(startColDetalle + 2).value = prods;
                 row.getCell(startColDetalle + 3).value = -p.total;
                 row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
-                for (let i = 0; i < 4; i++) row.getCell(startColDetalle + i).fill = greenFill;
+                for (let i = 0; i < 4; i++) {
+                    const cell = row.getCell(startColDetalle + i);
+                    cell.fill = greenFill;
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
+                }
+            });
+
+            // Título Ventas Detalladas
+            rG += 2;
+            worksheet.getCell(rG, startColDetalle).value = 'VENTAS DETALLADAS';
+            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
+            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 4);
+            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
+            worksheet.getCell(rG, startColDetalle).fill = yellowFill;
+            rG++;
+
+            // Cabeceras Ventas
+            const salesHeaders = ['Fecha', 'Folio', 'Cliente', 'Método Pago', 'Total'];
+            salesHeaders.forEach((h, idx) => {
+                const cell = worksheet.getCell(rG, startColDetalle + idx);
+                cell.value = h;
+                cell.font = { bold: true };
+                cell.fill = yellowFill;
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
+            });
+            rG++;
+
+            dailySalesList.forEach(s => {
+                const row = worksheet.getRow(rG++);
+                const date = new Date(s.created_at).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                row.getCell(startColDetalle).value = date;
+                row.getCell(startColDetalle + 1).value = s.id ? `#${s.id.toString().slice(0, 4).toUpperCase()}` : 'N/A';
+                row.getCell(startColDetalle + 2).value = s.customer_name || 'Sin nombre';
+                row.getCell(startColDetalle + 3).value = s.payment_method;
+                row.getCell(startColDetalle + 4).value = s.total;
+                row.getCell(startColDetalle + 4).numFmt = '"$"#,##0.00';
+                for (let i = 0; i < 5; i++) {
+                    const cell = row.getCell(startColDetalle + i);
+                    cell.fill = yellowFill;
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
+                }
             });
 
             // --- AJUSTE DE ANCHOS DE COLUMNA FINAL ---
@@ -176,9 +245,10 @@ const FinanceModal = ({
             worksheet.getColumn(4).width = 8;  // D: Espaciador
 
             worksheet.getColumn(startColDetalle).width = 15;     // E: Fecha
-            worksheet.getColumn(startColDetalle + 1).width = 35; // F: Concepto / ID
-            worksheet.getColumn(startColDetalle + 2).width = 40; // G: Categoría / Productos
-            worksheet.getColumn(startColDetalle + 3).width = 15; // H: Monto
+            worksheet.getColumn(startColDetalle + 1).width = 12; // F: Folio
+            worksheet.getColumn(startColDetalle + 2).width = 30; // G: Cliente/Productos
+            worksheet.getColumn(startColDetalle + 3).width = 20; // H: Método Pago
+            worksheet.getColumn(startColDetalle + 4).width = 15; // I: Total
 
             // Generar archivo
             const buffer = await workbook.xlsx.writeBuffer();
@@ -186,7 +256,7 @@ const FinanceModal = ({
 
         } catch (error) {
             console.error('Error al generar Excel:', error);
-            alert('Error al generar el archivo Excel. Asegúrate de estar en la pestaña de gráficas para incluirlas.');
+            alert('Error al generar el archivo Excel: ' + (error.message || 'Error desconocido'));
         } finally {
             setIsExporting(false);
         }
@@ -455,6 +525,28 @@ const FinanceModal = ({
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
+                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay ventas en este periodo.</p> : (
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
+                                                <tbody>
+                                                    {dailySalesList.map((sale) => (
+                                                        <tr key={sale.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ fontWeight: '600' }}>
+                                                                    #{sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
+                                                                </div>
+                                                                <div style={{ fontSize: '10px', color: '#999' }}>
+                                                                    {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#27ae60', width: '70px', verticalAlign: 'top' }}>+${sale.total}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
                                     <div>
                                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
                                         {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (

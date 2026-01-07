@@ -99,6 +99,7 @@ function App() {
   });
   const [dailyExpensesList, setDailyExpensesList] = useState([]);
   const [dailyStockList, setDailyStockList] = useState([]);
+  const [dailySalesList, setDailySalesList] = useState([]);
 
   // --- ESTADOS DE FORMULARIOS (INVENTARIO/GASTOS) ---
   const [purchaseCart, setPurchaseCart] = useState([]);
@@ -475,7 +476,7 @@ function App() {
   const calculateFinances = async () => {
     if (userRole !== 'admin') return;
     setLoading(true);
-    const { data: salesData } = await supabase.from('sales').select(`total, status, sale_items (quantity, products (cost_price))`)
+    const { data: salesData } = await supabase.from('sales').select(`total, created_at, status, sale_items (quantity, products (cost_price))`)
       .gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59').neq('status', 'cancelado');
 
     let ingresos = 0, costoProds = 0;
@@ -490,7 +491,7 @@ function App() {
     const util = ingresos - egr;
 
     setFinData({ ingresos, costoProductos: costoProds, gastosOps: gastOps, gastosStock: gastStk, totalEgresos: egr, utilidadNeta: util, margen: ingresos > 0 ? (util / ingresos) * 100 : 0 });
-    setDailyExpensesList(expData || []); setDailyStockList(purData || []); setLoading(false);
+    setDailyExpensesList(expData || []); setDailyStockList(purData || []); setDailySalesList(salesData || []); setLoading(false);
   };
 
   const runCashArqueo = async () => {
@@ -882,7 +883,7 @@ function App() {
       <FinanceModal
         showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}
         financeEndDate={financeEndDate} setFinanceEndDate={setFinanceEndDate} calculateFinances={calculateFinances} loading={loading} finData={finData}
-        dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList}
+        dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList} dailySalesList={dailySalesList}
       />
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}

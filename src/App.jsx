@@ -230,20 +230,20 @@ function App() {
   // --- LÓGICA DE WHATSAPP ---
   const generateWhatsAppMessage = (sale, items) => {
     const dateStr = new Date(sale.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
-    let message = `☕ *Oasis Café - Ticket de Compra* ☕\n`;
+    let message = `\u2615 *Oasis Café - Ticket de Compra* \u2615\n`;
     message += `----------------------------------\n`;
-    message += `¡Hola *${sale.customer_name}*! Gracias por tu preferencia. ✨\n\n`;
-    message += `🛒 *DETALLE DEL PEDIDO:*\n`;
+    message += `¡Hola *${sale.customer_name}*! Gracias por tu preferencia. \u2728\n\n`;
+    message += `\uD83D\uDED2 *DETALLE DEL PEDIDO:*\n`;
 
     items.forEach(item => {
-      message += `• ${item.quantity}x ${item.name} ... $${(item.quantity * item.sale_price).toFixed(2)}\n`;
+      message += `\u2022 ${item.quantity}x ${item.name} ... $${(item.quantity * item.sale_price).toFixed(2)}\n`;
     });
 
     message += `\n----------------------------------\n`;
-    message += `💰 *TOTAL: $${sale.total.toFixed(2)}*\n`;
-    message += `💳 Pago: ${sale.payment_method}\n`;
-    message += `📅 Fecha: ${dateStr}\n\n`;
-    message += `_¡Esperamos verte pronto!_ 🧉`;
+    message += `\uD83D\uDCB0 *TOTAL: $${sale.total.toFixed(2)}*\n`;
+    message += `\uD83D\uDCB3 Pago: ${sale.payment_method}\n`;
+    message += `\uD83D\uDCC5 Fecha: ${dateStr}\n\n`;
+    message += `_¡Esperamos verte pronto!_ \uD83E\uDDC9`;
 
     return encodeURIComponent(message);
   };

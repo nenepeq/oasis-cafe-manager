@@ -192,3 +192,31 @@ button:focus-visible {
     border-top: none !important;
   }
 }
+
+/* =========================================================
+   OPTIMIZACIÓN PARA TABLETS (TÁCTIL)
+   ========================================================= */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    /* Tarjetas más grandes para tablets */
+    gap: 15px !important;
+  }
+
+  .product-card {
+    height: 150px !important;
+    /* Mayor altura para facilitar el toque */
+    padding: 15px !important;
+  }
+
+  .product-name {
+    font-size: 14px !important;
+    /* Texto más legible */
+  }
+
+  /* Ajuste de botones superiores para tablets */
+  .sticky-header button {
+    padding: 12px !important;
+    /* Botones más grandes */
+  }
+}

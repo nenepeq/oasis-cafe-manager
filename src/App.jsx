@@ -44,6 +44,7 @@ function App() {
   const [inventoryList, setInventoryList] = useState([]);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
 
@@ -226,6 +227,27 @@ function App() {
     }
   };
 
+  // --- LÓGICA DE WHATSAPP ---
+  const generateWhatsAppMessage = (sale, items) => {
+    const dateStr = new Date(sale.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+    let message = `☕ *Oasis Café - Ticket de Compra* ☕\n`;
+    message += `----------------------------------\n`;
+    message += `¡Hola *${sale.customer_name}*! Gracias por tu preferencia. ✨\n\n`;
+    message += `🛒 *DETALLE DEL PEDIDO:*\n`;
+
+    items.forEach(item => {
+      message += `• ${item.quantity}x ${item.name} ... $${(item.quantity * item.sale_price).toFixed(2)}\n`;
+    });
+
+    message += `\n----------------------------------\n`;
+    message += `💰 *TOTAL: $${sale.total.toFixed(2)}*\n`;
+    message += `💳 Pago: ${sale.payment_method}\n`;
+    message += `📅 Fecha: ${dateStr}\n\n`;
+    message += `_¡Esperamos verte pronto!_ 🧉`;
+
+    return encodeURIComponent(message);
+  };
+
   // --- LÓGICA DE VENTAS ---
   const addToCart = (product) => {
     const inventoryItem = inventoryList.find(inv => inv.product_id === product.id);
@@ -295,7 +317,7 @@ function App() {
           items: cart
         });
         alert("💾 Sin internet. Venta guardada localmente.");
-        setCart([]); setCustomerName(''); fetchInventory();
+        setCart([]); setCustomerName(''); setCustomerPhone(''); fetchInventory();
         setLoading(false);
         return;
       }
@@ -327,14 +349,30 @@ function App() {
         items_count: cart.length
       });
 
-      setCart([]); setCustomerName(''); fetchInventory();
+      // --- LÓGICA DE TICKET POR WHATSAPP ---
+      if (customerPhone.trim()) {
+        const wantTicket = window.confirm("¿Deseas enviar el ticket de compra por WhatsApp?");
+        if (wantTicket) {
+          const encodedMessage = generateWhatsAppMessage(sale, cart);
+          const phoneClean = customerPhone.replace(/\D/g, '');
+          const waUrl = `https://wa.me/52${phoneClean}?text=${encodedMessage}`;
+          window.open(waUrl, '_blank');
+        }
+      }
+
+      setCart([]); setCustomerName(''); setCustomerPhone(''); fetchInventory();
 
     } catch (err) { alert("Error: " + err.message); }
     setLoading(false);
   };
 
   const handleNewOrder = () => {
-    if (window.confirm("¿Iniciar pedido nuevo?")) { setCart([]); setCustomerName(''); setPaymentMethod('Efectivo'); }
+    if (window.confirm("¿Iniciar pedido nuevo?")) {
+      setCart([]);
+      setCustomerName('');
+      setCustomerPhone('');
+      setPaymentMethod('Efectivo');
+    }
   };
 
   // --- LÓGICA DE REPORTES Y MODALES ---
@@ -702,7 +740,22 @@ function App() {
         boxSizing: 'border-box'
       }}>
         <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
-        <input type="text" placeholder="Pedido a nombre de..." value={customerName} onChange={(e) => setCustomerName(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '10px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+          <input
+            type="text"
+            placeholder="Pedido a nombre de..."
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
+          />
+          <input
+            type="tel"
+            placeholder="Teléfono WhatsApp (10 dígitos)"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#27ae60', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
+          />
+        </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>
           {cart.map((item, idx) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>

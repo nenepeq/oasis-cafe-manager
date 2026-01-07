@@ -37,13 +37,25 @@ const InventoryModal = ({
     const [activeTab, setActiveTab] = useState('existencias'); // 'existencias' | 'entradas' | 'gastos'
     const [expensePreview, setExpensePreview] = useState(null);
     const [purchasePreview, setPurchasePreview] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     const handleFileChange = (e, setFile, setPreview) => {
         const file = e.target.files[0];
+        console.log('Archivo seleccionado:', file);
         if (file) {
             setFile(file);
+            setPreviewLoading(true);
             const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result);
+            reader.onloadstart = () => console.log('Iniciando lectura de archivo...');
+            reader.onerror = (err) => {
+                console.error('Error en FileReader:', err);
+                setPreviewLoading(false);
+            };
+            reader.onloadend = () => {
+                console.log('Lectura finalizada, estableciendo preview...');
+                setPreview(reader.result);
+                setPreviewLoading(false);
+            };
             reader.readAsDataURL(file);
         }
     };
@@ -291,7 +303,12 @@ const InventoryModal = ({
                                         style={{ display: 'none' }}
                                         onChange={(e) => handleFileChange(e, setPurchaseFile, setPurchasePreview)}
                                     />
-                                    {purchasePreview && (
+                                    {previewLoading && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#666', fontSize: '12px' }}>
+                                            <RefreshCw size={14} className="spin" /> Procesando imagen...
+                                        </div>
+                                    )}
+                                    {purchasePreview && !previewLoading && (
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
                                             <div style={{ position: 'relative' }}>
                                                 <img src={purchasePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
@@ -438,7 +455,12 @@ const InventoryModal = ({
                                         style={{ display: 'none' }}
                                         onChange={(e) => handleFileChange(e, setExpenseFile, setExpensePreview)}
                                     />
-                                    {expensePreview && (
+                                    {previewLoading && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#666', fontSize: '12px' }}>
+                                            <RefreshCw size={14} className="spin" /> Procesando imagen...
+                                        </div>
+                                    )}
+                                    {expensePreview && !previewLoading && (
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
                                             <div style={{ position: 'relative' }}>
                                                 <img src={expensePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />

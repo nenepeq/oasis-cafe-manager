@@ -294,9 +294,12 @@ const InventoryModal = ({
                                     {purchasePreview && (
                                         <div style={{ position: 'relative' }}>
                                             <img src={purchasePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
+                                                <CheckCircle size={14} color="#27ae60" fill="#fff" />
+                                            </div>
                                             <button
                                                 onClick={() => { setPurchaseFile(null); setPurchasePreview(null); }}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 5 }}
                                             >
                                                 ×
                                             </button>
@@ -435,9 +438,12 @@ const InventoryModal = ({
                                     {expensePreview && (
                                         <div style={{ position: 'relative' }}>
                                             <img src={expensePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
+                                                <CheckCircle size={14} color="#27ae60" fill="#fff" />
+                                            </div>
                                             <button
                                                 onClick={() => { setExpenseFile(null); setExpensePreview(null); }}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 5 }}
                                             >
                                                 ×
                                             </button>
@@ -470,7 +476,7 @@ const InventoryModal = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -60,9 +60,10 @@
 
 /* Estado para productos agotados */
 .product-card.out-of-stock {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
-  filter: grayscale(0.8);
+  filter: grayscale(0.4);
+  /* Reducido para ver mejor los detalles */
   position: relative;
   pointer-events: none;
   /* Evita clics */
@@ -71,17 +72,19 @@
 .product-card.out-of-stock::after {
   content: "AGOTADO";
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-15deg);
-  background: rgba(231, 76, 60, 0.9);
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 0, 0, 0.75);
+  /* Un poco más de opacidad para el rojo */
   color: #fff;
-  padding: 2px 10px;
-  border-radius: 6px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
   font-weight: 900;
-  font-size: 14px;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  /* Aumentado de 8px */
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 10;
 }
 

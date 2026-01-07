@@ -219,4 +219,10 @@ button:focus-visible {
     padding: 12px !important;
     /* Botones más grandes */
   }
+
+  /* Asegurar que el botón de pago no se corte en el margen inferior */
+  .cart-section {
+    padding-bottom: 40px !important;
+    /* Espacio extra para que el botón suba */
+  }
 }

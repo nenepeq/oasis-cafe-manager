@@ -889,13 +889,22 @@ function App() {
 
         <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
           <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
-            {filteredProducts.map(p => (
-              <button key={p.id} onClick={() => addToCart(p)} className="product-card">
-                <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
-                <div className="product-name">{p.name}</div>
-                <div className="product-price">${p.sale_price}</div>
-              </button>
-            ))}
+            {filteredProducts.map(p => {
+              const invItem = inventoryList.find(inv => inv.product_id === p.id);
+              const isOutOfStock = !invItem || invItem.stock <= 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => addToCart(p)}
+                  className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+                  disabled={isOutOfStock}
+                >
+                  <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
+                  <div className="product-name">{p.name}</div>
+                  <div className="product-price">${p.sale_price}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

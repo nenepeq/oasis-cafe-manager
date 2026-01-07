@@ -281,7 +281,7 @@ const InventoryModal = ({
                                         onClick={() => document.getElementById('purchase-file-input').click()}
                                         style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', background: '#f39c12', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                                     >
-                                        <Package size={14} /> {purchaseFile ? 'CAMBIAR FOTO' : 'FOTO TICKET'}
+                                        <Package size={14} /> {purchaseFile ? 'CAMBIAR TICKET' : 'ADJUNTAR TICKET'}
                                     </button>
                                     <input
                                         id="purchase-file-input"

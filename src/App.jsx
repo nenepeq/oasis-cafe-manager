@@ -214,6 +214,30 @@ function App() {
     setUserRole('ventas');
   };
 
+  // Suscripción a cambios en tiempo real de Supabase (Tabla inventory)
+  useEffect(() => {
+    const channel = supabase
+      .channel('inventory_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory' },
+        (payload) => {
+          console.log('🔔 Cambio detectado en base de datos:', payload);
+          fetchInventory();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción Realtime:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Error de conexión Realtime. Asegúrate de que "Realtime" esté activado para la tabla "inventory" en el dashboard de Supabase.');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   useEffect(() => {
     if (user) {
       getProducts().then(res => {
@@ -312,25 +336,26 @@ function App() {
   };
 
   const updateCartQty = (productId, delta) => {
-    setCart(prev => {
-      const item = prev.find(i => i.id === productId);
-      if (!item) return prev;
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
 
-      const newQty = item.quantity + delta;
+    const newQty = item.quantity + delta;
 
-      if (newQty <= 0) return prev.filter(i => i.id !== productId);
+    if (newQty <= 0) {
+      setCart(prev => prev.filter(i => i.id !== productId));
+      return;
+    }
 
-      if (delta > 0) {
-        const inventoryItem = inventoryList.find(inv => inv.product_id === productId);
-        const totalStock = inventoryItem ? inventoryItem.stock : 0;
-        if (newQty > totalStock) {
-          alert(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock} unidades`);
-          return prev;
-        }
+    if (delta > 0) {
+      const inventoryItem = inventoryList.find(inv => inv.product_id === productId);
+      const totalStock = inventoryItem ? inventoryItem.stock : 0;
+      if (newQty > totalStock) {
+        alert(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock} unidades`);
+        return;
       }
+    }
 
-      return prev.map(i => i.id === productId ? { ...i, quantity: newQty } : i);
-    });
+    setCart(prev => prev.map(i => i.id === productId ? { ...i, quantity: newQty } : i));
   };
 
   const handleSale = async () => {
@@ -891,7 +916,11 @@ function App() {
           <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
             {filteredProducts.map(p => {
               const invItem = inventoryList.find(inv => inv.product_id === p.id);
-              const isOutOfStock = !invItem || invItem.stock <= 0;
+              const cartItem = cart.find(i => i.id === p.id);
+              const qtyInCart = cartItem ? cartItem.quantity : 0;
+              const totalStock = invItem ? invItem.stock : 0;
+              const isOutOfStock = totalStock - qtyInCart <= 0;
+
               return (
                 <button
                   key={p.id}
@@ -955,8 +984,9 @@ function App() {
                       <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: '#4a3728' }}>{item.quantity}</span>
                       <button
                         onClick={() => updateCartQty(item.id, 1)}
-                        className="btn-active-effect"
+                        className={`btn-active-effect ${((inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity) ? 'opacity-50 pointer-events-none' : ''}`}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
+                        disabled={(inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity}
                       >
                         <Plus size={12} />
                       </button>

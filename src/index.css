@@ -85,7 +85,7 @@ button:focus-visible {
    ========================================================= */
 
 /* Corrección general para móviles para quitar el centrado forzado de Vite */
-@media (max-width: 900px) {
+@media (max-width: 600px) {
   body {
     display: block !important;
     place-items: unset !important;
@@ -93,7 +93,7 @@ button:focus-visible {
 }
 
 /* CASO 1: CELULAR VERTICAL (PARADO) - Uno encima del otro */
-@media (max-width: 900px) and (orientation: portrait) {
+@media (max-width: 600px) and (orientation: portrait) {
   .app-container {
     flex-direction: column !important;
     height: auto !important;
@@ -162,97 +162,31 @@ button:focus-visible {
   }
 }
 
-/* CASO 2: CELULAR HORIZONTAL (ACOSTADO) - CORRECCIÓN COMPLETA */
-@media (max-width: 900px) and (orientation: landscape) {
+/* CASO 2: CELULAR HORIZONTAL (ACOSTADO) - AHORA MODO PC */
+/* Eliminamos las restricciones de tamaño mini para que se vea como en PC */
+@media (max-height: 600px) and (orientation: landscape) {
   .app-container {
     flex-direction: row !important;
     height: 100vh !important;
     overflow: hidden !important;
-    /* Evitamos scroll en el body */
     align-items: stretch !important;
   }
 
-  /* --- TIENDA (IZQUIERDA) --- */
   .store-section {
-    flex: 1.8 !important;
-    /* Ocupa más espacio (aprox 65%) */
-    width: auto !important;
+    flex: 2 !important;
+    /* Volvemos al flex de PC */
     height: 100% !important;
-    overflow: hidden !important;
-    padding: 8px !important;
-    display: flex !important;
-    flex-direction: column !important;
+    padding: 10px 15px !important;
   }
 
-  /* HEADER MINI: Hacemos todo pequeño para dejar espacio a los productos */
-  .store-section>div:first-child {
-    margin-bottom: 5px !important;
-    padding-bottom: 5px !important;
-    border-bottom: 1px solid #eee;
-    flex-shrink: 0 !important;
-    /* No permitimos que el header se aplaste */
-  }
-
-  .store-section>div:first-child img {
-    height: 25px !important;
-    /* Logo pequeño */
-  }
-
-  .store-section>div:first-child h1 {
-    font-size: 14px !important;
-    /* Título pequeño */
-  }
-
-  /* Botones del menú (Inventario, Reportes...) */
-  .store-section>div:first-child button {
-    padding: 4px 8px !important;
-    font-size: 9px !important;
-    border-radius: 6px !important;
-    margin-left: 2px !important;
-  }
-
-  .store-section>div:first-child svg {
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-  /* CONTENEDOR DE PRODUCTOS (GRID) */
-  /* Forzamos que ocupe el espacio restante */
-  .store-section>div:last-child {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important;
-    /* Tarjetas más chicas */
-    gap: 8px !important;
-    overflow-y: auto !important;
-    /* Scroll interno solo aquí */
-    padding-bottom: 50px !important;
-    /* Espacio extra al final */
-    flex: 1 !important;
-    /* ESTO ES CLAVE: Estírate para llenar el hueco */
-    min-height: 0 !important;
-  }
-
-  /* Tarjetas de productos individuales */
-  .store-section>div:last-child button {
-    height: 110px !important;
-    padding: 5px !important;
-  }
-
-  .store-section>div:last-child button div {
-    font-size: 11px !important;
-    /* Letra más chica */
-  }
-
-  /* --- CARRITO (DERECHA) --- */
   .cart-section {
-    flex: 1 !important;
-    /* Ocupa menos espacio (aprox 35%) */
-    width: auto !important;
+    flex: 0.8 !important;
+    /* Volvemos al flex de PC */
     height: 100% !important;
-    overflow-y: auto !important;
-    border-left: 2px solid #ddd !important;
+    padding: 15px !important;
+    border-left: 1px solid #eee !important;
     border-top: none !important;
-    padding: 10px !important;
-    background-color: #fff !important;
   }
+
+  /* Quitamos los forzados de tamaños mini que había antes */
 }

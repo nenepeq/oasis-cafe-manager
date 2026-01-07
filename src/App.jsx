@@ -877,6 +877,7 @@ function App() {
         purchaseCost={purchaseCost} setPurchaseCost={setPurchaseCost} purchaseCart={purchaseCart} setPurchaseCart={setPurchaseCart} handleRegisterPurchase={handleRegisterPurchase}
         expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
         expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories} handleRegisterExpense={handleRegisterExpense}
+        expenseFile={expenseFile} setExpenseFile={setExpenseFile} purchaseFile={purchaseFile} setPurchaseFile={setPurchaseFile}
       />
       <FinanceModal
         showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}

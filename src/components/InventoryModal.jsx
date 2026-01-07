@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download } from 'lucide-react';
 
 /**
@@ -39,20 +39,25 @@ const InventoryModal = ({
     const [purchasePreview, setPurchasePreview] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
 
+    // Limpiar previsualizaciones cuando los archivos se resetean en App.jsx
+    useEffect(() => {
+        if (!expenseFile) setExpensePreview(null);
+    }, [expenseFile]);
+
+    useEffect(() => {
+        if (!purchaseFile) setPurchasePreview(null);
+    }, [purchaseFile]);
+
     const handleFileChange = (e, setFile, setPreview) => {
         const file = e.target.files[0];
-        console.log('Archivo seleccionado:', file);
         if (file) {
             setFile(file);
             setPreviewLoading(true);
             const reader = new FileReader();
-            reader.onloadstart = () => console.log('Iniciando lectura de archivo...');
             reader.onerror = (err) => {
-                console.error('Error en FileReader:', err);
                 setPreviewLoading(false);
             };
             reader.onloadend = () => {
-                console.log('Lectura finalizada, estableciendo preview...');
                 setPreview(reader.result);
                 setPreviewLoading(false);
             };

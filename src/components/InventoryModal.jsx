@@ -114,7 +114,7 @@ const InventoryModal = ({
                             onClick={fetchInventory}
                             disabled={loading}
                             className="btn-active-effect"
-                            style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer' }}
+                            style={{ padding: '8px 16px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '900', cursor: loading ? 'not-allowed' : 'pointer', marginRight: '10px' }}
                         >
                             <RefreshCw size={16} className={loading ? 'spin' : ''} />
                         </button>

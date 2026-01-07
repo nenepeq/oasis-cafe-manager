@@ -17,7 +17,7 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
         salesData.forEach(sale => {
             const date = new Date(sale.created_at);
             const dayIndex = date.getDay();
-            data[dayIndex].total += sale.total_amount;
+            data[dayIndex].total += (sale.total || 0);
         });
 
         return data;
@@ -50,7 +50,7 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
         salesData.forEach(sale => {
             const date = new Date(sale.created_at).toLocaleDateString();
             if (!trendMap[date]) trendMap[date] = { date, ingresos: 0, egresos: 0 };
-            trendMap[date].ingresos += sale.total_amount;
+            trendMap[date].ingresos += (sale.total || 0);
         });
 
         // Egresos (Gastos + Compras)

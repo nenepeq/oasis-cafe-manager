@@ -292,14 +292,17 @@ const InventoryModal = ({
                                         onChange={(e) => handleFileChange(e, setPurchaseFile, setPurchasePreview)}
                                     />
                                     {purchasePreview && (
-                                        <div style={{ position: 'relative' }}>
-                                            <img src={purchasePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
-                                            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
-                                                <CheckCircle size={14} color="#27ae60" fill="#fff" />
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <img src={purchasePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
+                                                    <CheckCircle size={16} color="#27ae60" fill="#fff" />
+                                                </div>
                                             </div>
+                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32' }}>✅ LISTO</span>
                                             <button
                                                 onClick={() => { setPurchaseFile(null); setPurchasePreview(null); }}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 5 }}
+                                                style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '5px' }}
                                             >
                                                 ×
                                             </button>
@@ -436,14 +439,17 @@ const InventoryModal = ({
                                         onChange={(e) => handleFileChange(e, setExpenseFile, setExpensePreview)}
                                     />
                                     {expensePreview && (
-                                        <div style={{ position: 'relative' }}>
-                                            <img src={expensePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
-                                            <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
-                                                <CheckCircle size={14} color="#27ae60" fill="#fff" />
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <img src={expensePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
+                                                    <CheckCircle size={16} color="#27ae60" fill="#fff" />
+                                                </div>
                                             </div>
+                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32' }}>✅ LISTO</span>
                                             <button
                                                 onClick={() => { setExpenseFile(null); setExpensePreview(null); }}
-                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 5 }}
+                                                style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '5px' }}
                                             >
                                                 ×
                                             </button>

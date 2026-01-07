@@ -137,7 +137,7 @@ const FinanceModal = ({
                 </button>
 
                 <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-                    <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
                         <PieChart size={28} /> Reporte Financiero
                     </h2>
 

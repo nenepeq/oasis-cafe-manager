@@ -88,7 +88,7 @@ const StarProductsModal = ({
                     <X size={30} />
                 </button>
 
-                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 10px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 10px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
                     <Award size={30} color="#f1c40f" /> Inteligencia de Negocio
                 </h2>
 

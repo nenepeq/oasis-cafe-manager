@@ -86,7 +86,7 @@ const SalesModal = ({
                     <X size={24} />
                 </button>
 
-                <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px' }}>Reporte de Ventas</h2>
+                <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
                 {/* FILTRO DE FECHA (RANGO) */}
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>

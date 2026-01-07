@@ -175,6 +175,7 @@ button:focus-visible {
   .store-section {
     flex: 2 !important;
     /* Volvemos al flex de PC */
+    width: auto !important;
     height: 100% !important;
     padding: 10px 15px !important;
   }
@@ -182,6 +183,7 @@ button:focus-visible {
   .cart-section {
     flex: 0.8 !important;
     /* Volvemos al flex de PC */
+    width: auto !important;
     height: 100% !important;
     padding: 15px !important;
     border-left: 1px solid #eee !important;

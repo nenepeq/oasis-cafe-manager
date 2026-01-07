@@ -326,30 +326,25 @@ const FinanceModal = ({
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
                                     <div>
                                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
                                         {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyExpensesList.map((exp) => (
                                                         <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '12px 0', color: '#555', wordBreak: 'break-word', maxWidth: '0', width: '75%' }}>
-                                                                <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#333', marginBottom: '2px' }}>{exp.concepto}</div>
-                                                                <div style={{ fontSize: '10px', color: '#888', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                                                                    <span>{exp.fecha}</span>
-                                                                    <span>•</span>
-                                                                    <span>{exp.categoria}</span>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ lineHeight: '1.4' }}>
+                                                                    {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span>
                                                                     {exp.ticket_url && (
-                                                                        <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', marginLeft: '5px' }}>
-                                                                            <ImageIcon size={10} /> <span style={{ fontSize: '10px', fontWeight: 'bold' }}>TICKET</span>
+                                                                        <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ marginLeft: '5px', color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                                                                            <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
                                                                         </a>
                                                                     )}
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', fontSize: '14px', verticalAlign: 'top', width: '25%' }}>
-                                                                -${exp.monto}
-                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${exp.monto}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -359,29 +354,27 @@ const FinanceModal = ({
                                     <div>
                                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
                                         {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay compras de stock en este periodo.</p> : (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyStockList.map((purch) => (
                                                         <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '12px 0', color: '#555', wordBreak: 'break-word', maxWidth: '0', width: '75%' }}>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                                        <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#333' }}>Compra #{purch.id.toString().slice(0, 4)}</span>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
+                                                                        <span style={{ fontWeight: '600' }}>#{purch.id.toString().slice(0, 4)}</span>
+                                                                        <span style={{ color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
                                                                         {purch.ticket_url && (
                                                                             <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
-                                                                                <ImageIcon size={10} /> <span style={{ fontSize: '10px', fontWeight: 'bold' }}>TICKET</span>
+                                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
                                                                             </a>
                                                                         )}
                                                                     </div>
-                                                                    <div style={{ fontSize: '10px', color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</div>
-                                                                    <div style={{ fontSize: '10px', color: '#666', lineHeight: '1.4', background: '#f9f9f9', padding: '5px', borderRadius: '5px' }}>
-                                                                        {purch.purchase_items?.map(i => `${i.products?.name} (${i.quantity})`).join(', ')}
+                                                                    <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.2' }}>
+                                                                        {purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}
                                                                     </div>
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', fontSize: '14px', verticalAlign: 'top', width: '25%' }}>
-                                                                -${purch.total}
-                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${purch.total}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

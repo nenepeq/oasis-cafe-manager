@@ -106,6 +106,12 @@ function App() {
   const [selectedPurchaseProd, setSelectedPurchaseProd] = useState('');
   const [purchaseQty, setPurchaseQty] = useState(0);
   const [purchaseCost, setPurchaseCost] = useState(0);
+
+  // Mermas (Shrinkage)
+  const [selectedShrinkageProd, setSelectedShrinkageProd] = useState('');
+  const [shrinkageQty, setShrinkageQty] = useState(0);
+  const [shrinkageReason, setShrinkageReason] = useState('Dañado');
+
   const [expenseConcepto, setExpenseConcepto] = useState('');
   const [expenseCategoria, setExpenseCategoria] = useState('Insumos');
   const [expenseMonto, setExpenseMonto] = useState(0);
@@ -122,7 +128,7 @@ function App() {
     '---🧾 EMPAQUES Y DESECHABLES 🧾---', 'Cucharas y agitadores', 'Etiquetas o stickers', 'Fajitas para Café 50 pz', 'Popotes', 'Servilletas', 'Tapa Plana para vaso 16 oz Inix 50 pz', 'Tapa Traveler Negra 100 pz 12, 16, 20 oz', 'Vaso Cristal 16 oz Inix 473 ml 50 pz', 'Vaso Papel 16 oz blanco 50 pz',
     '--- 🏪OPERACIÓN DEL LOCAL 🏪---', 'Limpieza y sanitizantes', 'Servicios básicos',
     '---👥 PERSONAL 👥---', 'Nómina',
-    '---📉 FINANZAS Y CONTROL 📉---', 'Mermas', 'Otros'
+    '---📉 FINANZAS Y CONTROL 📉---', 'Otros'
   ];
 
   // --- EFECTOS INICIALES Y CARGA DE DATOS ---
@@ -625,6 +631,55 @@ function App() {
     setLoading(false);
   };
 
+  const handleRegisterShrinkage = async () => {
+    if (!selectedShrinkageProd || shrinkageQty <= 0) return;
+    setLoading(true);
+
+    try {
+      const prod = products.find(p => p.id === selectedShrinkageProd);
+      const inv = inventoryList.find(i => i.product_id === selectedShrinkageProd);
+
+      if (!inv || inv.stock < shrinkageQty) {
+        throw new Error("No hay suficiente stock para registrar esta merma.");
+      }
+
+      // 1. Actualizar Inventario
+      const { error: invError } = await supabase.from('inventory')
+        .update({ stock: inv.stock - shrinkageQty })
+        .eq('product_id', selectedShrinkageProd);
+      if (invError) throw invError;
+
+      // 2. Registrar como "Gasto" de $0 para historial
+      const { error: expError } = await supabase.from('expenses').insert([{
+        concepto: `Merma: ${shrinkageQty}x ${prod.name} (${shrinkageReason})`,
+        categoria: 'Merma',
+        monto: 0,
+        fecha: getMXDate(),
+        created_by: user.id
+      }]);
+      if (expError) throw expError;
+
+      // 3. Log de Actividad
+      await logActivity(user.id, 'REGISTRO_MERMA', 'INVENTARIO', {
+        producto: prod.name,
+        cantidad: shrinkageQty,
+        motivo: shrinkageReason
+      });
+
+      alert(`✅ Merma registrada de ${prod.name}`);
+      setSelectedShrinkageProd('');
+      setShrinkageQty(0);
+      setShrinkageReason('Dañado');
+      fetchInventory();
+      calculateFinances();
+
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRegisterExpense = async () => {
     if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos: Concepto y Monto > 0');
     setLoading(true);
@@ -879,6 +934,10 @@ function App() {
         expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
         expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories} handleRegisterExpense={handleRegisterExpense}
         expenseFile={expenseFile} setExpenseFile={setExpenseFile} purchaseFile={purchaseFile} setPurchaseFile={setPurchaseFile}
+        selectedShrinkageProd={selectedShrinkageProd} setSelectedShrinkageProd={setSelectedShrinkageProd}
+        shrinkageQty={shrinkageQty} setShrinkageQty={setShrinkageQty}
+        shrinkageReason={shrinkageReason} setShrinkageReason={setShrinkageReason}
+        handleRegisterShrinkage={handleRegisterShrinkage}
       />
       <FinanceModal
         showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import {
-    X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download, Image as ImageIcon, BarChart3, Table as TableIcon
+    X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download, Image as ImageIcon, BarChart3, Table as TableIcon, Loader2
 } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { toPng } from 'html-to-image';
 
 /**
  * Modal de Reporte Financiero Avanzado con Tablero de Gráficas
@@ -24,48 +27,169 @@ const FinanceModal = ({
 }) => {
     const [activeTab, setActiveTab] = useState('data'); // 'data' o 'charts'
 
-    const handleExportFinanceCSV = () => {
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportFinanceExcel = async () => {
         if (!finData) return;
+        setIsExporting(true);
 
-        const now = new Date().toLocaleString();
-        let csv = `OASIS CAFÉ - REPORTE FINANCIERO\n`;
-        csv += `Periodo: ${financeStartDate} al ${financeEndDate}\n`;
-        csv += `Generado el: ${now}\n\n`;
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Reporte Financiero');
 
-        // RESUMEN
-        csv += `--- RESUMEN GENERAL ---\n`;
-        csv += `Ingresos Brutos, $${finData.ingresos.toFixed(2)}\n`;
-        csv += `Costo Productos, -$${finData.costoProductos.toFixed(2)}\n`;
-        csv += `Gastos Operativos, -$${finData.gastosOps.toFixed(2)}\n`;
-        csv += `Inversion Stock, -$${finData.gastosStock.toFixed(2)}\n`;
-        csv += `Utilidad Neta, $${finData.utilidadNeta.toFixed(2)}\n`;
-        csv += `Margen Real, ${finData.margen.toFixed(1)}%\n\n`;
+            // 1. Encabezado Principal
+            worksheet.mergeCells('A1:H1');
+            const mainHeader = worksheet.getCell('A1');
+            mainHeader.value = 'OASIS CAFÉ - REPORTE FINANCIERO ADM';
+            mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
+            mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+            mainHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
 
-        // GASTOS OPERATIVOS
-        csv += `--- DESGLOSE DE GASTOS OPERATIVOS ---\n`;
-        csv += `Fecha,Concepto,Categoria,Monto\n`;
-        dailyExpensesList.forEach(e => {
-            csv += `"${e.fecha}","${e.concepto}","${e.categoria}",-${e.monto}\n`;
-        });
-        csv += `\n`;
+            worksheet.getCell('A2').value = `Periodo: ${financeStartDate} al ${financeEndDate}`;
+            worksheet.getCell('B2').value = `Generado: ${new Date().toLocaleString()}`;
+            worksheet.getRow(2).font = { bold: true, size: 9 };
 
-        // ENTRADAS DE STOCK
-        csv += `--- DESGLOSE DE ENTRADAS DE STOCK (INVERSION) ---\n`;
-        csv += `Fecha,ID Compra,Productos,Total\n`;
-        dailyStockList.forEach(p => {
-            const date = new Date(p.created_at).toLocaleDateString();
-            const prods = p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '';
-            csv += `"${date}","#${p.id.toString().slice(0, 4)}","${prods}",-${p.total}\n`;
-        });
+            // --- SECCIÓN IZQUIERDA: RESUMEN (A-C) ---
+            const rowResStart = 4;
+            const resCols = [1, 2, 3];
+            const blueFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAF7' } };
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Reporte_Financiero_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Encabezados Resumen (Fila 4)
+            worksheet.getCell(rowResStart, 1).value = 'Concepto';
+            worksheet.getCell(rowResStart, 2).value = 'Monto';
+            worksheet.getCell(rowResStart, 3).value = 'Detalle';
+            resCols.forEach(c => {
+                const cell = worksheet.getCell(rowResStart, c);
+                cell.font = { bold: true };
+                cell.fill = blueFill;
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
+            });
+
+            // Datos Resumen (Filas 5-9)
+            const resumenData = [
+                ['Ingresos Brutos', finData.ingresos, 'Total Ventas'],
+                ['Costo Productos', -finData.costoProductos, 'Insumos Vendidos'],
+                ['Gastos Operativos', -finData.gastosOps, 'Gastos de Operación'],
+                ['Inversión Stock', -finData.gastosStock, 'Compras de Inventario']
+            ];
+
+            resumenData.forEach((rd, idx) => {
+                const rowNum = 5 + idx;
+                rd.forEach((val, cIdx) => {
+                    const cell = worksheet.getCell(rowNum, cIdx + 1);
+                    cell.value = val;
+                    cell.fill = blueFill;
+                });
+            });
+
+            // Fila UTILIDAD (Fila 9)
+            const rowUtil = 9;
+            worksheet.getCell(rowUtil, 1).value = 'UTILIDAD NETA';
+            worksheet.getCell(rowUtil, 2).value = finData.utilidadNeta;
+            worksheet.getCell(rowUtil, 3).value = `Margen: ${finData.margen.toFixed(1)}%`;
+
+            resCols.forEach(c => {
+                const cell = worksheet.getCell(rowUtil, c);
+                cell.fill = blueFill;
+                cell.font = { bold: true, color: { argb: 'FF27AE60' } };
+            });
+            worksheet.getCell(rowUtil, 3).alignment = { horizontal: 'right' };
+
+            // Formatear moneda Resumen
+            ['B5', 'B6', 'B7', 'B8', 'B9'].forEach(cell => {
+                worksheet.getCell(cell).numFmt = '"$"#,##0.00';
+            });
+
+            // --- SECCIÓN DERECHA: DESGLOSE (E-H) ---
+            const startColDetalle = 5; // Columna E
+            const pinkFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2DEDE' } };
+            const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDFF0D8' } };
+
+            // Título Gastos (Fila 4)
+            let rG = 4;
+            worksheet.getCell(rG, startColDetalle).value = 'GASTOS OPERATIVOS';
+            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
+            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 3);
+            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
+            worksheet.getCell(rG, startColDetalle).fill = pinkFill;
+            rG++;
+
+            // Cabeceras Gastos (Fila 5)
+            const expenseHeaders = ['Fecha', 'Concepto', 'Categoría', 'Monto'];
+            expenseHeaders.forEach((h, idx) => {
+                const cell = worksheet.getCell(rG, startColDetalle + idx);
+                cell.value = h;
+                cell.font = { bold: true };
+                cell.fill = pinkFill;
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
+            });
+            rG++;
+
+            dailyExpensesList.forEach(e => {
+                const row = worksheet.getRow(rG++);
+                row.getCell(startColDetalle).value = e.fecha;
+                row.getCell(startColDetalle + 1).value = e.concepto;
+                row.getCell(startColDetalle + 2).value = e.categoria;
+                row.getCell(startColDetalle + 3).value = -e.monto;
+                row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
+                for (let i = 0; i < 4; i++) row.getCell(startColDetalle + i).fill = pinkFill;
+            });
+
+            // Título Stock
+            rG += 2;
+            const stockTitleRow = rG;
+            worksheet.getCell(rG, startColDetalle).value = 'ENTRADAS DE STOCK (INVERSIÓN)';
+            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
+            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 3);
+            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
+            worksheet.getCell(rG, startColDetalle).fill = greenFill;
+            rG++;
+
+            // Cabeceras Stock
+            const stockHeaders = ['Fecha', 'ID Compra', 'Productos', 'Total'];
+            stockHeaders.forEach((h, idx) => {
+                const cell = worksheet.getCell(rG, startColDetalle + idx);
+                cell.value = h;
+                cell.font = { bold: true };
+                cell.fill = greenFill;
+                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
+            });
+            rG++;
+
+            dailyStockList.forEach(p => {
+                const row = worksheet.getRow(rG++);
+                const date = new Date(p.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'numeric', day: 'numeric' });
+                const prods = p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '';
+
+                row.getCell(startColDetalle).value = date;
+                row.getCell(startColDetalle + 1).value = `#${p.id.toString().slice(0, 4)}`;
+                row.getCell(startColDetalle + 2).value = prods;
+                row.getCell(startColDetalle + 3).value = -p.total;
+                row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
+                for (let i = 0; i < 4; i++) row.getCell(startColDetalle + i).fill = greenFill;
+            });
+
+            // --- AJUSTE DE ANCHOS DE COLUMNA FINAL ---
+            worksheet.getColumn(1).width = 22; // A: Concepto
+            worksheet.getColumn(2).width = 15; // B: Monto
+            worksheet.getColumn(3).width = 25; // C: Detalle
+            worksheet.getColumn(4).width = 8;  // D: Espaciador
+
+            worksheet.getColumn(startColDetalle).width = 15;     // E: Fecha
+            worksheet.getColumn(startColDetalle + 1).width = 35; // F: Concepto / ID
+            worksheet.getColumn(startColDetalle + 2).width = 40; // G: Categoría / Productos
+            worksheet.getColumn(startColDetalle + 3).width = 15; // H: Monto
+
+            // Generar archivo
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Oasis_Cafe_Reporte_${financeStartDate}_a_${financeEndDate}.xlsx`);
+
+        } catch (error) {
+            console.error('Error al generar Excel:', error);
+            alert('Error al generar el archivo Excel. Asegúrate de estar en la pestaña de gráficas para incluirlas.');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     if (!showFinances || userRole !== 'admin') return null;
@@ -168,7 +292,8 @@ const FinanceModal = ({
                             <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
                                 {!loading && finData.ingresos >= 0 && (
                                     <button
-                                        onClick={handleExportFinanceCSV}
+                                        onClick={handleExportFinanceExcel}
+                                        disabled={isExporting}
                                         className="btn-active-effect"
                                         style={{
                                             padding: '10px 15px',
@@ -181,10 +306,13 @@ const FinanceModal = ({
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '5px',
-                                            boxShadow: '0 4px 0 #1e7e46'
+                                            boxShadow: isExporting ? 'none' : '0 4px 0 #1e7e46',
+                                            opacity: isExporting ? 0.7 : 1,
+                                            transform: isExporting ? 'translateY(2px)' : 'none'
                                         }}
                                     >
-                                        <Download size={18} /> EXCEL
+                                        {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                        {isExporting ? 'GENERANDO...' : 'EXCEL'}
                                     </button>
                                 )}
                             </div>

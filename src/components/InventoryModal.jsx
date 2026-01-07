@@ -32,9 +32,17 @@ const InventoryModal = ({
     purchaseFile,
     setPurchaseFile,
     expenseCategories,
-    handleRegisterExpense
+    handleRegisterExpense,
+    // Props de Mermas
+    selectedShrinkageProd,
+    setSelectedShrinkageProd,
+    shrinkageQty,
+    setShrinkageQty,
+    shrinkageReason,
+    setShrinkageReason,
+    handleRegisterShrinkage
 }) => {
-    const [activeTab, setActiveTab] = useState('existencias'); // 'existencias' | 'entradas' | 'gastos'
+    const [activeTab, setActiveTab] = useState('existencias'); // 'existencias' | 'entradas' | 'gastos' | 'mermas'
     const [expensePreview, setExpensePreview] = useState(null);
     const [purchasePreview, setPurchasePreview] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
@@ -191,6 +199,18 @@ const InventoryModal = ({
                         }}
                     >
                         GASTOS
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('mermas')}
+                        style={{
+                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none', fontSize: '11px',
+                            background: activeTab === 'mermas' ? '#fff' : 'transparent',
+                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
+                            boxShadow: activeTab === 'mermas' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        MERMAS
                     </button>
                 </div>
 
@@ -416,6 +436,7 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: GASTOS DE OPERACIÓN */}
                     {activeTab === 'gastos' && (
+                        // ... (código de gastos existente)
                         <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>GASTOS DE OPERACIÓN (MISC)</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -504,6 +525,71 @@ const InventoryModal = ({
                                 >
                                     {loading ? <RefreshCw className="spin" size={16} /> : 'REGISTRAR GASTO'}
                                 </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SECCIÓN: MERMAS */}
+                    {activeTab === 'mermas' && (
+                        <div style={{ background: '#f8d7da', padding: '20px', borderRadius: '15px', border: '2px solid #dc3545' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#721c24', marginBottom: '15px' }}>REGISTRO DE MERMAS Y BAJAS</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <select
+                                    value={selectedShrinkageProd}
+                                    onChange={(e) => setSelectedShrinkageProd(e.target.value)}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                >
+                                    <option value="">Seleccionar producto...</option>
+                                    {products.map(p => {
+                                        const inv = inventoryList.find(i => i.product_id === p.id);
+                                        return <option key={p.id} value={p.id}>{p.name} (Stock: {inv ? inv.stock : 0})</option>;
+                                    })}
+                                </select>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="Cantidad"
+                                        min="1"
+                                        value={shrinkageQty || ''}
+                                        onChange={(e) => setShrinkageQty(parseInt(e.target.value) || 0)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                    <select
+                                        value={shrinkageReason}
+                                        onChange={(e) => setShrinkageReason(e.target.value)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    >
+                                        <option value="Dañado">Dañado / Defectuoso</option>
+                                        <option value="Vencido">Vencido / Caducado</option>
+                                        <option value="Error Preparación">Error de Preparación</option>
+                                        <option value="Cortesía">Cortesía / Regalo</option>
+                                        <option value="Robo/Perdida">Robo o Pérdida</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={handleRegisterShrinkage}
+                                    disabled={loading || !selectedShrinkageProd || shrinkageQty <= 0}
+                                    className={(selectedShrinkageProd && shrinkageQty > 0) ? "btn-active-effect" : ""}
+                                    style={{
+                                        width: '100%',
+                                        padding: '15px',
+                                        background: loading ? '#ccc' : (selectedShrinkageProd && shrinkageQty > 0 ? '#dc3545' : '#ddd'),
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        fontWeight: '900',
+                                        marginTop: '10px',
+                                        cursor: (loading || !selectedShrinkageProd || shrinkageQty <= 0) ? 'not-allowed' : 'pointer',
+                                        fontSize: '16px'
+                                    }}
+                                >
+                                    {loading ? <Loader2 size={18} className="animate-spin" /> : 'REGISTRAR BAJA DE STOCK'}
+                                </button>
+                                <p style={{ fontSize: '11px', color: '#721c24', fontStyle: 'italic', marginTop: '5px' }}>
+                                    * Esta acción descontará el stock e incluirá un registro en gastos con valor $0 para control administrativo.
+                                </p>
                             </div>
                         </div>
                     )}

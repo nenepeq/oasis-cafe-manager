@@ -9,6 +9,18 @@ import {
  */
 const AdminDashboard = ({ salesData, expensesData, stockData }) => {
 
+    // Helper para formatear fecha de forma segura (ignorar desfase UTC)
+    const safeParseDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Mexico_City',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(d);
+    };
+
     // 1. Procesar Ventas por Día de la Semana
     const weeklySales = useMemo(() => {
         const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -48,20 +60,21 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
 
         // Ingresos de ventas
         salesData.forEach(sale => {
-            const date = new Date(sale.created_at).toLocaleDateString();
+            const date = safeParseDate(sale.created_at);
             if (!trendMap[date]) trendMap[date] = { date, ingresos: 0, egresos: 0 };
             trendMap[date].ingresos += (sale.total || 0);
         });
 
         // Egresos (Gastos + Compras)
         expensesData.forEach(exp => {
-            const date = new Date(exp.fecha).toLocaleDateString();
+            // Expenses ya vienen en formato YYYY-MM-DD del MXDate helper
+            const date = exp.fecha;
             if (!trendMap[date]) trendMap[date] = { date, ingresos: 0, egresos: 0 };
             trendMap[date].egresos += exp.monto;
         });
 
         stockData.forEach(stock => {
-            const date = new Date(stock.created_at).toLocaleDateString();
+            const date = safeParseDate(stock.created_at);
             if (!trendMap[date]) trendMap[date] = { date, ingresos: 0, egresos: 0 };
             trendMap[date].egresos += stock.total;
         });
@@ -73,7 +86,7 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', padding: '10px 0' }}>
 
             {/* GRÁFICA DE VENTAS SEMANALES */}
-            <div style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
+            <div id="weekly-sales-chart" style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
                 <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#666', fontWeight: 'bold' }}>VENTAS POR DÍA DE LA SEMANA ($)</h4>
                 <div style={{ width: '100%', height: 250 }}>
                     <ResponsiveContainer>
@@ -93,7 +106,7 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 {/* HORA PICO */}
-                <div style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
+                <div id="hourly-sales-chart" style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
                     <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#666', fontWeight: 'bold' }}>HORA PICO (TRANSACCIONES)</h4>
                     <div style={{ width: '100%', height: 250 }}>
                         <ResponsiveContainer>
@@ -113,7 +126,7 @@ const AdminDashboard = ({ salesData, expensesData, stockData }) => {
                 </div>
 
                 {/* TENDENCIA FINANCIERA */}
-                <div style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
+                <div id="financial-trend-chart" style={{ background: '#fff', padding: '20px', borderRadius: '20px', border: '1px solid #eee' }}>
                     <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#666', fontWeight: 'bold' }}>INGRESOS VS EGRESOS</h4>
                     <div style={{ width: '100%', height: 250 }}>
                         <ResponsiveContainer>

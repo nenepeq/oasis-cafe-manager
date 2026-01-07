@@ -27,10 +27,26 @@ const InventoryModal = ({
     setExpenseMonto,
     expenseConcepto,
     setExpenseConcepto,
+    expenseFile,
+    setExpenseFile,
+    purchaseFile,
+    setPurchaseFile,
     expenseCategories,
     handleRegisterExpense
 }) => {
     const [activeTab, setActiveTab] = useState('existencias'); // 'existencias' | 'entradas' | 'gastos'
+    const [expensePreview, setExpensePreview] = useState(null);
+    const [purchasePreview, setPurchasePreview] = useState(null);
+
+    const handleFileChange = (e, setFile, setPreview) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setPreview(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
 
     if (!showInventory || userRole !== 'admin') return null;
 
@@ -257,6 +273,38 @@ const InventoryModal = ({
                                     style={{ flex: 1, minWidth: '0', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '14px' }}
                                 />
                             </div>
+
+                            {/* SELECTOR DE IMAGEN PARA COMPRAS */}
+                            <div style={{ marginBottom: '15px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <button
+                                        onClick={() => document.getElementById('purchase-file-input').click()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', background: '#f39c12', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                                    >
+                                        <Package size={14} /> {purchaseFile ? 'CAMBIAR FOTO' : 'FOTO TICKET'}
+                                    </button>
+                                    <input
+                                        id="purchase-file-input"
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleFileChange(e, setPurchaseFile, setPurchasePreview)}
+                                    />
+                                    {purchasePreview && (
+                                        <div style={{ position: 'relative' }}>
+                                            <img src={purchasePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                            <button
+                                                onClick={() => { setPurchaseFile(null); setPurchasePreview(null); }}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             <button
                                 onClick={() => {
                                     const p = products.find(x => x.id === selectedPurchaseProd);
@@ -367,6 +415,36 @@ const InventoryModal = ({
                                     onChange={(e) => setExpenseConcepto(e.target.value)}
                                     style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
                                 />
+
+                                {/* SELECTOR DE IMAGEN PARA GASTOS */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+                                    <button
+                                        onClick={() => document.getElementById('expense-file-input').click()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', background: '#34495e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                                    >
+                                        <Package size={14} /> {expenseFile ? 'CAMBIAR TICKET' : 'ADJUNTAR TICKET'}
+                                    </button>
+                                    <input
+                                        id="expense-file-input"
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleFileChange(e, setExpenseFile, setExpensePreview)}
+                                    />
+                                    {expensePreview && (
+                                        <div style={{ position: 'relative' }}>
+                                            <img src={expensePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
+                                            <button
+                                                onClick={() => { setExpenseFile(null); setExpensePreview(null); }}
+                                                style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '15px', height: '15px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <button
                                     onClick={handleRegisterExpense}
                                     disabled={loading || expenseMonto <= 0 || !expenseConcepto.trim()}

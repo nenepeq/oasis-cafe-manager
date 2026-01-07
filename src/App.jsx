@@ -108,6 +108,8 @@ function App() {
   const [expenseConcepto, setExpenseConcepto] = useState('');
   const [expenseCategoria, setExpenseCategoria] = useState('Insumos');
   const [expenseMonto, setExpenseMonto] = useState(0);
+  const [expenseFile, setExpenseFile] = useState(null);
+  const [purchaseFile, setPurchaseFile] = useState(null);
 
   const categories = [
     'Todos', 'Bebidas Calientes', 'Alimentos', 'Frappés',
@@ -246,6 +248,36 @@ function App() {
     message += `_¡Esperamos verte pronto!_ 🧉`;
 
     return encodeURIComponent(message);
+  };
+
+  /**
+   * Sube una imagen al bucket de Supabase Storage
+   * @param {File} file Archivo a subir
+   * @param {string} folder Carpeta dentro del bucket (opcional)
+   * @returns {string|null} URL pública de la imagen o null si falla
+   */
+  const uploadTicketImage = async (file, folder = 'general') => {
+    if (!file) return null;
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('tickets')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('tickets')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen:', error.message);
+      alert('Error al subir la imagen del ticket: ' + error.message);
+      return null;
+    }
   };
 
   // --- LÓGICA DE VENTAS ---
@@ -561,7 +593,17 @@ function App() {
     if (purchaseCart.length === 0 || loading) return;
     setLoading(true);
     try {
-      const { data: purchase } = await supabase.from('purchases').insert([{ total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0), created_by: user.id }]).select().single();
+      let ticketUrl = null;
+      if (purchaseFile) {
+        ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
+      }
+
+      const { data: purchase } = await supabase.from('purchases').insert([{
+        total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
+        created_by: user.id,
+        ticket_url: ticketUrl
+      }]).select().single();
+
       for (const item of purchaseCart) {
         await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost }]);
         const currentInv = inventoryList.find(inv => inv.product_id === item.id);
@@ -576,274 +618,271 @@ function App() {
         items_count: purchaseCart.length
       });
 
-      setPurchaseCart([]); fetchInventory();
+      setPurchaseCart([]); setPurchaseFile(null); fetchInventory();
 
     } catch (err) { alert("Error: " + err.message); }
     setLoading(false);
   };
 
-  const handleRegisterExpense = async () => {
-    if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos: Concepto y Monto > 0');
-    setLoading(true);
-
-    if (!navigator.onLine) {
-      await savePendingExpense({
-        concepto: expenseConcepto.trim(),
-        categoria: expenseCategoria,
-        monto: expenseMonto,
-        fecha: getMXDate(),
-        created_by: user.id
-      });
-      alert("💰 Sin internet. Gasto guardado localmente.");
-      setExpenseConcepto(''); setExpenseMonto(0);
-      setLoading(false);
-      return;
+  setLoading(true);
+  try {
+    let ticketUrl = null;
+    if (expenseFile) {
+      ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
     }
 
-    const { error } = await supabase.from('expenses').insert([{ concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto, fecha: getMXDate(), created_by: user.id }]);
+    const { data: expense, error } = await supabase.from('expenses').insert([{
+      concepto: expenseConcepto.trim(),
+      categoria: expenseCategoria,
+      monto: expenseMonto,
+      fecha: getMXDate(),
+      created_by: user.id,
+      ticket_url: ticketUrl
+    }]).select().single();
 
-    if (!error) {
-      alert("💰 Gasto Registrado");
+    if (error) throw error;
+    alert("✅ Gasto registrado");
 
-      // LOG DE ACTIVIDAD
-      await logActivity(user.id, 'REGISTRO_GASTO', 'FINANZAS', {
-        concepto: expenseConcepto.trim(),
-        categoria: expenseCategoria,
-        monto: expenseMonto
-      });
+    // LOG DE ACTIVIDAD
+    await logActivity(user.id, 'REGISTRO_GASTO', 'FINANZAS', {
+      concepto: expenseConcepto,
+      monto: expenseMonto,
+      categoria: expenseCategoria,
+      expense_id: expense.id
+    });
 
-      setExpenseConcepto(''); setExpenseMonto(0);
-    }
+    setExpenseConcepto(''); setExpenseMonto(0); setExpenseFile(null); calculateFinances(); fetchInventory();
 
-    setLoading(false);
-  };
+  } catch (err) { alert("Error: " + err.message); }
+  setLoading(false);
+};
 
-  // --- UI HELPERS ---
-  const getCategoryIcon = (p) => {
-    const cat = (p.category || '').trim();
-    if (cat === 'Bebidas Calientes') return <Coffee size={35} color="#8b5a2b" />;
-    if (cat === 'Alimentos') return <Utensils size={35} color="#27ae60" />;
-    if (cat === 'Frappés') return <Snowflake size={35} color="#3498db" />;
-    if (cat === 'Bebidas Frías') return (
-      <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="10" width="9" height="9" rx="2" />
-        <path d="M4 14h9" strokeOpacity="0.3" />
-        <path d="M8 10v9" strokeOpacity="0.3" />
-        <rect x="11" y="5" width="9" height="9" rx="2" />
-        <path d="M11 9h9" strokeOpacity="0.3" />
-        <path d="M15 5v9" strokeOpacity="0.3" />
+// --- UI HELPERS ---
+const getCategoryIcon = (p) => {
+  const cat = (p.category || '').trim();
+  if (cat === 'Bebidas Calientes') return <Coffee size={35} color="#8b5a2b" />;
+  if (cat === 'Alimentos') return <Utensils size={35} color="#27ae60" />;
+  if (cat === 'Frappés') return <Snowflake size={35} color="#3498db" />;
+  if (cat === 'Bebidas Frías') return (
+    <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="10" width="9" height="9" rx="2" />
+      <path d="M4 14h9" strokeOpacity="0.3" />
+      <path d="M8 10v9" strokeOpacity="0.3" />
+      <rect x="11" y="5" width="9" height="9" rx="2" />
+      <path d="M11 9h9" strokeOpacity="0.3" />
+      <path d="M15 5v9" strokeOpacity="0.3" />
+    </svg>
+  );
+  if (cat === 'Refrescos') return (
+    <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 2h4" />
+      <path d="M10 2v4c0 1.5-3 2.5-3 5v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-8c0-2.5-3-3.5-3-5V2" />
+      <path d="M7 11h10" strokeOpacity="0.3" />
+      <path d="M7 15h10" strokeOpacity="0.3" />
+      <path d="M10 5h4" strokeOpacity="0.5" />
+    </svg>
+  );
+  if (cat === 'Postres' || cat === 'Sabritas y Otros') {
+    if (cat === 'Postres') return <CakeSlice size={35} color="#e67e22" />;
+    // Icono de bolsa de Sabritas (Chips Bag)
+    return (
+      <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#e67e22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* Bolsa con bordes dentados (zigzag) */}
+        <path d="M6 5 L8 3 L10 5 L12 3 L14 5 L16 3 L18 5 v14 L16 21 L14 19 L12 21 L10 19 L8 21 L6 19 v-14 Z" />
+        {/* Detalles de la bolsa */}
+        <path d="M9 8h6" strokeOpacity="0.4" strokeWidth="1" />
+        <circle cx="12" cy="13" r="2.5" strokeOpacity="0.3" />
+        <path d="M10 17h4" strokeOpacity="0.4" strokeWidth="1" />
       </svg>
     );
-    if (cat === 'Refrescos') return (
-      <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 2h4" />
-        <path d="M10 2v4c0 1.5-3 2.5-3 5v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-8c0-2.5-3-3.5-3-5V2" />
-        <path d="M7 11h10" strokeOpacity="0.3" />
-        <path d="M7 15h10" strokeOpacity="0.3" />
-        <path d="M10 5h4" strokeOpacity="0.5" />
-      </svg>
-    );
-    if (cat === 'Postres' || cat === 'Sabritas y Otros') {
-      if (cat === 'Postres') return <CakeSlice size={35} color="#e67e22" />;
-      // Icono de bolsa de Sabritas (Chips Bag)
-      return (
-        <svg width={35} height={35} viewBox="0 0 24 24" fill="none" stroke="#e67e22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {/* Bolsa con bordes dentados (zigzag) */}
-          <path d="M6 5 L8 3 L10 5 L12 3 L14 5 L16 3 L18 5 v14 L16 21 L14 19 L12 21 L10 19 L8 21 L6 19 v-14 Z" />
-          {/* Detalles de la bolsa */}
-          <path d="M9 8h6" strokeOpacity="0.4" strokeWidth="1" />
-          <circle cx="12" cy="13" r="2.5" strokeOpacity="0.3" />
-          <path d="M10 17h4" strokeOpacity="0.4" strokeWidth="1" />
-        </svg>
-      );
-    }
-    return <Coffee size={35} color="#8b5a2b" />;
-  };
+  }
+  return <Coffee size={35} color="#8b5a2b" />;
+};
 
-  const filteredProducts = selectedCategory === 'Todos' ? products : products.filter(p => (p.category || '').trim() === selectedCategory);
+const filteredProducts = selectedCategory === 'Todos' ? products : products.filter(p => (p.category || '').trim() === selectedCategory);
 
-  if (!user) return <Login onLogin={fetchProfile} />;
+if (!user) return <Login onLogin={fetchProfile} />;
 
-  return (
-    <div className="app-container" style={{
+return (
+  <div className="app-container" style={{
+    display: 'flex',
+    height: '100dvh', // Altura dinámica para móviles
+    width: '100vw',
+    backgroundColor: '#f8f6f2',
+    overflowX: 'hidden',
+    overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
+  }}>
+
+    {/* SECCIÓN TIENDA */}
+    <div className="store-section" style={{
+      flex: 2,
+      padding: '5px 15px 15px 15px', // Reducimos padding superior
       display: 'flex',
-      height: '100dvh', // Altura dinámica para móviles
-      width: '100vw',
-      backgroundColor: '#f8f6f2',
-      overflowX: 'hidden',
-      overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
+      flexDirection: 'column',
+      width: '100%',
+      boxSizing: 'border-box'
     }}>
-
-      {/* SECCIÓN TIENDA */}
-      <div className="store-section" style={{
-        flex: 2,
-        padding: '5px 15px 15px 15px', // Reducimos padding superior
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px',
-              borderRadius: '10px', background: isOnline ? '#def7ec' : '#fde8e8',
-              color: isOnline ? '#03543f' : '#9b1c1c', fontSize: '10px', fontWeight: 'bold'
-            }}>
-              {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
-              {isOnline ? (isSyncing ? <CloudSync size={14} className="spin" /> : 'ONLINE') : 'OFFLINE'}
-            </div>
-            {userRole === 'admin' && (
-
-              <>
-                <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
-                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
-                <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
-              </>
-            )}
-            <button onClick={() => setShowReport(true)} className="btn-active-effect" style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></button>
-            {userRole === 'admin' && <button onClick={() => setShowFinances(true)} className="btn-active-effect" style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><PieChart size={16} /></button>}
-            <button onClick={handleLogout} className="btn-active-effect" style={{ background: '#fff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px' }}><LogOut size={16} /></button>
-          </div>
+      <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
         </div>
-
-        <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '5px' }}>
-          {categories.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className="btn-active-effect" style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#fff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</button>
-          ))}
-        </div>
-
-        <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
-            {filteredProducts.map(p => (
-              <button key={p.id} onClick={() => addToCart(p)} className="product-card">
-                <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
-                <div className="product-name">{p.name}</div>
-                <div className="product-price">${p.sale_price}</div>
-              </button>
-            ))}
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px',
+            borderRadius: '10px', background: isOnline ? '#def7ec' : '#fde8e8',
+            color: isOnline ? '#03543f' : '#9b1c1c', fontSize: '10px', fontWeight: 'bold'
+          }}>
+            {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+            {isOnline ? (isSyncing ? <CloudSync size={14} className="spin" /> : 'ONLINE') : 'OFFLINE'}
           </div>
+          {userRole === 'admin' && (
+
+            <>
+              <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
+              <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
+              <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
+            </>
+          )}
+          <button onClick={() => setShowReport(true)} className="btn-active-effect" style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></button>
+          {userRole === 'admin' && <button onClick={() => setShowFinances(true)} className="btn-active-effect" style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><PieChart size={16} /></button>}
+          <button onClick={handleLogout} className="btn-active-effect" style={{ background: '#fff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px' }}><LogOut size={16} /></button>
         </div>
       </div>
 
-      {/* SECCIÓN CARRITO */}
-      <div className="cart-section" style={{
-        flex: 0.8,
-        backgroundColor: '#fff',
-        padding: '15px',
-        borderLeft: '1px solid #eee',
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-          <input
-            type="text"
-            placeholder="Pedido a nombre de..."
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
-          />
-          <input
-            type="tel"
-            placeholder="Teléfono WhatsApp (10 dígitos)"
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#27ae60', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
-          />
+      <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '5px' }}>
+        {categories.map(cat => (
+          <button key={cat} onClick={() => setSelectedCategory(cat)} className="btn-active-effect" style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#fff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</button>
+        ))}
+      </div>
+
+      <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
+        <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
+          {filteredProducts.map(p => (
+            <button key={p.id} onClick={() => addToCart(p)} className="product-card">
+              <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
+              <div className="product-name">{p.name}</div>
+              <div className="product-price">${p.sale_price}</div>
+            </button>
+          ))}
         </div>
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>
-          {cart.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="btn-active-effect"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' }}
-                  title="Eliminar"
-                >
-                  <Trash2 size={16} />
-                </button>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#f0f0f0', borderRadius: '8px', padding: '2px 5px' }}>
-                      <button
-                        onClick={() => updateCartQty(item.id, -1)}
-                        className="btn-active-effect"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: '#4a3728' }}>{item.quantity}</span>
-                      <button
-                        onClick={() => updateCartQty(item.id, 1)}
-                        className="btn-active-effect"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#888' }}>x ${item.sale_price}</span>
+      </div>
+    </div>
+
+    {/* SECCIÓN CARRITO */}
+    <div className="cart-section" style={{
+      flex: 0.8,
+      backgroundColor: '#fff',
+      padding: '15px',
+      borderLeft: '1px solid #eee',
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+      boxSizing: 'border-box'
+    }}>
+      <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+        <input
+          type="text"
+          placeholder="Pedido a nombre de..."
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
+        />
+        <input
+          type="tel"
+          placeholder="Teléfono WhatsApp (10 dígitos)"
+          value={customerPhone}
+          onChange={(e) => setCustomerPhone(e.target.value)}
+          style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#27ae60', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
+        />
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>
+        {cart.map((item, idx) => (
+          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => removeFromCart(item.id)}
+                className="btn-active-effect"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' }}
+                title="Eliminar"
+              >
+                <Trash2 size={16} />
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f0f0f0', borderRadius: '8px', padding: '2px 5px' }}>
+                    <button
+                      onClick={() => updateCartQty(item.id, -1)}
+                      className="btn-active-effect"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: '#4a3728' }}>{item.quantity}</span>
+                    <button
+                      onClick={() => updateCartQty(item.id, 1)}
+                      className="btn-active-effect"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
+                    >
+                      <Plus size={12} />
+                    </button>
                   </div>
+                  <span style={{ fontSize: '11px', color: '#888' }}>x ${item.sale_price}</span>
                 </div>
               </div>
-              <div style={{ color: '#27ae60', fontWeight: '900' }}>${item.sale_price * item.quantity}</div>
             </div>
-          ))}
-        </div>
-
-        {/* CONTENEDOR DE PAGO FIJO ABAJO */}
-        <div style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
-          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-            <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Banknote size={16} /> EFECTIVO
-            </button>
-            <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <CreditCard size={16} /> TARJETA
-            </button>
+            <div style={{ color: '#27ae60', fontWeight: '900' }}>${item.sale_price * item.quantity}</div>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
-          <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
-        </div>
+        ))}
       </div>
 
-      {/* MODALES MODULARIZADOS */}
-      <InventoryModal
-        showInventory={showInventory} setShowInventory={setShowInventory} userRole={userRole} fetchInventory={fetchInventory} loading={loading} inventoryList={inventoryList} products={products}
-        selectedPurchaseProd={selectedPurchaseProd} setSelectedPurchaseProd={setSelectedPurchaseProd} purchaseQty={purchaseQty} setPurchaseQty={setPurchaseQty}
-        purchaseCost={purchaseCost} setPurchaseCost={setPurchaseCost} purchaseCart={purchaseCart} setPurchaseCart={setPurchaseCart} handleRegisterPurchase={handleRegisterPurchase}
-        expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
-        expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories} handleRegisterExpense={handleRegisterExpense}
-      />
-      <FinanceModal
-        showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}
-        financeEndDate={financeEndDate} setFinanceEndDate={setFinanceEndDate} calculateFinances={calculateFinances} loading={loading} finData={finData}
-        dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList}
-      />
-      <SalesModal
-        showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
-        reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={fetchSales} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
-        selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus}
-      />
-      <CashArqueoModal
-        showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}
-        cashInitialFund={cashInitialFund} setCashInitialFund={setCashInitialFund} cashReportData={cashReportData} cashPhysicalCount={cashPhysicalCount} setCashPhysicalCount={setCashPhysicalCount}
-        cashObservations={cashObservations} setCashObservations={setCashObservations} handleSaveArqueo={handleSaveArqueo} loading={loading}
-        showArqueoHistory={showArqueoHistory} setShowArqueoHistory={setShowArqueoHistory} arqueoHistory={arqueoHistory}
-      />
-      <StarProductsModal
-        showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts} userRole={userRole} starStartDate={starStartDate} setStarStartDate={setStarStartDate}
-        starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData} kpiData={kpiData}
-      />
-
+      {/* CONTENEDOR DE PAGO FIJO ABAJO */}
+      <div style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+          <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <Banknote size={16} /> EFECTIVO
+          </button>
+          <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <CreditCard size={16} /> TARJETA
+          </button>
+        </div>
+        <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
+        <button onClick={handleSale} disabled={loading} className={cart.length > 0 ? "btn-active-effect" : ""} style={{ width: '100%', padding: '15px', background: '#4a3728', color: '#fff', borderRadius: '12px', fontWeight: '900', border: 'none', cursor: 'pointer', opacity: cart.length === 0 ? 0.6 : 1 }}>{loading ? 'PROCESANDO...' : 'PAGAR'}</button>
+      </div>
     </div>
-  );
+
+    {/* MODALES MODULARIZADOS */}
+    <InventoryModal
+      showInventory={showInventory} setShowInventory={setShowInventory} userRole={userRole} fetchInventory={fetchInventory} loading={loading} inventoryList={inventoryList} products={products}
+      selectedPurchaseProd={selectedPurchaseProd} setSelectedPurchaseProd={setSelectedPurchaseProd} purchaseQty={purchaseQty} setPurchaseQty={setPurchaseQty}
+      purchaseCost={purchaseCost} setPurchaseCost={setPurchaseCost} purchaseCart={purchaseCart} setPurchaseCart={setPurchaseCart} handleRegisterPurchase={handleRegisterPurchase}
+      expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
+      expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories} handleRegisterExpense={handleRegisterExpense}
+    />
+    <FinanceModal
+      showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}
+      financeEndDate={financeEndDate} setFinanceEndDate={setFinanceEndDate} calculateFinances={calculateFinances} loading={loading} finData={finData}
+      dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList}
+    />
+    <SalesModal
+      showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
+      reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={fetchSales} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
+      selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus}
+    />
+    <CashArqueoModal
+      showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}
+      cashInitialFund={cashInitialFund} setCashInitialFund={setCashInitialFund} cashReportData={cashReportData} cashPhysicalCount={cashPhysicalCount} setCashPhysicalCount={setCashPhysicalCount}
+      cashObservations={cashObservations} setCashObservations={setCashObservations} handleSaveArqueo={handleSaveArqueo} loading={loading}
+      showArqueoHistory={showArqueoHistory} setShowArqueoHistory={setShowArqueoHistory} arqueoHistory={arqueoHistory}
+    />
+    <StarProductsModal
+      showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts} userRole={userRole} starStartDate={starStartDate} setStarStartDate={setStarStartDate}
+      starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData} kpiData={kpiData}
+    />
+
+  </div>
+);
 }
 
 export default App;

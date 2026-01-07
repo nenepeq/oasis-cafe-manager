@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download
+    X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download, ExternalLink, Image as ImageIcon
 } from 'lucide-react';
 
 /**
@@ -290,7 +290,14 @@ const FinanceModal = ({
                                         <tbody>
                                             {dailyExpensesList.map((exp) => (
                                                 <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                    <td style={{ padding: '8px 0', color: '#555' }}>{exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span></td>
+                                                    <td style={{ padding: '8px 0', color: '#555' }}>
+                                                        {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span>
+                                                        {exp.ticket_url && (
+                                                            <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ marginLeft: '8px', color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
+                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ver Ticket</span>
+                                                            </a>
+                                                        )}
+                                                    </td>
                                                     <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${exp.monto}</td>
                                                 </tr>
                                             ))}
@@ -306,7 +313,14 @@ const FinanceModal = ({
                                             {dailyStockList.map((purch) => (
                                                 <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
                                                     <td style={{ padding: '8px 0', color: '#555' }}>
-                                                        {new Date(purch.created_at).toLocaleDateString()} - Compra #{purch.id.toString().slice(0, 4)}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span>{new Date(purch.created_at).toLocaleDateString()} - Compra #{purch.id.toString().slice(0, 4)}</span>
+                                                            {purch.ticket_url && (
+                                                                <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
+                                                                    <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                         <div style={{ fontSize: '10px', color: '#888' }}>{purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}</div>
                                                     </td>
                                                     <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c' }}>-${purch.total}</td>

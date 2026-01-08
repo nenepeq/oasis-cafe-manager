@@ -60,6 +60,7 @@ function App() {
 
 
   // --- ESTADOS DE ARQUEO DE CAJA ---
+  const [activeShift, setActiveShift] = useState(null);
   const [showArqueoHistory, setShowArqueoHistory] = useState(false);
   const [cashInitialFund, setCashInitialFund] = useState(0);
   const [cashPhysicalCount, setCashPhysicalCount] = useState(0);
@@ -245,8 +246,24 @@ function App() {
         else { setProducts(res.data || []); setFetchError(null); }
       });
       fetchInventory();
+      fetchActiveShift();
     }
   }, [user]);
+
+  const fetchActiveShift = async () => {
+    const { data, error } = await supabase
+      .from('cash_shifts')
+      .select('*')
+      .eq('status', 'open')
+      .order('start_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error) {
+      setActiveShift(data);
+      if (data) setCashInitialFund(data.initial_fund);
+    }
+  };
 
   // --- LÓGICA DE INVENTARIO ---
   const fetchInventory = async () => {
@@ -585,48 +602,107 @@ function App() {
   };
 
   const runCashArqueo = async () => {
+    if (!activeShift && !showArqueoHistory) {
+      setCashReportData({ ventasEfectivo: 0, gastosEfectivo: 0, esperado: cashInitialFund, diferencia: cashPhysicalCount - cashInitialFund });
+      return;
+    }
     setLoading(true);
-    const today = getMXDate();
-    const { data: vData } = await supabase.from('sales').select('total').eq('payment_method', 'Efectivo').neq('status', 'cancelado').gte('created_at', today + 'T00:00:00').lte('created_at', today + 'T23:59:59');
-    const { data: eData } = await supabase.from('expenses').select('monto').eq('fecha', today);
-    const vEfec = vData?.reduce((a, v) => a + v.total, 0) || 0;
-    const eEfec = eData?.reduce((a, e) => a + e.monto, 0) || 0;
-    const esp = (parseFloat(cashInitialFund) || 0) + vEfec - eEfec;
-    setCashReportData({ ventasEfectivo: vEfec, gastosEfectivo: eEfec, esperado: esp, diferencia: (parseFloat(cashPhysicalCount) || 0) - esp });
+    try {
+      const startTime = activeShift ? activeShift.start_time : new Date().toISOString();
+
+      // Ventas en efectivo desde que abrió el turno
+      const { data: vData } = await supabase.from('sales')
+        .select('total')
+        .eq('payment_method', 'Efectivo')
+        .neq('status', 'cancelado')
+        .gte('created_at', startTime);
+
+      // Gastos en efectivo desde que abrió el turno
+      const { data: eData } = await supabase.from('expenses')
+        .select('monto')
+        .eq('fecha', getMXDate())
+        .gte('created_at', startTime);
+
+      const vEfec = vData?.reduce((a, v) => a + v.total, 0) || 0;
+      const eEfec = eData?.reduce((a, e) => a + e.monto, 0) || 0;
+      const initial = activeShift ? parseFloat(activeShift.initial_fund) : parseFloat(cashInitialFund);
+      const esp = initial + vEfec - eEfec;
+
+      setCashReportData({
+        ventasEfectivo: vEfec,
+        gastosEfectivo: eEfec,
+        esperado: esp,
+        diferencia: (parseFloat(cashPhysicalCount) || 0) - esp
+      });
+    } catch (err) {
+      console.error("Error en runCashArqueo:", err);
+    }
     setLoading(false);
   };
 
-  const handleSaveArqueo = async () => {
-    if (cashInitialFund < 0 || cashPhysicalCount <= 0 || loading) {
-      return alert("El Fondo Inicial debe ser 0 o más, y el Efectivo Contado mayor a cero.");
-    }
+  const handleOpenShift = async () => {
+    if (cashInitialFund < 0 || loading) return alert("Ingresa un fondo inicial válido");
     setLoading(true);
-    const { error } = await supabase.from('cash_reconciliations').insert([{
-      initial_fund: cashInitialFund, sales_cash: cashReportData.ventasEfectivo, expenses_cash: cashReportData.gastosEfectivo,
-      expected_amount: cashReportData.esperado, actual_amount: cashPhysicalCount, difference: cashReportData.diferencia, observations: cashObservations, created_by: user.id
-    }]);
-    if (!error) {
-      alert("✅ Arqueo guardado");
+    const { data, error } = await supabase.from('cash_shifts').insert([{
+      initial_fund: cashInitialFund,
+      opened_by: user.id,
+      status: 'open',
+      start_time: new Date().toISOString()
+    }]).select().single();
 
-      // LOG DE ACTIVIDAD
-      await logActivity(user.id, 'REGISTRO_ARQUEO', 'FINANZAS', {
-        initial_fund: cashInitialFund,
+    if (!error) {
+      setActiveShift(data);
+      alert("✅ Turno Abierto");
+      await logActivity(user.id, 'APERTURA_TURNO', 'FINANZAS', { initial_fund: cashInitialFund });
+    } else {
+      alert("Error al abrir turno: " + error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleCloseShift = async () => {
+    if (cashPhysicalCount <= 0 || loading) return alert("Ingresa el efectivo contado");
+    if (!window.confirm("¿Estás seguro de cerrar el turno?")) return;
+
+    setLoading(true);
+    const { error } = await supabase.from('cash_shifts').update({
+      end_time: new Date().toISOString(),
+      actual_cash: cashPhysicalCount,
+      expected_cash: cashReportData.esperado,
+      difference: cashReportData.diferencia,
+      observations: cashObservations,
+      closed_by: user.id,
+      status: 'closed'
+    }).eq('id', activeShift.id);
+
+    if (!error) {
+      alert("✅ Turno Cerrado y Arqueo Guardado");
+      await logActivity(user.id, 'CIERRE_TURNO', 'FINANZAS', {
         expected: cashReportData.esperado,
         actual: cashPhysicalCount,
         difference: cashReportData.diferencia
       });
-
+      setActiveShift(null);
       setShowCashArqueo(false);
-
-      setCashObservations('');
       setCashPhysicalCount(0);
+      setCashObservations('');
+      setCashInitialFund(0);
+    } else {
+      alert("Error al cerrar turno: " + error.message);
     }
     setLoading(false);
   };
 
   const fetchArqueoHistory = async () => {
-    const { data } = await supabase.from('cash_reconciliations').select('*').order('created_at', { ascending: false });
-    if (data) { setArqueoHistory(data); setShowArqueoHistory(true); }
+    setLoading(true);
+    const { data, error } = await supabase.from('cash_shifts').select('*').order('start_time', { ascending: false });
+    if (!error) {
+      setArqueoHistory(data || []);
+      setShowArqueoHistory(true);
+    } else {
+      console.error("Error fetching shift history:", error);
+    }
+    setLoading(false);
   };
 
   const fetchStarProducts = async () => {
@@ -942,13 +1018,17 @@ function App() {
       <div className="cart-section" style={{
         flex: 0.8,
         backgroundColor: '#fff',
-        padding: '15px',
+        padding: '5px 15px 15px 15px',
         borderLeft: '1px solid #eee',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box'
       }}>
-        <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}><ShoppingCart size={20} /> Carrito</h2>
+        <div style={{ height: '35px', display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+          <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <ShoppingCart size={20} /> Carrito
+          </h2>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
           <input
             type="text"
@@ -1058,8 +1138,8 @@ function App() {
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}
         cashInitialFund={cashInitialFund} setCashInitialFund={setCashInitialFund} cashReportData={cashReportData} cashPhysicalCount={cashPhysicalCount} setCashPhysicalCount={setCashPhysicalCount}
-        cashObservations={cashObservations} setCashObservations={setCashObservations} handleSaveArqueo={handleSaveArqueo} loading={loading}
-        showArqueoHistory={showArqueoHistory} setShowArqueoHistory={setShowArqueoHistory} arqueoHistory={arqueoHistory}
+        cashObservations={cashObservations} setCashObservations={setCashObservations} handleOpenShift={handleOpenShift} handleCloseShift={handleCloseShift} loading={loading}
+        activeShift={activeShift} showArqueoHistory={showArqueoHistory} setShowArqueoHistory={setShowArqueoHistory} arqueoHistory={arqueoHistory}
       />
       <StarProductsModal
         showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts} userRole={userRole} starStartDate={starStartDate} setStarStartDate={setStarStartDate}

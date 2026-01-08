@@ -115,11 +115,11 @@
 
 /* Layout Principal Media Queries */
 @media (max-width: 600px) {
-  .main-container {
+  .app-container {
     flex-direction: column !important;
   }
 
-  .shop-section {
+  .store-section {
     flex: none !important;
     height: 55vh !important;
     overflow-y: auto !important;
@@ -158,8 +158,8 @@
   /* Header Fijo para Móvil */
   .sticky-header {
     position: sticky !important;
-    top: -15px !important;
-    /* Compensa el padding del padre .shop-section */
+    top: -5px !important;
+    /* Compensa el padding del padre .store-section */
     z-index: 50 !important;
     background-color: #f8f6f2 !important;
     padding: 15px 15px 10px 15px !important;

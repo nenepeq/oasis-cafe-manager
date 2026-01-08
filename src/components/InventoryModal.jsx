@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download } from 'lucide-react';
+import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download, Loader2, XCircle } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /**
  * Modal de Gestión de Inventario, Compras y Gastos
@@ -75,37 +77,61 @@ const InventoryModal = ({
 
     if (!showInventory || userRole !== 'admin') return null;
 
-    const handleExportInventoryCSV = () => {
+    const handleExportInventoryExcel = async () => {
         if (inventoryList.length === 0) return;
 
-        const now = new Date();
-        const dateStr = now.toLocaleDateString();
-        const timeStr = now.toLocaleTimeString();
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Inventario');
 
-        const headers = ["Producto", "Stock Actual", "Estatus"];
+        // 1. Encabezado
+        worksheet.mergeCells('A1:C1');
+        const mainHeader = worksheet.getCell('A1');
+        mainHeader.value = 'OASIS CAFÉ - REPORTE DE EXISTENCIAS';
+        mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
+        mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+        mainHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
+
+        worksheet.getCell('A2').value = `Generado: ${new Date().toLocaleString()}`;
+        worksheet.getRow(2).font = { bold: true };
+
+        // 2. Datos para la tabla
         const rows = inventoryList.map(inv => [
             inv.products?.name || 'N/A',
             inv.stock,
-            inv.stock <= 5 ? "STOCK BAJO" : "DISPONIBLE"
+            inv.stock === 0 ? "❌ SIN STOCK" : (inv.stock <= 5 ? "⚠️ STOCK BAJO" : "✅ DISPONIBLE")
         ]);
 
-        const csvContent = [
-            `Reporte de Existencias en Inventario`,
-            `Fecha y hora de generación: ${dateStr} ${timeStr}`,
-            ``,
-            headers.join(","),
-            ...rows.map(row => row.map(val => `"${val}"`).join(","))
-        ].join("\n");
+        worksheet.addTable({
+            name: 'InventarioActual',
+            ref: 'A4',
+            headerRow: true,
+            style: {
+                theme: 'TableStyleMedium9', // Un verde/gris profesional
+                showRowStripes: true,
+            },
+            columns: [
+                { name: 'Producto', filterButton: true },
+                { name: 'Stock Actual', filterButton: true },
+                { name: 'Estatus', filterButton: true },
+            ],
+            rows: rows,
+        });
 
-        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Inventario_Oasis_${now.toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // 3. Estilos de columna
+        worksheet.getColumn(1).width = 40;
+        worksheet.getColumn(2).width = 15;
+        worksheet.getColumn(3).width = 20;
+
+        // Formato condicional visual manual para estatus bajo o sin stock
+        rows.forEach((r, idx) => {
+            if (r[2] === "⚠️ STOCK BAJO" || r[2] === "❌ SIN STOCK") {
+                const cell = worksheet.getCell(5 + idx, 3);
+                cell.font = { color: { argb: 'FFFF0000' }, bold: true };
+            }
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Inventario_Oasis_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     return (
@@ -222,7 +248,7 @@ const InventoryModal = ({
                                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000', margin: 0 }}>EXISTENCIAS ACTUALES</h3>
                                 {inventoryList.length > 0 && (
                                     <button
-                                        onClick={handleExportInventoryCSV}
+                                        onClick={handleExportInventoryExcel}
                                         className="btn-active-effect"
                                         style={{ padding: '6px 12px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
                                     >
@@ -257,7 +283,13 @@ const InventoryModal = ({
                                                 </td>
                                                 <td style={{ padding: '12px 5px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td>
                                                 <td style={{ padding: '12px 5px', textAlign: 'center' }}>
-                                                    {inv.stock <= 5 ? <AlertTriangle color="#e74c3c" size={16} /> : <CheckCircle color="#27ae60" size={16} />}
+                                                    {inv.stock === 0 ? (
+                                                        <XCircle color="#e74c3c" size={16} />
+                                                    ) : inv.stock <= 5 ? (
+                                                        <AlertTriangle color="#e74c3c" size={16} />
+                                                    ) : (
+                                                        <CheckCircle color="#27ae60" size={16} />
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -377,7 +409,7 @@ const InventoryModal = ({
                                     opacity: (selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0) ? 1 : 0.5
                                 }}
                             >
-                                + AÑADIR AL CARRITO DE COMPRA
+                                AÑADIR INVENTARIO
                             </button>
                             <div style={{ marginTop: '20px', color: '#000' }}>
                                 {purchaseCart.map((item, i) => (

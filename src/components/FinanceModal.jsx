@@ -125,117 +125,88 @@ const FinanceModal = ({
 
             // --- SECCIÓN DERECHA: DESGLOSE (E-H) ---
             const startColDetalle = 5; // Columna E
-            const pinkFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2DEDE' } };
-            const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDFF0D8' } };
-            const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
 
-            // Título Gastos (Fila 4)
+            // 1. GASTOS OPERATIVOS
             let rG = 4;
-            worksheet.getCell(rG, startColDetalle).value = 'GASTOS OPERATIVOS';
-            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
-            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 3);
-            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
-            worksheet.getCell(rG, startColDetalle).fill = pinkFill;
-            rG++;
+            const gastoRows = dailyExpensesList.map(e => [e.fecha, e.concepto, e.categoria, -e.monto]);
 
-            // Cabeceras Gastos (Fila 5)
-            const expenseHeaders = ['Fecha', 'Concepto', 'Categoría', 'Monto'];
-            expenseHeaders.forEach((h, idx) => {
-                const cell = worksheet.getCell(rG, startColDetalle + idx);
-                cell.value = h;
-                cell.font = { bold: true };
-                cell.fill = pinkFill;
-                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
-            });
-            rG++;
-
-            dailyExpensesList.forEach(e => {
-                const row = worksheet.getRow(rG++);
-                row.getCell(startColDetalle).value = e.fecha;
-                row.getCell(startColDetalle + 1).value = e.concepto;
-                row.getCell(startColDetalle + 2).value = e.categoria;
-                row.getCell(startColDetalle + 3).value = -e.monto;
-                row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
-                for (let i = 0; i < 4; i++) {
-                    const cell = row.getCell(startColDetalle + i);
-                    cell.fill = pinkFill;
-                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
-                }
+            worksheet.addTable({
+                name: 'GastosTable',
+                ref: `E${rG}`,
+                headerRow: true,
+                style: { theme: 'TableStyleMedium11', showRowStripes: true },
+                columns: [
+                    { name: 'Fecha Gasto', filterButton: true },
+                    { name: 'Concepto', filterButton: true },
+                    { name: 'Categoría', filterButton: true },
+                    { name: 'Monto Gasto', filterButton: false }
+                ],
+                rows: gastoRows,
             });
 
-            // Título Stock
-            rG += 2;
-            const stockTitleRow = rG;
-            worksheet.getCell(rG, startColDetalle).value = 'ENTRADAS DE STOCK (INVERSIÓN)';
-            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
-            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 3);
-            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
-            worksheet.getCell(rG, startColDetalle).fill = greenFill;
-            rG++;
-
-            // Cabeceras Stock
-            const stockHeaders = ['Fecha', 'ID Compra', 'Productos', 'Total'];
-            stockHeaders.forEach((h, idx) => {
-                const cell = worksheet.getCell(rG, startColDetalle + idx);
-                cell.value = h;
-                cell.font = { bold: true };
-                cell.fill = greenFill;
-                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
-            });
-            rG++;
-
-            dailyStockList.forEach(p => {
-                const row = worksheet.getRow(rG++);
-                const date = new Date(p.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'numeric', day: 'numeric' });
-                const prods = p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '';
-
-                row.getCell(startColDetalle).value = date;
-                row.getCell(startColDetalle + 1).value = p.id ? `#${p.id.toString().slice(0, 4).toUpperCase()}` : 'N/A';
-                row.getCell(startColDetalle + 2).value = prods;
-                row.getCell(startColDetalle + 3).value = -p.total;
-                row.getCell(startColDetalle + 3).numFmt = '"$"#,##0.00';
-                for (let i = 0; i < 4; i++) {
-                    const cell = row.getCell(startColDetalle + i);
-                    cell.fill = greenFill;
-                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
-                }
+            // Formato moneda Gastos
+            gastoRows.forEach((_, idx) => {
+                worksheet.getCell(rG + 1 + idx, startColDetalle + 3).numFmt = '"$"#,##0.00';
             });
 
-            // Título Ventas Detalladas
-            rG += 2;
-            worksheet.getCell(rG, startColDetalle).value = 'VENTAS DETALLADAS';
-            worksheet.getCell(rG, startColDetalle).font = { bold: true, underline: true };
-            worksheet.mergeCells(rG, startColDetalle, rG, startColDetalle + 4);
-            worksheet.getCell(rG, startColDetalle).alignment = { horizontal: 'center' };
-            worksheet.getCell(rG, startColDetalle).fill = yellowFill;
-            rG++;
+            rG += gastoRows.length + 3;
 
-            // Cabeceras Ventas
-            const salesHeaders = ['Fecha', 'Folio', 'Cliente', 'Método Pago', 'Total'];
-            salesHeaders.forEach((h, idx) => {
-                const cell = worksheet.getCell(rG, startColDetalle + idx);
-                cell.value = h;
-                cell.font = { bold: true };
-                cell.fill = yellowFill;
-                cell.border = { bottom: { style: 'thin', color: { argb: 'FFAAAAAA' } } };
+            // 2. ENTRADAS DE STOCK
+            const stockRows = dailyStockList.map(p => [
+                new Date(p.created_at).toLocaleDateString(),
+                p.id ? `#${p.id.toString().slice(0, 4).toUpperCase()}` : 'N/A',
+                p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '',
+                -p.total
+            ]);
+
+            worksheet.addTable({
+                name: 'StockTable',
+                ref: `E${rG}`,
+                headerRow: true,
+                style: { theme: 'TableStyleMedium10', showRowStripes: true },
+                columns: [
+                    { name: 'Fecha Stock', filterButton: true },
+                    { name: 'ID Compra', filterButton: true },
+                    { name: 'Productos', filterButton: false },
+                    { name: 'Total Inversión', filterButton: false }
+                ],
+                rows: stockRows,
             });
-            rG++;
 
-            dailySalesList.forEach(s => {
-                const row = worksheet.getRow(rG++);
-                const date = new Date(s.created_at).toLocaleString('es-MX', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            // Formato moneda Stock
+            stockRows.forEach((_, idx) => {
+                worksheet.getCell(rG + 1 + idx, startColDetalle + 3).numFmt = '"$"#,##0.00';
+            });
 
-                row.getCell(startColDetalle).value = date;
-                row.getCell(startColDetalle + 1).value = s.id ? `#${s.id.toString().slice(0, 4).toUpperCase()}` : 'N/A';
-                row.getCell(startColDetalle + 2).value = s.customer_name || 'Sin nombre';
-                row.getCell(startColDetalle + 3).value = s.payment_method;
-                row.getCell(startColDetalle + 4).value = s.total;
-                row.getCell(startColDetalle + 4).numFmt = '"$"#,##0.00';
-                for (let i = 0; i < 5; i++) {
-                    const cell = row.getCell(startColDetalle + i);
-                    cell.fill = yellowFill;
-                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }, color: { argb: 'FFAAAAAA' } };
-                }
+            rG += stockRows.length + 3;
+
+            // 3. VENTAS DETALLADAS
+            const saleRows = dailySalesList.map(s => [
+                new Date(s.created_at).toLocaleString(),
+                s.id ? `#${s.id.toString().slice(0, 4).toUpperCase()}` : 'N/A',
+                s.customer_name || 'Sin nombre',
+                s.payment_method,
+                s.total
+            ]);
+
+            worksheet.addTable({
+                name: 'VentasTable',
+                ref: `E${rG}`,
+                headerRow: true,
+                style: { theme: 'TableStyleMedium13', showRowStripes: true },
+                columns: [
+                    { name: 'Fecha Venta', filterButton: true },
+                    { name: 'Folio', filterButton: true },
+                    { name: 'Cliente', filterButton: true },
+                    { name: 'Método Pago', filterButton: true },
+                    { name: 'Total Venta', filterButton: false }
+                ],
+                rows: saleRows,
+            });
+
+            // Formato moneda Ventas
+            saleRows.forEach((_, idx) => {
+                worksheet.getCell(rG + 1 + idx, startColDetalle + 4).numFmt = '"$"#,##0.00';
             });
 
             // --- AJUSTE DE ANCHOS DE COLUMNA FINAL ---

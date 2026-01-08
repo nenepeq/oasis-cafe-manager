@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Award, X, Download, TrendingUp, Clock, Target, ArrowRight } from 'lucide-react';
-
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /**
  * Modal de Productos Estrella (Ranking de Ventas)
@@ -20,34 +21,66 @@ const StarProductsModal = ({
     const [activeTab, setActiveTab] = useState('ranking'); // 'ranking' | 'kpis'
     if (!showStarProducts || userRole !== 'admin') return null;
 
-
-    const handleExportCSV = () => {
+    const handleExportCSV = async () => {
         if (starData.length === 0) return;
 
-        const headers = ["Producto", "Cantidad Vendida", "Dinero Generado"];
-        const rows = starData.map(item => [
-            item.name,
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Productos Estrella');
+
+        const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
+        const goldFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFD700' } };
+
+        worksheet.mergeCells('A1:C1');
+        const mainHeader = worksheet.getCell('A1');
+        mainHeader.value = 'OASIS CAFÉ - PRODUCTOS ESTRELLA';
+        mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
+        mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+        mainHeader.fill = headerFill;
+
+        worksheet.getCell('A2').value = `Periodo: ${starStartDate} al ${starEndDate}`;
+        worksheet.getRow(2).font = { bold: true };
+
+        const rows = starData.map((item, idx) => [
+            idx < 3 ? `⭐ ${item.name}` : item.name,
             item.totalQty,
-            item.totalRevenue.toFixed(2)
+            item.totalRevenue
         ]);
 
-        const csvContent = [
-            `Reporte de Productos Estrella`,
-            `Rango de fechas: ${starStartDate} al ${starEndDate}`,
-            ``, // Línea vacía para separar el encabezado de los datos
-            headers.join(","),
-            ...rows.map(row => row.map(val => `"${val}"`).join(","))
-        ].join("\n");
+        worksheet.addTable({
+            name: 'RankingProductos',
+            ref: 'A4',
+            headerRow: true,
+            style: {
+                theme: 'TableStyleMedium14', // Color naranja/dorado
+                showRowStripes: true,
+            },
+            columns: [
+                { name: 'Producto', filterButton: true },
+                { name: 'Cantidad Vendida', filterButton: false },
+                { name: 'Dinero Generado', filterButton: false },
+            ],
+            rows: rows,
+        });
 
-        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Productos_Estrella_${starStartDate}_a_${starEndDate}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Aplicar formatos
+        const startRow = 5;
+        rows.forEach((r, idx) => {
+            const rowNum = startRow + idx;
+            const row = worksheet.getRow(rowNum);
+            row.getCell(3).numFmt = '"$"#,##0.00';
+
+            // Resaltar Top 3 con negrita si es necesario
+            if (idx < 3) {
+                row.getCell(1).font = { bold: true, color: { argb: 'FFC0392B' } };
+            }
+        });
+
+        worksheet.getColumn(1).width = 30;
+        worksheet.getColumn(2).width = 20;
+        worksheet.getColumn(3).width = 20;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Productos_Estrella_Oasis_${starStartDate}.xlsx`);
     };
 
     return (

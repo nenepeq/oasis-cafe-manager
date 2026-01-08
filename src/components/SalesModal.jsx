@@ -1,5 +1,7 @@
 import React from 'react';
 import { X, RefreshCw, Download } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 /**
  * Modal de Historial de Ventas y Detalles de Pedido
@@ -20,32 +22,105 @@ const SalesModal = ({
     userRole,
     updateSaleStatus
 }) => {
-    const handleExportSalesCSV = () => {
+    const handleExportSalesCSV = async () => {
         if (!sales || sales.length === 0) return;
 
-        const now = new Date().toLocaleString();
-        let csv = `OASIS CAFÉ - REPORTE DE VENTAS\n`;
-        csv += `Periodo: ${reportStartDate} al ${reportEndDate}\n`;
-        csv += `Generado el: ${now}\n\n`;
-        csv += 'Folio,Fecha,Cliente,Productos,Metodo Pago,Total,Estatus\n';
-        sales.forEach(s => {
-            const date = new Date(s.created_at).toLocaleString();
-            const productsList = s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '';
-            const folio = `#${s.id.slice(0, 4).toUpperCase()}`;
-            csv += `${folio},"${date}","${s.customer_name}","${productsList}","${s.payment_method || ''}",${s.total},${s.status}\n`;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Reporte de Ventas');
+
+        // Estilos
+        const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
+        const headerFont = { name: 'Arial Black', size: 10, color: { argb: 'FFFFFFFF' } };
+        const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+
+        worksheet.mergeCells('A1:G1');
+        const mainHeader = worksheet.getCell('A1');
+        mainHeader.value = 'OASIS CAFÉ - REPORTE DE VENTAS';
+        mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
+        mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+        mainHeader.fill = headerFill;
+
+        worksheet.getCell('A2').value = `Periodo: ${reportStartDate} al ${reportEndDate}`;
+        worksheet.getCell('G2').value = `Total: $${totalIngresosReporte.toFixed(2)}`;
+        worksheet.getRow(2).font = { bold: true };
+
+        const rows = sales.map(s => {
+            let statusText = '';
+            if (s.status === 'entregado') statusText = '✅ ENTREGADO';
+            else if (s.status === 'cancelado') statusText = '❌ CANCELADO';
+            else statusText = '⏳ PENDIENTE DE ENTREGAR';
+
+            return [
+                `#${s.id.slice(0, 4).toUpperCase()}`,
+                new Date(s.created_at).toLocaleString(),
+                s.customer_name,
+                s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '',
+                s.payment_method || '',
+                s.total,
+                statusText
+            ];
         });
 
-        // Agregar fila de TOTAL al final
-        csv += `\n,,,,,TOTAL,$${totalIngresosReporte.toFixed(2)}\n`;
+        worksheet.addTable({
+            name: 'VentasDetalle',
+            ref: 'A4',
+            headerRow: true,
+            style: {
+                theme: 'TableStyleMedium6',
+                showRowStripes: true,
+            },
+            columns: [
+                { name: 'Folio', filterButton: true },
+                { name: 'Fecha/Hora', filterButton: true },
+                { name: 'Cliente', filterButton: true },
+                { name: 'Productos', filterButton: false },
+                { name: 'Método Pago', filterButton: true },
+                { name: 'Total', filterButton: false },
+                { name: 'Estatus', filterButton: true },
+            ],
+            rows: rows,
+        });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Reporte_Ventas_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Aplicar formatos a la tabla
+        const startRow = 5;
+        rows.forEach((sRow, idx) => {
+            const rowNum = startRow + idx;
+            const row = worksheet.getRow(rowNum);
+            row.getCell(6).numFmt = '"$"#,##0.00';
+
+            // Estilos específicos por estatus
+            if (sRow[6] === '❌ CANCELADO') {
+                row.font = { color: { argb: 'FF999999' }, italic: true };
+                const statusCell = row.getCell(7);
+                statusCell.font = { color: { argb: 'FFFF0000' }, bold: true, italic: true };
+            } else if (sRow[6] === '⏳ PENDIENTE DE ENTREGAR') {
+                const statusCell = row.getCell(7);
+                statusCell.font = { color: { argb: 'FFCC7A00' }, bold: true }; // Un tono naranja/ámbar
+            } else if (sRow[6] === '✅ ENTREGADO') {
+                const statusCell = row.getCell(7);
+                statusCell.font = { color: { argb: 'FF27AE60' }, bold: true };
+            }
+        });
+
+        // Fila de Total
+        const totalRow = worksheet.addRow([]);
+        const totalCell = worksheet.getCell(totalRow.number, 6);
+        totalCell.value = totalIngresosReporte;
+        totalCell.numFmt = '"$"#,##0.00';
+        totalCell.font = { bold: true, size: 12 };
+        worksheet.getCell(totalRow.number, 5).value = 'TOTAL:';
+        worksheet.getCell(totalRow.number, 5).font = { bold: true };
+
+        worksheet.getColumn(1).width = 10;
+        worksheet.getColumn(2).width = 20;
+        worksheet.getColumn(3).width = 25;
+        worksheet.getColumn(4).width = 40;
+        worksheet.getColumn(5).width = 15;
+        worksheet.getColumn(6).width = 15;
+        worksheet.getColumn(7).width = 12;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), `Reporte_Ventas_Oasis_${reportStartDate}.xlsx`);
     };
 
     if (!showReport) return null;

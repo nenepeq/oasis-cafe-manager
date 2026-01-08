@@ -1,8 +1,17 @@
+html,
+body {
+  overflow: hidden !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  position: fixed;
+  /* Evita bounce en iOS */
+}
+
 #root {
   width: 100%;
   height: 100%;
-  margin: 0;
-  padding: 0;
 }
 
 /* Ocultar barra de desplazamiento manteniendo funcionalidad */
@@ -117,30 +126,36 @@
 @media (max-width: 600px) {
   .app-container {
     flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    width: 100% !important;
   }
 
   .store-section {
     flex: none !important;
-    height: 50vh !important;
-    /* Reducido para dar más espacio al carrito */
-    overflow-y: hidden !important;
-    /* FIJA Cabecera y Categorías */
-    overflow-x: hidden !important;
-    /* Previene jiggle horizontal */
-    border-bottom: 2px solid #eee !important;
+    height: 50dvh !important;
+    /* Altura fija para la mitad superior */
+    overflow: hidden !important;
+    /* El padre NO scrollea */
     display: flex !important;
     flex-direction: column !important;
+    border-bottom: 2px solid #eee !important;
+    padding: 10px 15px !important;
+    box-sizing: border-box !important;
   }
 
   .cart-section {
     flex: 1 !important;
-    /* Cambiado a 1 para expandirse */
-    height: auto !important;
+    /* Ocupa el resto (aprox 50dvh) */
+    height: 50dvh !important;
+    overflow: hidden !important;
+    /* El padre NO scrollea */
+    display: flex !important;
+    flex-direction: column !important;
+    border-top: none !important;
     border-left: none !important;
-    border-top: 2px solid #eee !important;
-    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05) !important;
-    padding-bottom: 20px !important;
-    overflow-x: hidden !important;
+    padding: 10px 15px !important;
+    box-sizing: border-box !important;
   }
 
   .product-grid {
@@ -165,16 +180,15 @@
     padding: 8px 4px !important;
   }
 
-  /* Header Fijo para Móvil corrigiendo desbordamiento */
+  /* Desactivar sticky en móvil para evitar conflictos con el scroll interno */
   .sticky-header {
-    position: sticky !important;
-    top: -5px !important;
-    z-index: 50 !important;
-    background-color: #f8f6f2 !important;
-    padding: 10px 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative !important;
+    top: 0 !important;
+    margin: 0 0 10px 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-bottom: none !important;
   }
 }
 

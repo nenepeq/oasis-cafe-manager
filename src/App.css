@@ -144,9 +144,20 @@ body {
 }
 
 /* Layout Principal Media Queries */
-.cart-header-compact {
-  margin-top: 20px !important;
-  /* Baja más el título en tablet/PC para alinear con botones */
+
+/* TABLET: Mantener tal cual (601px a 1024px) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .cart-header-compact {
+    margin-top: 20px !important;
+  }
+}
+
+/* PC: Subir el título al máximo para alinear con botones (> 1024px) */
+@media (min-width: 1025px) {
+  .cart-header-compact {
+    margin-top: 0px !important;
+    /* Eliminado para nivelar perfectamente con el catálogo */
+  }
 }
 
 @media (max-width: 600px) {

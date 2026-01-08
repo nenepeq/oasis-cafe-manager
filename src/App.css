@@ -123,10 +123,13 @@
     flex: none !important;
     height: 50vh !important;
     /* Reducido para dar más espacio al carrito */
-    overflow-y: auto !important;
+    overflow-y: hidden !important;
+    /* FIJA Cabecera y Categorías */
     overflow-x: hidden !important;
     /* Previene jiggle horizontal */
     border-bottom: 2px solid #eee !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .cart-section {

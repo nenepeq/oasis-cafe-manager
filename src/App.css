@@ -123,6 +123,8 @@
     flex: none !important;
     height: 55vh !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* Previene jiggle horizontal */
     border-bottom: 2px solid #eee !important;
   }
 
@@ -133,10 +135,13 @@
     border-top: 2px solid #eee !important;
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05) !important;
     padding-bottom: 20px !important;
+    overflow-x: hidden !important;
   }
 
   .product-grid {
     grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .modal-content-responsive {
@@ -155,17 +160,16 @@
     padding: 8px 4px !important;
   }
 
-  /* Header Fijo para Móvil */
+  /* Header Fijo para Móvil corrigiendo desbordamiento */
   .sticky-header {
     position: sticky !important;
     top: -5px !important;
-    /* Compensa el padding del padre .store-section */
     z-index: 50 !important;
     background-color: #f8f6f2 !important;
-    padding: 15px 15px 10px 15px !important;
-    margin: -15px -15px 15px -15px !important;
+    padding: 10px 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
   }
 }
 

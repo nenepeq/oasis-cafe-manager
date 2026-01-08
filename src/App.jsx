@@ -941,7 +941,7 @@ function App() {
     <div className="app-container" style={{
       display: 'flex',
       height: '100dvh', // Altura dinámica para móviles
-      width: '100vw',
+      width: '100%',
       backgroundColor: '#f8f6f2',
       overflowX: 'hidden',
       overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
@@ -989,7 +989,14 @@ function App() {
         </div>
 
         <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px' }}>
-          <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', padding: '5px' }}>
+          <div className="product-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+            gap: '10px',
+            padding: '5px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
             {filteredProducts.map(p => {
               const invItem = inventoryList.find(inv => inv.product_id === p.id);
               const cartItem = cart.find(i => i.id === p.id);

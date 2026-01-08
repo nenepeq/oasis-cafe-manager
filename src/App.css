@@ -144,7 +144,17 @@ body {
 }
 
 /* Layout Principal Media Queries */
+.cart-header-compact {
+  margin-top: 20px !important;
+  /* Baja más el título en tablet/PC para alinear con botones */
+}
+
 @media (max-width: 600px) {
+  .cart-header-compact {
+    margin-top: 0 !important;
+    /* En móvil se queda arriba para ahorrar espacio */
+  }
+
   .app-container {
     flex-direction: column !important;
     height: 100dvh !important;

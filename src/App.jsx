@@ -1031,18 +1031,18 @@ function App() {
         flexDirection: 'column',
         boxSizing: 'border-box'
       }}>
-        <div style={{ height: '35px', display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
-          <h2 style={{ color: '#4a3728', fontSize: '20px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <ShoppingCart size={20} /> Carrito
+        <div className="cart-header-compact" style={{ height: '25px', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+          <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <ShoppingCart size={18} /> Carrito
           </h2>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '8px' }}>
           <input
             type="text"
             placeholder="Pedido a nombre de..."
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box', fontSize: '13px' }}
           />
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px' }}>

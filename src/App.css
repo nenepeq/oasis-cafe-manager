@@ -121,7 +121,8 @@
 
   .store-section {
     flex: none !important;
-    height: 55vh !important;
+    height: 50vh !important;
+    /* Reducido para dar más espacio al carrito */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     /* Previene jiggle horizontal */
@@ -129,7 +130,8 @@
   }
 
   .cart-section {
-    flex: none !important;
+    flex: 1 !important;
+    /* Cambiado a 1 para expandirse */
     height: auto !important;
     border-left: none !important;
     border-top: 2px solid #eee !important;

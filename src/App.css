@@ -5,13 +5,34 @@ body {
   margin: 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  position: fixed;
-  /* Evita bounce en iOS */
+  /* position: fixed; removido para permitir scroll interno fluido */
 }
 
 #root {
   width: 100%;
   height: 100%;
+}
+
+/* Scrollbars Visibles y Elegantes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  display: block !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Ocultar barra de desplazamiento manteniendo funcionalidad */

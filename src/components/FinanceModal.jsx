@@ -496,28 +496,7 @@ const FinanceModal = ({
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
-                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay ventas en este periodo.</p> : (
-                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
-                                                <tbody>
-                                                    {dailySalesList.map((sale) => (
-                                                        <tr key={sale.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
-                                                                <div style={{ fontWeight: '600' }}>
-                                                                    #{sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
-                                                                </div>
-                                                                <div style={{ fontSize: '10px', color: '#999' }}>
-                                                                    {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </div>
-                                                            </td>
-                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#27ae60', width: '70px', verticalAlign: 'top' }}>+${sale.total}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        )}
-                                    </div>
+                                    {/* 1.- GASTOS OPERATIVOS (IZQUIERDA) */}
                                     <div>
                                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
                                         {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (
@@ -542,6 +521,8 @@ const FinanceModal = ({
                                             </table>
                                         )}
                                     </div>
+
+                                    {/* 2.- ENTRADAS DE STOCK (MEDIO) */}
                                     <div>
                                         <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
                                         {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay compras de stock en este periodo.</p> : (
@@ -566,6 +547,30 @@ const FinanceModal = ({
                                                                 </div>
                                                             </td>
                                                             <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${purch.total}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        )}
+                                    </div>
+
+                                    {/* 3.- VENTAS DETALLADAS (DERECHA) */}
+                                    <div>
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
+                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay ventas en este periodo.</p> : (
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
+                                                <tbody>
+                                                    {dailySalesList.map((sale) => (
+                                                        <tr key={sale.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ fontWeight: '600' }}>
+                                                                    #{sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
+                                                                </div>
+                                                                <div style={{ fontSize: '10px', color: '#999' }}>
+                                                                    {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#27ae60', width: '70px', verticalAlign: 'top' }}>+${sale.total}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

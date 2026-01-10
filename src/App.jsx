@@ -38,6 +38,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState('ventas');
   const [loading, setLoading] = useState(false);
+  const [confirmPaymentStep, setConfirmPaymentStep] = useState(false); // Safety toggle
 
   // --- ESTADOS DE DATOS PRINCIPALES ---
   const [products, setProducts] = useState([]);
@@ -385,25 +386,7 @@ function App() {
       }
     }
     const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
-    let changeInfo = "";
-
-    if (paymentMethod === 'Efectivo') {
-      const receivedInput = window.prompt(`Total a cobrar: $${total}\n\nIngresa el monto recibido del cliente:`);
-      if (receivedInput === null) return;
-
-      const receivedAmount = parseFloat(receivedInput);
-      if (isNaN(receivedAmount) || receivedAmount < total) {
-        alert("⚠️ Monto recibido insuficiente o inválido.");
-        return;
-      }
-      changeInfo = `\n\nRecibido: $${receivedAmount.toFixed(2)}\nCambio: $${(receivedAmount - total).toFixed(2)}`;
-    }
-
-    const confirmMsg = paymentMethod === 'Tarjeta'
-      ? `✅ CONFIRMAR VENTA (Tarjeta)\n\nProcede a realizar el cargo en la terminal bancaria.`
-      : `✅ CONFIRMAR VENTA (${paymentMethod})${changeInfo}`;
-
-    if (!window.confirm(confirmMsg)) return;
+    // Venta directa sin confirmación ni cálculo de cambio
 
     setLoading(true);
     try {
@@ -413,7 +396,7 @@ function App() {
           total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
           status: "recibido",
           created_by: user.id,
-          customer_name: customerName.trim() || 'Sin nombre',
+          customer_name: customerName.trim() || 'Cliente Mostrador',
           payment_method: paymentMethod,
           items: cart
         });
@@ -424,14 +407,17 @@ function App() {
       }
 
       const { data: sale, error: saleError } = await supabase.from('sales').insert([{
-
-        total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
-        status: "recibido", created_by: user.id, customer_name: customerName.trim() || 'Sin nombre', payment_method: paymentMethod
+        total: total,
+        status: "recibido",
+        created_by: user.id,
+        customer_name: customerName.trim() || 'Cliente Mostrador',
+        payment_method: paymentMethod
       }]).select().single();
+
       if (saleError) throw saleError;
 
       await supabase.from('sale_items').insert(cart.map(item => ({
-        sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price
+        sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price, sale_ticket_number: sale.ticket_number
       })));
 
       for (const item of cart) {
@@ -439,7 +425,7 @@ function App() {
         await supabase.from('inventory').update({ stock: currentInvItem.stock - item.quantity }).eq('product_id', item.id);
       }
 
-      alert("✅ Venta Satisfactoria");
+      alert("✅ Venta registrada");
 
       // LOG DE ACTIVIDAD
       await logActivity(user.id, 'CREACION_VENTA', 'VENTAS', {
@@ -451,55 +437,7 @@ function App() {
       });
 
 
-      // --- LÓGICA DE TICKET PDF Y WHATSAPP ---
-      const wantTicket = window.confirm("¿Deseas enviar el Ticket Digital (PDF) por WhatsApp?");
-      if (wantTicket) {
-        let activePhone = customerPhone;
-        if (!activePhone) {
-          activePhone = window.prompt("Ingresa el número de WhatsApp del cliente (10 dígitos):");
-        }
-
-        if (activePhone && activePhone.trim()) {
-          try {
-            // 1. Generar Blob del PDF
-            const pdfBlob = await generateTicketPDF(sale, cart);
-
-            // 2. Subir a Supabase Storage
-            const fileName = `ticket_${sale.id}_${Date.now()}.pdf`;
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('customer_tickets')
-              .upload(fileName, pdfBlob, {
-                contentType: 'application/pdf',
-                cacheControl: '3600',
-                upsert: false
-              });
-
-            if (uploadError) throw uploadError;
-
-            // 3. Obtener URL Pública
-            const { data: { publicUrl } } = supabase.storage
-              .from('customer_tickets')
-              .getPublicUrl(fileName);
-
-            // 4. Formatear Mensaje de WhatsApp
-            let waMessage = `☕ *Oasis Café - Ticket Digital* ☕\n\n`;
-            waMessage += `¡Hola *${sale.customer_name}*! Gracias por tu compra. ✨\n\n`;
-            waMessage += `Puedes ver y descargar tu ticket oficial aquí:\n`;
-            waMessage += `📄 ${publicUrl}\n\n`;
-            waMessage += `_¡Esperamos verte pronto!_ 🧉`;
-
-            const encodedMessage = encodeURIComponent(waMessage);
-            const phoneClean = activePhone.replace(/\D/g, '');
-            const waUrl = `https://api.whatsapp.com/send?phone=52${phoneClean}&text=${encodedMessage}`;
-            window.open(waUrl, '_blank');
-
-          } catch (err) {
-            console.error("Error al generar/enviar ticket PDF:", err);
-            console.log("Datos de la venta intentados:", sale);
-            alert("No se pudo enviar el ticket PDF. Error: " + (err.message || 'Error desconocido'));
-          }
-        }
-      }
+      // Ticket y WhatsApp omitidos por configuración rápida
 
       setCart([]); setCustomerName(''); setCustomerPhone(''); fetchInventory();
 
@@ -772,7 +710,7 @@ function App() {
       }]).select().single();
 
       for (const item of purchaseCart) {
-        await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost }]);
+        await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost, purchase_number: purchase.purchase_number }]);
         const currentInv = inventoryList.find(inv => inv.product_id === item.id);
         await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
       }
@@ -1099,22 +1037,31 @@ function App() {
           </div>
           <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
           <button
-            onClick={handleSale}
+            onClick={() => {
+              if (!confirmPaymentStep) {
+                setConfirmPaymentStep(true);
+                setTimeout(() => setConfirmPaymentStep(false), 2000); // 2s timeout
+              } else {
+                handleSale();
+                setConfirmPaymentStep(false);
+              }
+            }}
             disabled={loading || cart.length === 0}
             className={cart.length > 0 ? "btn-active-effect" : ""}
             style={{
               width: '100%',
               padding: '15px',
-              background: cart.length > 0 ? '#e74c3c' : '#999',
+              background: confirmPaymentStep ? '#f39c12' : (cart.length > 0 ? '#e74c3c' : '#999'),
               color: '#fff',
               borderRadius: '12px',
               fontWeight: '900',
               border: 'none',
               cursor: cart.length > 0 ? 'pointer' : 'default',
-              transition: 'background-color 0.3s ease'
+              transition: 'all 0.2s ease',
+              transform: confirmPaymentStep ? 'scale(1.02)' : 'scale(1)'
             }}
           >
-            {loading ? 'PROCESANDO...' : 'PAGAR'}
+            {loading ? 'PROCESANDO...' : (confirmPaymentStep ? '¿CONFIRMAR PAGO?' : 'PAGAR')}
           </button>
         </div>
       </div>

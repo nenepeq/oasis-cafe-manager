@@ -154,7 +154,7 @@ const FinanceModal = ({
             // 2. ENTRADAS DE STOCK
             const stockRows = dailyStockList.map(p => [
                 new Date(p.created_at).toLocaleDateString(),
-                p.id ? `#${p.id.toString().slice(0, 4).toUpperCase()}` : 'N/A',
+                p.purchase_number ? `#${p.purchase_number}` : (p.id ? `#${p.id.toString().slice(0, 4).toUpperCase()}` : 'N/A'),
                 p.purchase_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(' | ') || '',
                 -p.total
             ]);
@@ -183,7 +183,7 @@ const FinanceModal = ({
             // 3. VENTAS DETALLADAS
             const saleRows = dailySalesList.map(s => [
                 new Date(s.created_at).toLocaleString(),
-                s.id ? `#${s.id.toString().slice(0, 4).toUpperCase()}` : 'N/A',
+                s.ticket_number ? `#${s.ticket_number}` : (s.id ? `#${s.id.toString().slice(0, 4).toUpperCase()}` : 'N/A'),
                 s.customer_name || 'Sin nombre',
                 s.payment_method,
                 s.total
@@ -533,7 +533,7 @@ const FinanceModal = ({
                                                             <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-                                                                        <span style={{ fontWeight: '600' }}>#{purch.id.toString().slice(0, 4)}</span>
+                                                                        <span style={{ fontWeight: '600' }}>#{purch.purchase_number || purch.id.toString().slice(0, 4)}</span>
                                                                         <span style={{ color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
                                                                         {purch.ticket_url && (
                                                                             <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
@@ -564,7 +564,7 @@ const FinanceModal = ({
                                                         <tr key={sale.id} style={{ borderBottom: '1px solid #eee' }}>
                                                             <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
                                                                 <div style={{ fontWeight: '600' }}>
-                                                                    #{sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
+                                                                    #{sale.ticket_number || sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
                                                                 </div>
                                                                 <div style={{ fontSize: '10px', color: '#999' }}>
                                                                     {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

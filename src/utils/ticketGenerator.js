@@ -38,7 +38,8 @@ export const generateTicketPDF = async (sale, items) => {
     // --- INFO DE VENTA ---
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`NOTA: #${sale.id.toString().slice(0, 4).toUpperCase()}`, margin, currentY);
+    const folioText = sale.ticket_number ? `#${sale.ticket_number}` : `#${sale.id.toString().slice(0, 4).toUpperCase()}`;
+    doc.text(`NOTA: ${folioText}`, margin, currentY);
     currentY += 5;
 
     doc.setFontSize(8);

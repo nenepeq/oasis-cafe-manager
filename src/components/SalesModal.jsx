@@ -51,7 +51,7 @@ const SalesModal = ({
             else statusText = '⏳ PENDIENTE DE ENTREGAR';
 
             return [
-                `#${s.id.slice(0, 4).toUpperCase()}`,
+                s.ticket_number ? `#${s.ticket_number}` : `#${s.id.slice(0, 4).toUpperCase()}`,
                 new Date(s.created_at).toLocaleString(),
                 s.customer_name,
                 s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '',
@@ -277,7 +277,7 @@ const SalesModal = ({
                     {selectedSale && (
                         <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
                             <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
-                                Nota #{selectedSale.id.slice(0, 4)}
+                                Nota #{selectedSale.ticket_number || selectedSale.id.slice(0, 4)}
                                 <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
                                     {new Date(selectedSale.created_at).toLocaleDateString()} · {new Date(selectedSale.created_at).toLocaleTimeString()}
                                 </div>

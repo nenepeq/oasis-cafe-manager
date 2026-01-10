@@ -1,0 +1,90 @@
+{
+    "name": "Oasis Cafe - Alertas Stock Telegram V2 (Nativo)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "alerta-stock",
+                "options": {}
+            },
+            "name": "Webhook Supabase",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "field1": "={{$json.body.record.stock}}",
+                            "operation": "smallerEqual",
+                            "field2": 5
+                        },
+                        {
+                            "field1": "={{$json.body.old_record.stock}}",
+                            "operation": "larger",
+                            "field2": 5
+                        }
+                    ]
+                }
+            },
+            "name": "Filtro Stock Bajo",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "8505215678",
+                "text": "=⚠️ *ALERTA DE STOCK BAJO*\n\nEl producto: *{{$json.body.record.product_name}}*\nHa llegado a: *{{$json.body.record.stock}}* unidades.\n\n_Gestionar compra urgente._ 🛒",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "name": "Enviar a Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ],
+            "credentials": {
+                "telegramApi": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENTIAL_ID",
+                    "name": "OasisCafeBot"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Filtro Stock Bajo",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filtro Stock Bajo": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar a Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

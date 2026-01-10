@@ -1,0 +1,77 @@
+{
+    "name": "Oasis Cafe - Alertas Stock Telegram V3 (Niveles + 0)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "alerta-stock",
+                "options": {}
+            },
+            "name": "Webhook Supabase",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const newStock = $input.item.json.body.record.stock;\nconst oldStock = $input.item.json.body.old_record.stock;\nconst product = $input.item.json.body.record.product_name;\n\n// 1. Aviso leve (10)\nif (oldStock > 10 && newStock <= 10) {\n  return { json: { \n    message: `⚠️ *AVISO DE STOCK*\\nEl producto *${product}* bajó a 10 unidades.` \n  }};\n}\n\n// 2. Alerta Media (5)\nif (oldStock > 5 && newStock <= 5) {\n   return { json: { \n     message: `🟠 *ALERTA MEDIA*\\nAtención: Quedan 5 unidades de *${product}*.` \n   }};\n}\n\n// 3. Urgencia (2)\nif (oldStock > 2 && newStock <= 2) {\n   return { json: { \n     message: `🔴 *URGENCIA CRÍTICA*\\n¡Solo quedan 2 unidades de *${product}*!\\n_Reponer inmediatamente._` \n   }};\n}\n\n// 4. Agotado (0)\nif (oldStock > 0 && newStock <= 0) {\n   return { json: { \n     message: `🚫 *SIN STOCK*\\nEl producto *${product}* se ha AGOTADO (0 unidades).\\n_No se puede vender más._` \n   }};\n}\n\nreturn [];"
+            },
+            "name": "Logica Niveles (10, 5, 2, 0)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "1765256468",
+                "text": "={{$json.message}}",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "name": "Enviar a Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ],
+            "credentials": {
+                "telegramApi": {
+                    "id": "e2JroKwEWVF1oa7J",
+                    "name": "Telegram account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Logica Niveles (10, 5, 2, 0)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Logica Niveles (10, 5, 2, 0)": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar a Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

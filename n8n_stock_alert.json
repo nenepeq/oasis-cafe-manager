@@ -1,0 +1,54 @@
+{
+    "name": "Oasis Cafe - Alertas Stock Telegram",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "alerta-stock",
+                "options": {}
+            },
+            "name": "Webhook Supabase",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "REEMPLAZAR_CON_TU_CHAT_ID",
+                "text": "=⚠️ *ALERTA DE STOCK BAJO*\n\nEl producto: *{{$json.body.product_name}}*\nHa llegado a: *{{$json.body.current_stock}}* unidades.\n\n_Gestionar compra urgente._ 🛒",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "name": "Enviar a Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ],
+            "credentials": {
+                "telegramApi": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENTIAL_ID",
+                    "name": "OasisCafeBot"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar a Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

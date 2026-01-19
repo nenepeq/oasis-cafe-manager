@@ -19,6 +19,14 @@ const StarProductsModal = ({
     kpiData
 }) => {
     const [activeTab, setActiveTab] = useState('ranking'); // 'ranking' | 'kpis'
+
+    // Efecto para recargar automáticamente al cambiar fechas
+    React.useEffect(() => {
+        if (showStarProducts && starStartDate && starEndDate) {
+            fetchStarProducts();
+        }
+    }, [starStartDate, starEndDate, showStarProducts]);
+
     if (!showStarProducts || userRole !== 'admin') return null;
 
     const handleExportCSV = async () => {
@@ -174,13 +182,7 @@ const StarProductsModal = ({
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end' }}>
-                        <button
-                            onClick={fetchStarProducts}
-                            className="btn-active-effect"
-                            style={{ padding: '10px 20px', background: '#4a3728', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                            VER REPORTE
-                        </button>
+
                         {starData.length > 0 && (
                             <button
                                 onClick={handleExportCSV}
@@ -251,20 +253,11 @@ const StarProductsModal = ({
                         <div style={{ background: '#f0fdf4', padding: '20px', borderRadius: '20px', border: '1px solid #dcfce7' }}>
                             <div style={{ color: '#15803d', marginBottom: '10px' }}><TrendingUp size={24} /></div>
                             <div style={{ fontSize: '12px', color: '#15803d', fontWeight: 'bold' }}>MARGEN ESTIMADO</div>
-                            <div style={{ fontSize: '28px', fontWeight: '900', color: '#166534' }}>{kpiData.margenReal.toFixed(1)}%</div>
+                            <div style={{ fontSize: '28px', fontWeight: '900', color: '#166534' }}>{kpiData.margenReal.toFixed(2)}%</div>
                             <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '5px' }}>Sobre costo de producto</div>
                         </div>
 
-                        {/* TARJETA DE RECOMENDACIÓN RÁPIDA */}
-                        <div style={{ gridColumn: '1 / -1', background: '#4a3728', padding: '20px', borderRadius: '20px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div>
-                                <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.8 }}>OASIS TIP:</div>
-                                <div style={{ fontSize: '16px', fontWeight: '900' }}>
-                                    {kpiData.ticketPromedio < 80 ? 'Sugiere postres para subir el ticket.' : 'Excelente ticket promedio.'}
-                                </div>
-                            </div>
-                            <ArrowRight size={30} opacity={0.3} />
-                        </div>
+
                     </div>
                 )}
 

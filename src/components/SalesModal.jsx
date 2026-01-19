@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, RefreshCw, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, RefreshCw, Download, Banknote, CreditCard } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -20,8 +20,11 @@ const SalesModal = ({
     sales,
     selectedSale,
     userRole,
-    updateSaleStatus
+    updateSaleStatus,
+    markAsPaid
 }) => {
+    const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
+
     const handleExportSalesCSV = async () => {
         if (!sales || sales.length === 0) return;
 
@@ -41,7 +44,7 @@ const SalesModal = ({
         mainHeader.fill = headerFill;
 
         worksheet.getCell('A2').value = `Periodo: ${reportStartDate} al ${reportEndDate}`;
-        worksheet.getCell('G2').value = `Total: $${totalIngresosReporte.toFixed(2)}`;
+        worksheet.getCell('G2').value = `Total Ingresos: $${totalIngresosReporte.toFixed(2)}`;
         worksheet.getRow(2).font = { bold: true };
 
         const rows = sales.map(s => {
@@ -108,7 +111,7 @@ const SalesModal = ({
         totalCell.value = totalIngresosReporte;
         totalCell.numFmt = '"$"#,##0.00';
         totalCell.font = { bold: true, size: 12 };
-        worksheet.getCell(totalRow.number, 5).value = 'TOTAL:';
+        worksheet.getCell(totalRow.number, 5).value = 'TOTAL INGRESOS:';
         worksheet.getCell(totalRow.number, 5).font = { bold: true };
 
         worksheet.getColumn(1).width = 10;
@@ -124,6 +127,21 @@ const SalesModal = ({
     };
 
     if (!showReport) return null;
+
+    // LÓGICA DE FILTRADO
+    const filteredSales = sales.filter(s => {
+        if (activeTab === 'pagadas') {
+            // Mostrar pagadas (Efectivo/Tarjeta) y canceladas (para historial completo)
+            // Ocultar solo las "A Cuenta" que estan activas
+            return s.payment_method !== 'A Cuenta';
+        } else {
+            // activeTab === 'por_cobrar'
+            // Solo mostrar 'A Cuenta' que NO estén canceladas
+            return s.payment_method === 'A Cuenta' && s.status !== 'cancelado';
+        }
+    });
+
+    const totalFiltered = filteredSales.reduce((acc, s) => acc + (s.status !== 'cancelado' ? s.total : 0), 0);
 
     return (
         <div
@@ -164,6 +182,36 @@ const SalesModal = ({
 
                 <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
+                {/* TABS SELECTOR */}
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', background: '#f0ece6', padding: '5px', borderRadius: '15px' }}>
+                    <button
+                        onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
+                        style={{
+                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
+                            background: activeTab === 'pagadas' ? '#fff' : 'transparent',
+                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
+                            boxShadow: activeTab === 'pagadas' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        ✅ VENTAS COBRADAS
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('por_cobrar'); setSelectedSale(null); }}
+                        style={{
+                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
+                            background: activeTab === 'por_cobrar' ? '#fff' : 'transparent',
+                            color: '#e67e22', fontWeight: '900', cursor: 'pointer',
+                            boxShadow: activeTab === 'por_cobrar' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        ⏳ POR COBRAR
+                    </button>
+                </div>
+
                 {/* FILTRO DE FECHA (RANGO) */}
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -185,7 +233,7 @@ const SalesModal = ({
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
-                        {sales.length > 0 && (
+                        {sales.length > 0 && activeTab === 'pagadas' && (
                             <button
                                 onClick={handleExportSalesCSV}
                                 className="btn-active-effect"
@@ -208,8 +256,8 @@ const SalesModal = ({
                         )}
                     </div>
 
-                    <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: '#27ae60' }}>
-                        Total: ${totalIngresosReporte.toFixed(2)}
+                    <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: activeTab === 'pagadas' ? '#27ae60' : '#e67e22' }}>
+                        {activeTab === 'pagadas' ? 'Total Ingresos:' : 'Total Pendiente:'} ${totalFiltered.toFixed(2)}
                     </div>
                 </div>
 
@@ -233,8 +281,8 @@ const SalesModal = ({
                     <div style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Cargando ventas...</div>
-                        ) : sales.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay ventas en este rango</div>
+                        ) : filteredSales.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay ventas en esta sección</div>
                         ) : (
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                 <thead>
@@ -245,7 +293,7 @@ const SalesModal = ({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {sales.map(sale => (
+                                    {filteredSales.map(sale => (
                                         <tr
                                             key={sale.id}
                                             onClick={() => setSelectedSale(sale)}
@@ -264,7 +312,7 @@ const SalesModal = ({
                                                 {sale.payment_method && <div style={{ fontSize: '10px', color: '#666' }}>{sale.payment_method}</div>}
                                             </td>
                                             <td style={{ padding: '10px', textAlign: 'right', color: sale.status === 'cancelado' ? '#ccc' : '#27ae60', fontWeight: '900' }}>
-                                                ${sale.total}
+                                                ${parseFloat(sale.total).toFixed(2)}
                                                 {sale.status === 'cancelado' && <div style={{ fontSize: '10px', color: '#e74c3c' }}>CANCELADO</div>}
                                             </td>
                                         </tr>
@@ -285,23 +333,54 @@ const SalesModal = ({
                             <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
                                 {selectedSale.sale_items?.map((item, i) => (
                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                                        <span>{item.products?.name} {item.quantity} x ${item.price}</span>
+                                        <span>{item.products?.name} {item.quantity} x ${parseFloat(item.price).toFixed(2)}</span>
                                         <span style={{ fontWeight: 'bold' }}>${(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
                             <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}>
                                 <span>Total</span>
-                                <span>${selectedSale.total}</span>
+                                <span>${parseFloat(selectedSale.total).toFixed(2)}</span>
                             </div>
                             <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {selectedSale.status === 'recibido' && (
+                                {selectedSale.status === 'recibido' && selectedSale.payment_method !== 'A Cuenta' && (
                                     <button
                                         onClick={() => updateSaleStatus(selectedSale.id, 'entregado')}
                                         style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
                                     >
                                         MARCAR ENTREGADO
                                     </button>
+                                )}
+
+                                {/* BOTONES DE COBRAR (SOLO PARA 'A CUENTA') */}
+                                {selectedSale.payment_method === 'A Cuenta' && selectedSale.status !== 'cancelado' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#e67e22', textAlign: 'center' }}>
+                                            ¿Cómo paga el cliente?
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm(`¿Cobrar $${selectedSale.total} en EFECTIVO?`)) {
+                                                        markAsPaid(selectedSale.id, 'Efectivo');
+                                                    }
+                                                }}
+                                                style={{ flex: 1, padding: '10px', backgroundColor: '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                                            >
+                                                <Banknote size={16} /> EFECTIVO
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm(`¿Cobrar $${selectedSale.total} con TARJETA?`)) {
+                                                        markAsPaid(selectedSale.id, 'Tarjeta');
+                                                    }
+                                                }}
+                                                style={{ flex: 1, padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                                            >
+                                                <CreditCard size={16} /> TARJETA
+                                            </button>
+                                        </div>
+                                    </div>
                                 )}
                                 {userRole === 'admin' && selectedSale.status !== 'cancelado' && (
                                     <button

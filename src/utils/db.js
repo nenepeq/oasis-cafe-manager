@@ -18,6 +18,9 @@ export const openDB = () => {
             if (!db.objectStoreNames.contains('pending_expenses')) {
                 db.createObjectStore('pending_expenses', { keyPath: 'id', autoIncrement: true });
             }
+            if (!db.objectStoreNames.contains('pending_purchases')) {
+                db.createObjectStore('pending_purchases', { keyPath: 'id', autoIncrement: true });
+            }
         };
 
         request.onsuccess = () => resolve(request.result);
@@ -45,6 +48,16 @@ export const savePendingExpense = async (expenseData) => {
     });
 };
 
+export const savePendingPurchase = async (purchaseData) => {
+    const db = await openDB();
+    const tx = db.transaction('pending_purchases', 'readwrite');
+    const store = tx.objectStore('pending_purchases');
+    store.add({ ...purchaseData, timestamp: new Date().toISOString() });
+    return new Promise((resolve) => {
+        tx.oncomplete = () => resolve();
+    });
+};
+
 export const getAllPendingItems = async () => {
     const db = await openDB();
     const getStoreItems = (storeName) => {
@@ -58,8 +71,9 @@ export const getAllPendingItems = async () => {
 
     const sales = await getStoreItems('pending_sales');
     const expenses = await getStoreItems('pending_expenses');
+    const purchases = await getStoreItems('pending_purchases');
 
-    return { sales, expenses };
+    return { sales, expenses, purchases };
 };
 
 export const clearPendingItem = async (storeName, id) => {

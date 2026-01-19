@@ -6,10 +6,10 @@ import {
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart,
   LogOut, IceCream, FileText, RefreshCw, CakeSlice,
   Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard,
-  Wifi, WifiOff, CloudSync
+  Wifi, WifiOff, CloudSync, ClipboardList, Clock
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
-import { savePendingSale, savePendingExpense, getAllPendingItems, clearPendingItem } from './utils/db';
+import { savePendingSale, savePendingExpense, savePendingPurchase, getAllPendingItems, clearPendingItem } from './utils/db';
 
 // Componentes
 import Login from './components/Login';
@@ -18,6 +18,7 @@ import FinanceModal from './components/FinanceModal';
 import SalesModal from './components/SalesModal';
 import CashArqueoModal from './components/CashArqueoModal';
 import StarProductsModal from './components/StarProductsModal';
+import CatalogModal from './components/CatalogModal';
 import { generateTicketPDF } from './utils/ticketGenerator';
 
 
@@ -56,6 +57,7 @@ function App() {
   const [showFinances, setShowFinances] = useState(false);
   const [showCashArqueo, setShowCashArqueo] = useState(false);
   const [showStarProducts, setShowStarProducts] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -118,13 +120,22 @@ function App() {
   const [expenseConcepto, setExpenseConcepto] = useState('');
   const [expenseCategoria, setExpenseCategoria] = useState('Insumos');
   const [expenseMonto, setExpenseMonto] = useState(0);
+  const [expenseCart, setExpenseCart] = useState([]);
   const [expenseFile, setExpenseFile] = useState(null);
   const [purchaseFile, setPurchaseFile] = useState(null);
 
-  const categories = [
-    'Todos', 'Bebidas Calientes', 'Alimentos', 'Frappés',
+  // Categorías base (siempre visibles)
+  const baseCategories = [
+    'Bebidas Calientes', 'Alimentos', 'Frappés',
     'Bebidas Frías', 'Refrescos', 'Postres', 'Sabritas y Otros'
   ];
+
+  // Categorías Dinámicas (Base + las que vengan de DB)
+  const categories = React.useMemo(() => {
+    const prodCats = products.map(p => p.category).filter(Boolean);
+    const uniqueCats = new Set([...baseCategories, ...prodCats]);
+    return ['Todos', ...Array.from(uniqueCats).sort()];
+  }, [products]);
 
   const expenseCategories = [
     '---☕ INSUMOS Y ALIMENTOS ☕---', 'Agua purificada', 'Azúcar', 'Café molido', 'Canela', 'Chobani', 'Crema batida', 'Embutidos', 'Endulzantes', 'Hielo', 'Jarabes saborizantes', 'Lácteos', 'Pan', 'Té', 'Vegetales',
@@ -153,8 +164,8 @@ function App() {
 
   const syncOfflineData = async () => {
     if (isSyncing || !navigator.onLine) return;
-    const { sales, expenses } = await getAllPendingItems();
-    if (sales.length === 0 && expenses.length === 0) return;
+    const { sales, expenses, purchases } = await getAllPendingItems();
+    if (sales.length === 0 && expenses.length === 0 && purchases.length === 0) return;
 
     setIsSyncing(true);
     console.log('Sincronizando datos offline...');
@@ -190,6 +201,39 @@ function App() {
           await logActivity(e.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { concepto: e.concepto });
         }
       } catch (err) { console.error('Error sync gasto:', err); }
+    }
+
+    // Sync Compras (Inventario)
+    for (const p of purchases) {
+      try {
+        const { data: purchase, error: pError } = await supabase.from('purchases').insert([{
+          total: p.total,
+          created_by: p.created_by,
+          created_at: p.timestamp
+        }]).select().single();
+
+        if (!pError) {
+          for (const item of p.items) {
+            await supabase.from('purchase_items').insert([{
+              purchase_id: purchase.id,
+              product_id: item.id,
+              quantity: item.qty,
+              cost: item.cost,
+              purchase_number: purchase.purchase_number
+            }]);
+
+            // Actualizar stock (Aunque ya se actualizó localmente, aseguramos la DB)
+            // Nota: Esto podría duplicar si la lógica offline ya sumó, pero en este caso
+            // asumimos que el "fetchInventory" final corregirá la verdad absoluta.
+            // Para mayor seguridad en offline, incrementamos en DB la cantidad reportada.
+            const currentData = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
+            const currentStock = currentData.data ? currentData.data.stock : 0;
+            await supabase.from('inventory').update({ stock: currentStock + item.qty }).eq('product_id', item.id);
+          }
+          await clearPendingItem('pending_purchases', p.id);
+          await logActivity(p.created_by, 'SYNC_COMPRA_OFFLINE', 'INVENTARIO', { purchase_id: purchase.id, total: p.total });
+        }
+      } catch (err) { console.error('Error sync compra:', err); }
     }
 
     setIsSyncing(false);
@@ -229,23 +273,41 @@ function App() {
         }
       )
       .subscribe((status) => {
-        console.log('📡 Estado de suscripción Realtime:', status);
+        console.log('📡 Estado de suscripción Realtime (Inventory):', status);
         if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error de conexión Realtime. Asegúrate de que "Realtime" esté activado para la tabla "inventory" en el dashboard de Supabase.');
+          console.error('❌ Error de conexión Realtime en inventory.');
         }
+      });
+
+    const productsChannel = supabase
+      .channel('products_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        (payload) => {
+          console.log('🔔 Cambio detectado en productos:', payload);
+          fetchProducts();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción Realtime (Products):', status);
       });
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(productsChannel);
     };
   }, []);
 
+  const fetchProducts = async () => {
+    const res = await getProducts();
+    if (res.error) setFetchError(res.error.message);
+    else { setProducts(res.data || []); setFetchError(null); }
+  };
+
   useEffect(() => {
     if (user) {
-      getProducts().then(res => {
-        if (res.error) setFetchError(res.error.message);
-        else { setProducts(res.data || []); setFetchError(null); }
-      });
+      fetchProducts();
       fetchInventory();
       fetchActiveShift();
     }
@@ -386,6 +448,13 @@ function App() {
       }
     }
     const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
+
+    // Validación para A Cuenta
+    if (paymentMethod === 'A Cuenta' && !customerName.trim()) {
+      alert("⚠️ Para ventas A CUENTA, debes ingresar el nombre del cliente obligatoriamente.");
+      return;
+    }
+
     // Venta directa sin confirmación ni cálculo de cambio
 
     setLoading(true);
@@ -487,7 +556,8 @@ function App() {
       .gte('created_at', reportStartDate + 'T00:00:00').lte('created_at', reportEndDate + 'T23:59:59').order('created_at', { ascending: false });
     if (!error) {
       setSales(data || []);
-      setTotalIngresosReporte((data || []).reduce((acc, sale) => sale.status !== 'cancelado' ? acc + (sale.total || 0) : acc, 0));
+      // Solo sumamos lo que NO es cancelado Y que NO es 'A Cuenta' (porque eso no ha entrado dinero real aun)
+      setTotalIngresosReporte((data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0));
     }
     setLoading(false);
   };
@@ -515,6 +585,25 @@ function App() {
       fetchSales(); calculateFinances(); fetchInventory(); setSelectedSale(null);
 
     } catch (err) { alert('Error: ' + err.message); }
+    setLoading(false);
+  };
+
+  const markAsPaid = async (saleId, method = 'Efectivo') => {
+    setLoading(true);
+    try {
+      await supabase.from('sales').update({
+        payment_method: method,
+        status: 'entregado' // Asumimos que al pagar ya se entregó o se entrega en el momento
+      }).eq('id', saleId);
+
+      alert(`✅ Venta cobrada con éxito (registrada como ${method})`);
+      await logActivity(user.id, 'COBRO_DEUDA', 'VENTAS', { sale_id: saleId, method });
+
+      fetchSales();
+      calculateFinances();
+      setSelectedSale(null);
+
+    } catch (err) { alert('Error al cobrar: ' + err.message); }
     setLoading(false);
   };
 
@@ -699,31 +788,57 @@ function App() {
     setLoading(true);
     try {
       let ticketUrl = null;
-      if (purchaseFile) {
+      // Solo intentamos subir la imagen si tenemos internet
+      if (navigator.onLine && purchaseFile) {
         ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
       }
 
-      const { data: purchase } = await supabase.from('purchases').insert([{
-        total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
-        created_by: user.id,
-        ticket_url: ticketUrl
-      }]).select().single();
+      if (!navigator.onLine) {
+        // --- FLUJO OFFLINE ---
+        await savePendingPurchase({
+          total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
+          items: purchaseCart,
+          created_by: user.id
+          // La imagen se pierde en versión offline actual, se notifica al usuario
+        });
 
-      for (const item of purchaseCart) {
-        await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost, purchase_number: purchase.purchase_number }]);
-        const currentInv = inventoryList.find(inv => inv.product_id === item.id);
-        await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
+        // Actualización Optimista del Stock Local
+        const newInventory = [...inventoryList];
+        purchaseCart.forEach(item => {
+          const idx = newInventory.findIndex(inv => inv.product_id === item.id);
+          if (idx >= 0) {
+            newInventory[idx] = { ...newInventory[idx], stock: newInventory[idx].stock + item.qty };
+          }
+        });
+        setInventoryList(newInventory); // Actualizamos estado visual inmediatamente
+
+        alert("📦 Sin internet. Compra guardada y stock actualizado localmente. Se sincronizará al volver la conexión.");
+      } else {
+        // --- FLUJO ONLINE ---
+        const { data: purchase } = await supabase.from('purchases').insert([{
+          total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
+          created_by: user.id,
+          ticket_url: ticketUrl
+        }]).select().single();
+
+        for (const item of purchaseCart) {
+          await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost, purchase_number: purchase.purchase_number }]);
+          const currentInv = inventoryList.find(inv => inv.product_id === item.id);
+          await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
+        }
+        alert("📦 Stock Actualizado");
+
+        // LOG DE ACTIVIDAD
+        await logActivity(user.id, 'REGISTRO_COMPRA_INVENTARIO', 'INVENTARIO', {
+          purchase_id: purchase.id,
+          total: purchase.total,
+          items_count: purchaseCart.length
+        });
+
+        fetchInventory(); // Refrescar stock de la nube
       }
-      alert("📦 Stock Actualizado");
 
-      // LOG DE ACTIVIDAD
-      await logActivity(user.id, 'REGISTRO_COMPRA_INVENTARIO', 'INVENTARIO', {
-        purchase_id: purchase.id,
-        total: purchase.total,
-        items_count: purchaseCart.length
-      });
-
-      setPurchaseCart([]); setPurchaseFile(null); fetchInventory();
+      setPurchaseCart([]); setPurchaseFile(null);
 
     } catch (err) { alert("Error: " + err.message); }
     setLoading(false);
@@ -779,54 +894,63 @@ function App() {
   };
 
   const handleRegisterExpense = async () => {
-    if (!expenseConcepto.trim() || expenseMonto <= 0 || loading) return alert('Completa campos: Concepto y Monto > 0');
+    if (expenseCart.length === 0 || loading) return;
     setLoading(true);
 
-    if (!navigator.onLine) {
-      await savePendingExpense({
-        concepto: expenseConcepto.trim(),
-        categoria: expenseCategoria,
-        monto: expenseMonto,
-        fecha: getMXDate(),
-        created_by: user.id
-      });
-      alert("💰 Sin internet. Gasto guardado localmente.");
-      setExpenseConcepto(''); setExpenseMonto(0);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
     try {
+      // 1. Subir Ticket una sola vez (si existe)
       let ticketUrl = null;
       if (expenseFile) {
         ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
       }
 
-      const { data: expense, error } = await supabase.from('expenses').insert([{
-        concepto: expenseConcepto.trim(),
-        categoria: expenseCategoria,
-        monto: expenseMonto,
-        fecha: getMXDate(),
-        created_by: user.id,
-        ticket_url: ticketUrl
-      }]).select().single();
+      const today = getMXDate();
 
-      if (error) throw error;
-      alert("✅ Gasto registrado");
+      // 2. Procesar cada ítem del carrito
+      for (const item of expenseCart) {
+        if (!navigator.onLine) {
+          await savePendingExpense({
+            concepto: item.concepto,
+            categoria: item.categoria,
+            monto: item.monto,
+            fecha: today,
+            created_by: user.id
+            // Offline no soporta subir fotos por ahora en esta versión
+          });
+        } else {
+          const { error } = await supabase.from('expenses').insert([{
+            concepto: item.concepto,
+            categoria: item.categoria,
+            monto: item.monto,
+            fecha: today,
+            created_by: user.id,
+            ticket_url: ticketUrl
+          }]);
+          if (error) throw error;
+        }
+      }
 
-      // LOG DE ACTIVIDAD
-      await logActivity(user.id, 'REGISTRO_GASTO', 'FINANZAS', {
-        concepto: expenseConcepto,
-        monto: expenseMonto,
-        categoria: expenseCategoria,
-        expense_id: expense.id
+      // 3. Log General
+      await logActivity(user.id, 'REGISTRO_TICKET_GASTOS', 'FINANZAS', {
+        items_count: expenseCart.length,
+        total: expenseCart.reduce((a, b) => a + b.monto, 0)
       });
 
-      setExpenseConcepto(''); setExpenseMonto(0); setExpenseFile(null); calculateFinances(); fetchInventory();
+      alert(navigator.onLine ? "✅ Ticket registrado con éxito" : "💰 Sin internet. Gastos guardados localmente.");
 
-    } catch (err) { alert("Error: " + err.message); }
-    setLoading(false);
+      // Limpiar todo al finalizar el ticket
+      setExpenseCart([]);
+      setExpenseFile(null);
+      setExpenseConcepto('');
+      setExpenseMonto(0);
+      calculateFinances();
+      fetchInventory();
+
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // --- UI HELPERS ---
@@ -898,17 +1022,16 @@ function App() {
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px',
-              borderRadius: '10px', background: isOnline ? '#def7ec' : '#fde8e8',
-              color: isOnline ? '#03543f' : '#9b1c1c', fontSize: '10px', fontWeight: 'bold'
+            <div title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet'} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
+              borderRadius: '50%', background: isOnline ? '#def7ec' : '#fde8e8',
+              color: isOnline ? '#27ae60' : '#e74c3c'
             }}>
-              {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
-              {isOnline ? (isSyncing ? <CloudSync size={14} className="spin" /> : 'ONLINE') : 'OFFLINE'}
+              {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" /> : <Wifi size={18} />) : <WifiOff size={18} />}
             </div>
             {userRole === 'admin' && (
-
               <>
+                <button onClick={() => setShowCatalog(true)} title="Gestión de Catálogo" className="btn-active-effect" style={{ background: '#4a3728', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><ClipboardList size={16} /></button>
                 <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
                 <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
                 <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
@@ -951,7 +1074,7 @@ function App() {
                 >
                   <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
                   <div className="product-name">{p.name}</div>
-                  <div className="product-price">${p.sale_price}</div>
+                  <div className="product-price">${parseFloat(p.sale_price).toFixed(2)}</div>
                 </button>
               );
             })}
@@ -1016,11 +1139,11 @@ function App() {
                         <Plus size={12} />
                       </button>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#888' }}>x ${item.sale_price}</span>
+                    <span style={{ fontSize: '11px', color: '#888' }}>x ${item.sale_price.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
-              <div style={{ color: '#27ae60', fontWeight: '900' }}>${item.sale_price * item.quantity}</div>
+              <div style={{ color: '#27ae60', fontWeight: '900' }}>${(item.sale_price * item.quantity).toFixed(2)}</div>
             </div>
           ))}
         </div>
@@ -1034,8 +1157,11 @@ function App() {
             <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <CreditCard size={16} /> TARJETA
             </button>
+            <button onClick={() => setPaymentMethod('A Cuenta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'A Cuenta' ? '#f39c12' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Clock size={16} /> A CUENTA
+            </button>
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0)}</div>
+          <div style={{ fontSize: '24px', fontWeight: '900', color: '#00913f', textAlign: 'center', marginBottom: '10px' }}>Total: ${cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0).toFixed(2)}</div>
           <button
             onClick={() => {
               if (!confirmPaymentStep) {
@@ -1072,7 +1198,8 @@ function App() {
         selectedPurchaseProd={selectedPurchaseProd} setSelectedPurchaseProd={setSelectedPurchaseProd} purchaseQty={purchaseQty} setPurchaseQty={setPurchaseQty}
         purchaseCost={purchaseCost} setPurchaseCost={setPurchaseCost} purchaseCart={purchaseCart} setPurchaseCart={setPurchaseCart} handleRegisterPurchase={handleRegisterPurchase}
         expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
-        expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories} handleRegisterExpense={handleRegisterExpense}
+        expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories}
+        expenseCart={expenseCart} setExpenseCart={setExpenseCart} handleRegisterExpense={handleRegisterExpense}
         expenseFile={expenseFile} setExpenseFile={setExpenseFile} purchaseFile={purchaseFile} setPurchaseFile={setPurchaseFile}
         selectedShrinkageProd={selectedShrinkageProd} setSelectedShrinkageProd={setSelectedShrinkageProd}
         shrinkageQty={shrinkageQty} setShrinkageQty={setShrinkageQty}
@@ -1087,7 +1214,7 @@ function App() {
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
         reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={fetchSales} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
-        selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus}
+        selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus} markAsPaid={markAsPaid}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}
@@ -1098,6 +1225,9 @@ function App() {
       <StarProductsModal
         showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts} userRole={userRole} starStartDate={starStartDate} setStarStartDate={setStarStartDate}
         starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData} kpiData={kpiData}
+      />
+      <CatalogModal
+        showCatalog={showCatalog} setShowCatalog={setShowCatalog} userRole={userRole} products={products} fetchProducts={fetchProducts} fetchInventory={fetchInventory} categories={categories}
       />
 
     </div>

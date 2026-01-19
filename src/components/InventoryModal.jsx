@@ -34,6 +34,8 @@ const InventoryModal = ({
     purchaseFile,
     setPurchaseFile,
     expenseCategories,
+    expenseCart,
+    setExpenseCart,
     handleRegisterExpense,
     // Props de Mermas
     selectedShrinkageProd,
@@ -299,58 +301,98 @@ const InventoryModal = ({
                         </div>
                     )}
 
-                    {/* SECCIÓN: ENTRADA DE MERCANCÍAS */}
+                    {/* SECCIÓN: ENTRADAS DE INVENTARIO (CARRITO) */}
                     {activeTab === 'entradas' && (
-                        <div style={{
-                            background: '#fdfbf9',
-                            padding: '20px',
-                            borderRadius: '15px',
-                            border: '1px solid #f1ece6',
-                            boxSizing: 'border-box'
-                        }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000', marginBottom: '15px' }}>REGISTRAR ENTRADA</h3>
-                            <select
-                                value={selectedPurchaseProd}
-                                onChange={(e) => setSelectedPurchaseProd(e.target.value)}
-                                style={{ width: '100%', padding: '12px', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '14px' }}
-                            >
-                                <option value="">Seleccionar producto...</option>
-                                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                                <input
-                                    type="number"
-                                    placeholder="Cant. Unidades"
-                                    min="1"
-                                    value={purchaseQty || ''}
-                                    onChange={(e) => {
-                                        const val = parseInt(e.target.value);
-                                        setPurchaseQty(isNaN(val) ? 0 : Math.max(0, val));
+                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE ENTRADAS (STOCK)</h3>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
+                                <select
+                                    value={selectedPurchaseProd}
+                                    onChange={(e) => setSelectedPurchaseProd(e.target.value)}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                >
+                                    <option value="">Seleccionar producto...</option>
+                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="Unidades"
+                                        min="1"
+                                        value={purchaseQty || ''}
+                                        onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="$ Costo Total"
+                                        min="0.01"
+                                        step="0.01"
+                                        value={purchaseCost || ''}
+                                        onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const p = products.find(x => x.id === selectedPurchaseProd);
+                                        if (p && purchaseQty > 0 && purchaseCost > 0) {
+                                            // Calculamos el costo unitario a partir del total ingresado
+                                            const unitCost = purchaseCost / purchaseQty;
+                                            setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: unitCost }]);
+                                            setSelectedPurchaseProd('');
+                                            setPurchaseQty(0);
+                                            setPurchaseCost(0);
+                                        }
                                     }}
-                                    style={{ flex: 1, minWidth: '0', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '14px' }}
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="$ Costo Unitario"
-                                    min="0.01"
-                                    step="0.01"
-                                    value={purchaseCost || ''}
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value);
-                                        setPurchaseCost(isNaN(val) ? 0 : Math.max(0, val));
+                                    disabled={!selectedPurchaseProd || purchaseQty <= 0 || purchaseCost <= 0}
+                                    style={{
+                                        padding: '12px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold',
+                                        cursor: (!selectedPurchaseProd || purchaseQty <= 0 || purchaseCost <= 0) ? 'not-allowed' : 'pointer',
+                                        opacity: (!selectedPurchaseProd || purchaseQty <= 0 || purchaseCost <= 0) ? 0.6 : 1
                                     }}
-                                    style={{ flex: 1, minWidth: '0', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '14px' }}
-                                />
+                                >
+                                    + AÑADIR AL INVENTARIO
+                                </button>
                             </div>
 
-                            {/* SELECTOR DE IMAGEN PARA COMPRAS */}
-                            <div style={{ marginBottom: '15px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            {/* LISTA DE ÍTEMS EN EL TICKET DE ENTRADA */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '10px' }}>PRODUCTOS A INGRESAR:</h4>
+                                {purchaseCart.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px', background: '#f5f5f5', borderRadius: '10px', border: '1px dashed #ccc' }}>
+                                        No hay productos agregados aún
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {purchaseCart.map((item, i) => (
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
+                                                    <div style={{ fontSize: '11px', color: '#666' }}>{item.qty} unids x ${item.cost.toFixed(2)} unit.</div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{ fontWeight: '900', color: '#27ae60' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                                                    <button onClick={() => setPurchaseCart(purchaseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div style={{ marginTop: '10px', textAlign: 'right', fontSize: '16px', fontWeight: '900', color: '#27ae60' }}>
+                                            TOTAL COMPRA: ${purchaseCart.reduce((a, b) => a + (b.cost * b.qty), 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* FOTO DEL TICKET GLOBAL (COMPRAS) */}
+                            <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <button
                                         onClick={() => document.getElementById('purchase-file-input').click()}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', background: '#f39c12', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 15px', background: '#34495e', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                                     >
-                                        <Package size={14} /> {purchaseFile ? 'CAMBIAR TICKET' : 'ADJUNTAR TICKET'}
+                                        <Package size={14} /> {purchaseFile ? 'CAMBIAR FOTO DEL TICKET' : 'TOMAR FOTO DEL TICKET'}
                                     </button>
                                     <input
                                         id="purchase-file-input"
@@ -360,121 +402,40 @@ const InventoryModal = ({
                                         style={{ display: 'none' }}
                                         onChange={(e) => handleFileChange(e, setPurchaseFile, setPurchasePreview)}
                                     />
-                                    {previewLoading && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#666', fontSize: '12px' }}>
-                                            <RefreshCw size={14} className="spin" /> Procesando imagen...
-                                        </div>
-                                    )}
-                                    {purchasePreview && !previewLoading && (
-                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <img src={purchasePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
-                                                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
-                                                    <CheckCircle size={16} color="#27ae60" fill="#fff" />
-                                                </div>
+                                    {purchasePreview && (
+                                        <div style={{ position: 'relative' }}>
+                                            <img src={purchasePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            <div style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#27ae60', borderRadius: '50%', width: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <CheckCircle size={10} color="#fff" />
                                             </div>
-                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32' }}>✅ LISTO</span>
-                                            <button
-                                                onClick={() => { setPurchaseFile(null); setPurchasePreview(null); }}
-                                                style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '5px' }}
-                                            >
-                                                ×
-                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <button
-                                onClick={() => {
-                                    const p = products.find(x => x.id === selectedPurchaseProd);
-                                    if (p && purchaseQty > 0 && purchaseCost > 0) {
-                                        setPurchaseCart([...purchaseCart, { ...p, qty: purchaseQty, cost: purchaseCost }]);
-                                        setSelectedPurchaseProd('');
-                                        setPurchaseQty(0);
-                                        setPurchaseCost(0);
-                                    }
-                                }}
-                                disabled={!selectedPurchaseProd || purchaseQty <= 0 || purchaseCost <= 0}
-                                className={selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0 ? "btn-active-effect" : ""}
+                                onClick={handleRegisterPurchase}
+                                disabled={loading || purchaseCart.length === 0}
                                 style={{
-                                    width: '100%',
-                                    padding: '12px',
-                                    background: '#3498db',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    fontWeight: '900',
-                                    cursor: (selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0) ? 'pointer' : 'not-allowed',
-                                    opacity: (selectedPurchaseProd && purchaseQty > 0 && purchaseCost > 0) ? 1 : 0.5
+                                    width: '100%', padding: '15px', background: (loading || purchaseCart.length === 0) ? '#ccc' : '#27ae60',
+                                    color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
+                                    cursor: (loading || purchaseCart.length === 0) ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                AÑADIR INVENTARIO
+                                {loading ? <RefreshCw className="spin" size={20} /> : 'FINALIZAR REGISTRO DE COMPRA'}
                             </button>
-                            <div style={{ marginTop: '20px', color: '#000' }}>
-                                {purchaseCart.map((item, i) => (
-                                    <div key={i} style={{
-                                        fontSize: '13px',
-                                        marginBottom: '8px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        background: '#fff',
-                                        padding: '10px',
-                                        borderRadius: '8px',
-                                        border: '1px solid #eee'
-                                    }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontWeight: '600' }}>📦 {item.name}</span>
-                                            <span style={{ color: '#666' }}>{item.qty} x ${item.cost}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ fontWeight: '900' }}>${(item.qty * item.cost).toFixed(2)}</span>
-                                            <button
-                                                onClick={() => setPurchaseCart(purchaseCart.filter((_, idx) => idx !== i))}
-                                                style={{ border: 'none', background: 'none', color: '#dc2626', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                                className="btn-active-effect"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={18} strokeWidth={2} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {purchaseCart.length > 0 && (
-                                    <button
-                                        onClick={handleRegisterPurchase}
-                                        disabled={loading}
-                                        className="btn-active-effect"
-                                        style={{
-                                            width: '100%',
-                                            padding: '15px',
-                                            background: loading ? '#ccc' : '#27ae60',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: '10px',
-                                            fontWeight: '900',
-                                            marginTop: '10px',
-                                            cursor: loading ? 'not-allowed' : 'pointer',
-                                            fontSize: '16px'
-                                        }}
-                                    >
-                                        {loading ? <RefreshCw className="spin" size={16} /> : 'FINALIZAR REGISTRO DE COMPRA'}
-                                    </button>
-                                )}
-                            </div>
                         </div>
                     )}
 
-                    {/* SECCIÓN: GASTOS DE OPERACIÓN */}
+                    {/* SECCIÓN: GASTOS DE OPERACIÓN (CARRITO) */}
                     {activeTab === 'gastos' && (
-                        // ... (código de gastos existente)
-                        <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '15px', border: '2px solid #ff9800' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>GASTOS DE OPERACIÓN (MISC)</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE GASTOS (POR TICKET)</h3>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '10px' }}>
                                     <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}>
-                                        {expenseCategories.map((cat, idx) => <option key={idx} value={cat}>{cat}</option>)}
+                                        {expenseCategories.map((cat, idx) => <option key={idx} value={cat} disabled={cat.startsWith('---')}>{cat}</option>)}
                                     </select>
                                     <input
                                         type="number"
@@ -482,28 +443,71 @@ const InventoryModal = ({
                                         min="0.01"
                                         step="0.01"
                                         value={expenseMonto || ''}
-                                        onChange={(e) => {
-                                            const val = parseFloat(e.target.value);
-                                            setExpenseMonto(isNaN(val) ? 0 : Math.max(0, val));
-                                        }}
+                                        onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)}
                                         style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
                                     />
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Concepto del gasto (ej. Luz, Renta, Limpieza...)"
+                                    placeholder="Concepto (ej. Detergente, Jabón, Pan...)"
                                     value={expenseConcepto}
                                     onChange={(e) => setExpenseConcepto(e.target.value)}
                                     style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
                                 />
+                                <button
+                                    onClick={() => {
+                                        if (expenseConcepto.trim() && expenseMonto > 0) {
+                                            setExpenseCart([...expenseCart, { concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto }]);
+                                            setExpenseConcepto('');
+                                            setExpenseMonto(0);
+                                        }
+                                    }}
+                                    disabled={!expenseConcepto.trim() || expenseMonto <= 0}
+                                    style={{
+                                        padding: '12px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold',
+                                        cursor: (!expenseConcepto.trim() || expenseMonto <= 0) ? 'not-allowed' : 'pointer', opacity: (!expenseConcepto.trim() || expenseMonto <= 0) ? 0.6 : 1
+                                    }}
+                                >
+                                    + AÑADIR AL TICKET
+                                </button>
+                            </div>
 
-                                {/* SELECTOR DE IMAGEN PARA GASTOS */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+                            {/* LISTA DE ÍTEMS EN EL TICKET */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '10px' }}>ÍTEMS EN ESTE TICKET:</h4>
+                                {expenseCart.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px', background: '#f5f5f5', borderRadius: '10px', border: '1px dashed #ccc' }}>
+                                        No hay ítems agregados aún
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {expenseCart.map((item, i) => (
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.concepto}</div>
+                                                    <div style={{ fontSize: '11px', color: '#666' }}>{item.categoria}</div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{ fontWeight: '900', color: '#e74c3c' }}>${item.monto.toFixed(2)}</span>
+                                                    <button onClick={() => setExpenseCart(expenseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div style={{ marginTop: '10px', textAlign: 'right', fontSize: '16px', fontWeight: '900', color: '#27ae60' }}>
+                                            TOTAL TICKET: ${expenseCart.reduce((a, b) => a + b.monto, 0).toFixed(2)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* FOTO DEL TICKET GLOBAL */}
+                            <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <button
                                         onClick={() => document.getElementById('expense-file-input').click()}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', background: '#34495e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 15px', background: '#34495e', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                                     >
-                                        <Package size={14} /> {expenseFile ? 'CAMBIAR TICKET' : 'ADJUNTAR TICKET'}
+                                        <Package size={14} /> {expenseFile ? 'CAMBIAR FOTO DEL TICKET' : 'TOMAR FOTO DEL TICKET'}
                                     </button>
                                     <input
                                         id="expense-file-input"
@@ -513,51 +517,28 @@ const InventoryModal = ({
                                         style={{ display: 'none' }}
                                         onChange={(e) => handleFileChange(e, setExpenseFile, setExpensePreview)}
                                     />
-                                    {previewLoading && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#666', fontSize: '12px' }}>
-                                            <RefreshCw size={14} className="spin" /> Procesando imagen...
-                                        </div>
-                                    )}
-                                    {expensePreview && !previewLoading && (
-                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', background: '#e8f5e9', padding: '5px 10px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <img src={expensePreview} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ddd' }} />
-                                                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#fff', borderRadius: '50%', display: 'flex' }}>
-                                                    <CheckCircle size={16} color="#27ae60" fill="#fff" />
-                                                </div>
+                                    {expensePreview && (
+                                        <div style={{ position: 'relative' }}>
+                                            <img src={expensePreview} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            <div style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#27ae60', borderRadius: '50%', width: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <CheckCircle size={10} color="#fff" />
                                             </div>
-                                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32' }}>✅ LISTO</span>
-                                            <button
-                                                onClick={() => { setExpenseFile(null); setExpensePreview(null); }}
-                                                style={{ background: '#e74c3c', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '5px' }}
-                                            >
-                                                ×
-                                            </button>
                                         </div>
                                     )}
                                 </div>
-
-                                <button
-                                    onClick={handleRegisterExpense}
-                                    disabled={loading || expenseMonto <= 0 || !expenseConcepto.trim()}
-                                    className={(expenseMonto > 0 && expenseConcepto.trim()) ? "btn-active-effect" : ""}
-                                    style={{
-                                        width: '100%',
-                                        padding: '15px',
-                                        background: loading ? '#ccc' : (expenseMonto > 0 && expenseConcepto.trim() ? '#ff9800' : '#ddd'),
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '10px',
-                                        fontWeight: '900',
-                                        marginTop: '10px',
-                                        cursor: (loading || expenseMonto <= 0 || !expenseConcepto.trim()) ? 'not-allowed' : 'pointer',
-                                        opacity: (expenseMonto > 0 && expenseConcepto.trim()) ? 1 : 0.6,
-                                        fontSize: '16px'
-                                    }}
-                                >
-                                    {loading ? <RefreshCw className="spin" size={16} /> : 'REGISTRAR GASTO'}
-                                </button>
                             </div>
+
+                            <button
+                                onClick={handleRegisterExpense}
+                                disabled={loading || expenseCart.length === 0}
+                                style={{
+                                    width: '100%', padding: '15px', background: (loading || expenseCart.length === 0) ? '#ccc' : '#27ae60',
+                                    color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
+                                    cursor: (loading || expenseCart.length === 0) ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {loading ? <RefreshCw className="spin" size={20} /> : 'REGISTRAR TODO EL TICKET'}
+                            </button>
                         </div>
                     )}
 

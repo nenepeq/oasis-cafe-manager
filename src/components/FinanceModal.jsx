@@ -443,7 +443,7 @@ const FinanceModal = ({
                                             <DollarSign size={20} /> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span>
                                         </div>
                                         <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
-                                        <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(1)}%</div>
+                                        <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(2)}%</div>
                                     </div>
                                 </div>
 
@@ -452,7 +452,7 @@ const FinanceModal = ({
                                         <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Distribución de Flujo</h3>
                                         <div style={donutStyle}>
                                             <div style={innerCircleStyle}>
-                                                <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(0) : 0}%</span>
+                                                <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(2) : 0}%</span>
                                                 <span style={{ fontSize: '10px', color: '#888' }}>Rentabilidad</span>
                                             </div>
                                         </div>
@@ -477,7 +477,7 @@ const FinanceModal = ({
                                         <div style={{ marginBottom: '20px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
                                                 <span>Costo Productos + Gastos</span>
-                                                <span>{percentageExpenses.toFixed(1)}%</span>
+                                                <span>{percentageExpenses.toFixed(2)}%</span>
                                             </div>
                                             <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div>
@@ -486,7 +486,7 @@ const FinanceModal = ({
                                         <div style={{ marginBottom: '10px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
                                                 <span>Margen Neto (Bolsa)</span>
-                                                <span>{finData.margen.toFixed(1)}%</span>
+                                                <span>{finData.margen.toFixed(2)}%</span>
                                             </div>
                                             <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div>
@@ -514,7 +514,7 @@ const FinanceModal = ({
                                                                     )}
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${exp.monto}</td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(exp.monto).toFixed(2)}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -541,12 +541,22 @@ const FinanceModal = ({
                                                                             </a>
                                                                         )}
                                                                     </div>
-                                                                    <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.2' }}>
-                                                                        {purch.purchase_items?.map(i => `${i.products?.name} ${i.quantity} x $${i.cost}`).join(', ')}
+                                                                    <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.4' }}>
+                                                                        {purch.purchase_items?.map((i, idx) => {
+                                                                            const totalLine = i.quantity * i.cost;
+                                                                            const unitCost = i.cost; // Ya está almacenado como unitario
+                                                                            return (
+                                                                                <div key={idx} style={{ borderBottom: '1px dashed #eee', paddingBottom: '2px', marginBottom: '2px' }}>
+                                                                                    • <span style={{ fontWeight: 'bold' }}>{i.products?.name}</span>: {i.quantity} pz.
+                                                                                    <span style={{ marginLeft: '5px', color: '#e74c3c' }}>Total: ${totalLine.toFixed(2)}</span>
+                                                                                    <span style={{ marginLeft: '5px', background: '#eafaf1', padding: '1px 4px', borderRadius: '4px', color: '#27ae60', fontWeight: 'bold' }}>(${unitCost.toFixed(2)} c/u)</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${purch.total}</td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(purch.total).toFixed(2)}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -570,7 +580,7 @@ const FinanceModal = ({
                                                                     {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </div>
                                                             </td>
-                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#27ae60', width: '70px', verticalAlign: 'top' }}>+${sale.total}</td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#27ae60', width: '70px', verticalAlign: 'top' }}>+${parseFloat(sale.total).toFixed(2)}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

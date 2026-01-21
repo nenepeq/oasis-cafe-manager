@@ -265,9 +265,22 @@ function App() {
 
   // Actualizamos el ref en cada render (o cuando cambien las deps relevantes)
   useEffect(() => {
-    onSalesUpdateRef.current = () => {
-      console.log('🔄 Ejecutando actualización realtime de ventas...');
-      fetchSales(); // Usará el reportStartDate/EndDate actual del closure reciente
+    onSalesUpdateRef.current = (payload) => {
+      console.log('🔄 Procesando actualización realtime:', payload);
+
+      // 1. Actualización Optimista (Immediate UI Feedback)
+      if (payload.eventType === 'UPDATE' && payload.new) {
+        setSales(prev => prev.map(sale => {
+          if (sale.id === payload.new.id) {
+            // Preservamos los items y solo actualizamos campos cambiados de la venta
+            return { ...sale, ...payload.new };
+          }
+          return sale;
+        }));
+      }
+
+      // 2. Refresco completo para asegurar consistencia (relaciones, totales calculados, etc)
+      fetchSales();
       if (userRole === 'admin') calculateFinances();
     };
   }); // Sin array de dependencias, se actualiza en cada render
@@ -313,7 +326,7 @@ function App() {
         (payload) => {
           console.log('🔔 Cambio detectado en ventas:', payload);
           // Llamamos a la función a través del ref para evitar stale closures
-          if (onSalesUpdateRef.current) onSalesUpdateRef.current();
+          if (onSalesUpdateRef.current) onSalesUpdateRef.current(payload);
         }
       )
       .subscribe((status) => {

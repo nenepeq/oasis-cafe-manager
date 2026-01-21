@@ -1010,13 +1010,7 @@ function App() {
     }}>
 
       {/* SECCIÓN TIENDA */}
-      <div className="store-section" style={{
-        flex: 2,
-        padding: '5px 15px 15px 15px', // Reducimos padding superior
-        display: 'flex',
-        flexDirection: 'column',
-        boxSizing: 'border-box'
-      }}>
+      <div className="store-section" style={{ display: 'flex', flexDirection: 'column', padding: '5px 15px 15px 15px' }}>
         <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
@@ -1083,15 +1077,7 @@ function App() {
       </div>
 
       {/* SECCIÓN CARRITO */}
-      <div className="cart-section" style={{
-        flex: 0.8,
-        backgroundColor: '#fff',
-        padding: '5px 15px 15px 15px',
-        borderLeft: '1px solid #eee',
-        display: 'flex',
-        flexDirection: 'column',
-        boxSizing: 'border-box'
-      }}>
+      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column', padding: '5px 15px 15px 15px', backgroundColor: '#fff', borderLeft: '1px solid #eee' }}>
         <div className="cart-header-compact" style={{ height: '25px', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
           <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <ShoppingCart size={18} /> Carrito
@@ -1151,13 +1137,13 @@ function App() {
         {/* CONTENEDOR DE PAGO FIJO ABAJO */}
         <div style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-            <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               <Banknote size={16} /> EFECTIVO
             </button>
-            <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <button onClick={() => setPaymentMethod('Tarjeta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Tarjeta' ? '#3498db' : '#999', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               <CreditCard size={16} /> TARJETA
             </button>
-            <button onClick={() => setPaymentMethod('A Cuenta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'A Cuenta' ? '#f39c12' : '#999', color: '#fff', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <button onClick={() => setPaymentMethod('A Cuenta')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'A Cuenta' ? '#f39c12' : '#999', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               <Clock size={16} /> A CUENTA
             </button>
           </div>

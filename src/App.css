@@ -136,6 +136,31 @@ body {
 
 /* --- RESPONSIVIDAD PROFESIONAL --- */
 
+/* Estilos base para las secciones principales (Desktop First overrides are handled below or via defaults) */
+.store-section {
+  flex: 2 !important; /* Default desktop ratio */
+  padding: 5px 15px 15px 15px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.cart-section {
+  flex: 0.8 !important; /* Default desktop ratio */
+  background-color: #fff;
+  padding: 5px 15px 15px 15px;
+  border-left: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.payment-buttons-grid {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
 /* Contenedor de tablas responsivo */
 .table-container {
   width: 100%;
@@ -145,11 +170,28 @@ body {
 
 /* Layout Principal Media Queries */
 
-/* TABLET: Mantener tal cual (601px a 1024px) */
+/* TABLET: Ajustes específicos (601px a 1024px) */
 @media (min-width: 601px) and (max-width: 1024px) {
   .cart-header-compact {
     margin-top: 20px !important;
   }
+  
+  /* Ajuste de layout para dar más espacio al carrito en tablet */
+  .store-section {
+    flex: 1.5 !important;
+  }
+  
+  .cart-section {
+    flex: 1.2 !important; /* Aumentamos el ancho del carrito considerablemente */
+  }
+
+  /* Si aún así es estrecho, permitimos que los botones se apilen si es crítico, 
+     pero probemos primero con más ancho */
+  /* 
+  .payment-buttons-grid {
+     flex-wrap: wrap; 
+  } 
+  */
 }
 
 /* PC: Subir el título al máximo para alinear con botones (> 1024px) */
@@ -338,6 +380,7 @@ body {
 
 .login-button:active {
   opacity: 0.8;
+  /* Reducción de gap para ganar espacio */
 }
 
 @media (max-width: 600px) {

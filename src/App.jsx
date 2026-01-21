@@ -1094,7 +1094,19 @@ function App() {
         </div>
         <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px', WebkitOverflowScrolling: 'touch' }}>
           {cart.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '13px' }}>
+            <div key={idx} style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px',
+              fontSize: '13px',
+              backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f4f4f4',
+              borderRadius: '8px',
+              marginBottom: '8px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(0,0,0,0.05)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   onClick={() => removeFromCart(item.id)}

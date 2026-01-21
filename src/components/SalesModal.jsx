@@ -25,19 +25,6 @@ const SalesModal = ({
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
 
-    // Sincronizar el pedido seleccionado con la lista actualizada para reflejar cambios de estatus en tiempo real
-    useEffect(() => {
-        if (selectedSale) {
-            const updatedSale = sales.find(s => s.id === selectedSale.id);
-            if (updatedSale) {
-                // Si el objeto cambió (por actualización de estatus/pago), actualizamos la vista de detalle
-                if (updatedSale.status !== selectedSale.status || updatedSale.payment_method !== selectedSale.payment_method) {
-                    setSelectedSale(updatedSale);
-                }
-            }
-        }
-    }, [sales, selectedSale, setSelectedSale]);
-
     const handleExportSalesCSV = async () => {
         if (!sales || sales.length === 0) return;
 

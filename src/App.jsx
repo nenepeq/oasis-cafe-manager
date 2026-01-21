@@ -277,6 +277,11 @@ function App() {
           }
           return sale;
         }));
+
+        // Si la venta actualizada es la que está seleccionada actualmente, actualizamos también su estado en la vista detallada
+        if (selectedSale && selectedSale.id === payload.new.id) {
+          setSelectedSale(prev => ({ ...prev, ...payload.new }));
+        }
       }
 
       // 2. Refresco completo para asegurar consistencia (relaciones, totales calculados, etc)

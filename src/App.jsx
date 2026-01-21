@@ -293,11 +293,29 @@ function App() {
         console.log('📡 Estado de suscripción Realtime (Products):', status);
       });
 
+    const salesChannel = supabase
+      .channel('sales_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sales' },
+        (payload) => {
+          console.log('🔔 Cambio detectado en ventas:', payload);
+          // Actualizar listas si están visibles
+          fetchSales();
+          // Si es un update de pago o cancelación, recalcular finanzas si es admin
+          if (userRole === 'admin') calculateFinances();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción Realtime (Sales):', status);
+      });
+
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(productsChannel);
+      supabase.removeChannel(salesChannel);
     };
-  }, []);
+  }, [userRole]); // Agregamos dependencia userRole para el cálculo correcto
 
   const fetchProducts = async () => {
     const res = await getProducts();

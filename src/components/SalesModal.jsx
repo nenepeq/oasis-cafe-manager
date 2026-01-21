@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, Download, Banknote, CreditCard } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -24,6 +24,19 @@ const SalesModal = ({
     markAsPaid
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
+
+    // Sincronizar el pedido seleccionado con la lista actualizada para reflejar cambios de estatus en tiempo real
+    useEffect(() => {
+        if (selectedSale) {
+            const updatedSale = sales.find(s => s.id === selectedSale.id);
+            if (updatedSale) {
+                // Si el objeto cambió (por actualización de estatus/pago), actualizamos la vista de detalle
+                if (updatedSale.status !== selectedSale.status || updatedSale.payment_method !== selectedSale.payment_method) {
+                    setSelectedSale(updatedSale);
+                }
+            }
+        }
+    }, [sales, selectedSale, setSelectedSale]);
 
     const handleExportSalesCSV = async () => {
         if (!sales || sales.length === 0) return;

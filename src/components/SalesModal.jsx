@@ -141,6 +141,12 @@ const SalesModal = ({
         }
     });
 
+    // SINGLE SOURCE OF TRUTH:
+    // En lugar de usar 'selectedSale' directamente (que puede tener datos viejos),
+    // buscamos la versión más reciente de esa venta en la lista 'sales' actualizada.
+    // Si no se encuentra (ej. filtrado excesivo), usamos selectedSale como fallback o null.
+    const activeSale = selectedSale ? (sales.find(s => s.id === selectedSale.id) || selectedSale) : null;
+
     const totalFiltered = filteredSales.reduce((acc, s) => acc + (s.status !== 'cancelado' ? s.total : 0), 0);
 
     return (
@@ -300,7 +306,7 @@ const SalesModal = ({
                                             style={{
                                                 borderBottom: '1px solid #eee',
                                                 cursor: 'pointer',
-                                                backgroundColor: selectedSale?.id === sale.id ? '#f0f8ff' : 'transparent',
+                                                backgroundColor: activeSale?.id === sale.id ? '#f0f8ff' : 'transparent',
                                                 opacity: sale.status === 'cancelado' ? 0.6 : 1
                                             }}
                                         >
@@ -322,16 +328,16 @@ const SalesModal = ({
                         )}
                     </div>
 
-                    {selectedSale && (
+                    {activeSale && (
                         <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
                             <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
-                                Nota #{selectedSale.ticket_number || selectedSale.id.slice(0, 4)}
+                                Nota #{activeSale.ticket_number || activeSale.id.slice(0, 4)}
                                 <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                                    {new Date(selectedSale.created_at).toLocaleDateString()} · {new Date(selectedSale.created_at).toLocaleTimeString()}
+                                    {new Date(activeSale.created_at).toLocaleDateString()} · {new Date(activeSale.created_at).toLocaleTimeString()}
                                 </div>
                             </h3>
                             <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
-                                {selectedSale.sale_items?.map((item, i) => (
+                                {activeSale.sale_items?.map((item, i) => (
                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                         <span>{item.products?.name} {item.quantity} x ${parseFloat(item.price).toFixed(2)}</span>
                                         <span style={{ fontWeight: 'bold' }}>${(item.price * item.quantity).toFixed(2)}</span>
@@ -340,12 +346,12 @@ const SalesModal = ({
                             </div>
                             <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', color: '#000' }}>
                                 <span>Total</span>
-                                <span>${parseFloat(selectedSale.total).toFixed(2)}</span>
+                                <span>${parseFloat(activeSale.total).toFixed(2)}</span>
                             </div>
                             <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {selectedSale.status === 'recibido' && selectedSale.payment_method !== 'A Cuenta' && (
+                                {activeSale.status === 'recibido' && activeSale.payment_method !== 'A Cuenta' && (
                                     <button
-                                        onClick={() => updateSaleStatus(selectedSale.id, 'entregado')}
+                                        onClick={() => updateSaleStatus(activeSale.id, 'entregado')}
                                         style={{ padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
                                     >
                                         MARCAR ENTREGADO
@@ -353,7 +359,7 @@ const SalesModal = ({
                                 )}
 
                                 {/* BOTONES DE COBRAR (SOLO PARA 'A CUENTA') */}
-                                {selectedSale.payment_method === 'A Cuenta' && selectedSale.status !== 'cancelado' && (
+                                {activeSale.payment_method === 'A Cuenta' && activeSale.status !== 'cancelado' && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#e67e22', textAlign: 'center' }}>
                                             ¿Cómo paga el cliente?
@@ -361,8 +367,8 @@ const SalesModal = ({
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <button
                                                 onClick={() => {
-                                                    if (window.confirm(`¿Cobrar $${selectedSale.total} en EFECTIVO?`)) {
-                                                        markAsPaid(selectedSale.id, 'Efectivo');
+                                                    if (window.confirm(`¿Cobrar $${activeSale.total} en EFECTIVO?`)) {
+                                                        markAsPaid(activeSale.id, 'Efectivo');
                                                     }
                                                 }}
                                                 style={{ flex: 1, padding: '10px', backgroundColor: '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
@@ -371,8 +377,8 @@ const SalesModal = ({
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    if (window.confirm(`¿Cobrar $${selectedSale.total} con TARJETA?`)) {
-                                                        markAsPaid(selectedSale.id, 'Tarjeta');
+                                                    if (window.confirm(`¿Cobrar $${activeSale.total} con TARJETA?`)) {
+                                                        markAsPaid(activeSale.id, 'Tarjeta');
                                                     }
                                                 }}
                                                 style={{ flex: 1, padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
@@ -382,9 +388,9 @@ const SalesModal = ({
                                         </div>
                                     </div>
                                 )}
-                                {userRole === 'admin' && selectedSale.status !== 'cancelado' && (
+                                {userRole === 'admin' && activeSale.status !== 'cancelado' && (
                                     <button
-                                        onClick={() => { if (window.confirm('¿Estás seguro de cancelar esta venta?')) updateSaleStatus(selectedSale.id, 'cancelado'); }}
+                                        onClick={() => { if (window.confirm('¿Estás seguro de cancelar esta venta?')) updateSaleStatus(activeSale.id, 'cancelado'); }}
                                         style={{ padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
                                     >
                                         CANCELAR VENTA

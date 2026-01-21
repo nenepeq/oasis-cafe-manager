@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { supabase } from './supabaseClient';
 import { getProducts } from './api';
@@ -260,6 +260,18 @@ function App() {
     setUserRole('ventas');
   };
 
+  // Ref para manejar la callback de realtime siempre con el estado más reciente
+  const onSalesUpdateRef = useRef(() => { });
+
+  // Actualizamos el ref en cada render (o cuando cambien las deps relevantes)
+  useEffect(() => {
+    onSalesUpdateRef.current = () => {
+      console.log('🔄 Ejecutando actualización realtime de ventas...');
+      fetchSales(); // Usará el reportStartDate/EndDate actual del closure reciente
+      if (userRole === 'admin') calculateFinances();
+    };
+  }); // Sin array de dependencias, se actualiza en cada render
+
   // Suscripción a cambios en tiempo real de Supabase (Tabla inventory)
   useEffect(() => {
     const channel = supabase
@@ -300,10 +312,8 @@ function App() {
         { event: '*', schema: 'public', table: 'sales' },
         (payload) => {
           console.log('🔔 Cambio detectado en ventas:', payload);
-          // Actualizar listas si están visibles
-          fetchSales();
-          // Si es un update de pago o cancelación, recalcular finanzas si es admin
-          if (userRole === 'admin') calculateFinances();
+          // Llamamos a la función a través del ref para evitar stale closures
+          if (onSalesUpdateRef.current) onSalesUpdateRef.current();
         }
       )
       .subscribe((status) => {
@@ -315,7 +325,7 @@ function App() {
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(salesChannel);
     };
-  }, [userRole]); // Agregamos dependencia userRole para el cálculo correcto
+  }, []); // Array vacío: Solo se suscribe una vez al montar
 
   const fetchProducts = async () => {
     const res = await getProducts();

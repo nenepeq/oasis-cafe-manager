@@ -663,7 +663,12 @@ function App() {
     salesData?.forEach(s => { ingresos += s.total; s.sale_items?.forEach(i => costoProds += (i.quantity * (i.products?.cost_price || 0))); });
 
     const { data: expData } = await supabase.from('expenses').select('*').gte('fecha', financeStartDate).lte('fecha', financeEndDate);
+
+    console.log("📊 [FinanceModal Debug] Raw Expenses Data:", expData); // DEBUG: Check ticket_url
+
     const { data: purData } = await supabase.from('purchases').select(`*, purchase_items(*, products(name))`).gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59');
+
+    console.log("📊 [FinanceModal Debug] Raw Stock Data:", purData); // DEBUG: Check ticket_url for purchases
 
     const gastOps = expData?.reduce((a, e) => a + e.monto, 0) || 0;
     const gastStk = purData?.reduce((a, p) => a + p.total, 0) || 0;
@@ -836,11 +841,14 @@ function App() {
       let ticketUrl = null;
       // Solo intentamos subir la imagen si tenemos internet
       if (navigator.onLine && purchaseFile) {
+        console.log("📸 [App Debug] Iniciando subida de foto compra...");
         ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
+        console.log("📸 [App Debug] URL Compra generada:", ticketUrl);
       }
 
       if (!navigator.onLine) {
         // --- FLUJO OFFLINE ---
+        console.log("⚠️ [App Debug] Offline: No se subirá foto.");
         await savePendingPurchase({
           total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
           items: purchaseCart,
@@ -947,7 +955,9 @@ function App() {
       // 1. Subir Ticket una sola vez (si existe)
       let ticketUrl = null;
       if (expenseFile) {
+        console.log("📸 [App Debug] Iniciando subida de foto gasto...");
         ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
+        console.log("📸 [App Debug] URL Gasto generada:", ticketUrl);
       }
 
       const today = getMXDate();

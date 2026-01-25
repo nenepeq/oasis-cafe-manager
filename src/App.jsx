@@ -60,6 +60,8 @@ function App() {
   const [showCatalog, setShowCatalog] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
+  const isSyncingRef = useRef(false);
+  const [hasPendingItems, setHasPendingItems] = useState(false);
 
 
   // --- ESTADOS DE ARQUEO DE CAJA ---
@@ -153,6 +155,9 @@ function App() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Verificar si hay items pendientes al inicio
+    checkPendingItems();
+
     // Intento inicial de sync si estamos online
     if (navigator.onLine) syncOfflineData();
 
@@ -162,83 +167,117 @@ function App() {
     };
   }, []);
 
-  const syncOfflineData = async () => {
-    if (isSyncing || !navigator.onLine) return;
+  const checkPendingItems = async () => {
     const { sales, expenses, purchases } = await getAllPendingItems();
-    if (sales.length === 0 && expenses.length === 0 && purchases.length === 0) return;
+    setHasPendingItems(sales.length > 0 || expenses.length > 0 || purchases.length > 0);
+  };
 
+  const syncOfflineData = async () => {
+    if (isSyncingRef.current || !navigator.onLine) return;
+
+    const { sales, expenses, purchases } = await getAllPendingItems();
+    if (sales.length === 0 && expenses.length === 0 && purchases.length === 0) {
+      setHasPendingItems(false);
+      return;
+    }
+
+    isSyncingRef.current = true;
     setIsSyncing(true);
     console.log('Sincronizando datos offline...');
 
-    // Sync Ventas
-    for (const s of sales) {
-      try {
-        const { data: sale, error: saleError } = await supabase.from('sales').insert([{
-          total: s.total, status: s.status, created_by: s.created_by,
-          customer_name: s.customer_name, payment_method: s.payment_method,
-          created_at: s.timestamp // Mantener la hora real del registro
-        }]).select().single();
+    try {
+      // Sync Ventas
+      for (const s of sales) {
+        try {
+          const { data: sale, error: saleError } = await supabase.from('sales').insert([{
+            total: s.total, status: s.status, created_by: s.created_by,
+            customer_name: s.customer_name, payment_method: s.payment_method,
+            created_at: s.timestamp
+          }]).select().single();
 
-        if (!saleError) {
-          await supabase.from('sale_items').insert(s.items.map(item => ({
-            sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price
-          })));
-          await clearPendingItem('pending_sales', s.id);
-          await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
-        }
-      } catch (e) { console.error('Error sync venta:', e); }
-    }
-
-    // Sync Gastos
-    for (const e of expenses) {
-      try {
-        const { error } = await supabase.from('expenses').insert([{
-          concepto: e.concepto, categoria: e.categoria, monto: e.monto,
-          fecha: e.fecha, created_by: e.created_by
-        }]);
-        if (!error) {
-          await clearPendingItem('pending_expenses', e.id);
-          await logActivity(e.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { concepto: e.concepto });
-        }
-      } catch (err) { console.error('Error sync gasto:', err); }
-    }
-
-    // Sync Compras (Inventario)
-    for (const p of purchases) {
-      try {
-        const { data: purchase, error: pError } = await supabase.from('purchases').insert([{
-          total: p.total,
-          created_by: p.created_by,
-          created_at: p.timestamp
-        }]).select().single();
-
-        if (!pError) {
-          for (const item of p.items) {
-            await supabase.from('purchase_items').insert([{
-              purchase_id: purchase.id,
+          if (!saleError && sale) {
+            const { error: itemsError } = await supabase.from('sale_items').insert(s.items.map(item => ({
+              sale_id: sale.id,
               product_id: item.id,
-              quantity: item.qty,
-              cost: item.cost,
-              purchase_number: purchase.purchase_number
-            }]);
+              quantity: item.quantity,
+              price: item.sale_price,
+              sale_ticket_number: sale.ticket_number // Incluir número de ticket generado
+            })));
 
-            // Actualizar stock (Aunque ya se actualizó localmente, aseguramos la DB)
-            // Nota: Esto podría duplicar si la lógica offline ya sumó, pero en este caso
-            // asumimos que el "fetchInventory" final corregirá la verdad absoluta.
-            // Para mayor seguridad en offline, incrementamos en DB la cantidad reportada.
-            const currentData = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-            const currentStock = currentData.data ? currentData.data.stock : 0;
-            await supabase.from('inventory').update({ stock: currentStock + item.qty }).eq('product_id', item.id);
+            if (!itemsError) {
+              await clearPendingItem('pending_sales', s.id);
+              await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
+            } else {
+              console.error('Error insertando items offline:', itemsError);
+            }
+          } else {
+            console.error('Error insertando venta offline:', saleError);
           }
-          await clearPendingItem('pending_purchases', p.id);
-          await logActivity(p.created_by, 'SYNC_COMPRA_OFFLINE', 'INVENTARIO', { purchase_id: purchase.id, total: p.total });
-        }
-      } catch (err) { console.error('Error sync compra:', err); }
-    }
+        } catch (e) { console.error('Error sync venta:', e); }
+      }
 
-    setIsSyncing(false);
-    alert("✅ Datos offline sincronizados con éxito");
-    fetchInventory(); // Refrescar stock
+      // Sync Gastos
+      for (const e of expenses) {
+        try {
+          const { error } = await supabase.from('expenses').insert([{
+            concepto: e.concepto, categoria: e.categoria, monto: e.monto,
+            fecha: e.fecha, created_by: e.created_by
+          }]);
+          if (!error) {
+            await clearPendingItem('pending_expenses', e.id);
+            await logActivity(e.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { concepto: e.concepto });
+          }
+        } catch (err) { console.error('Error sync gasto:', err); }
+      }
+
+      // Sync Compras (Inventario)
+      for (const p of purchases) {
+        try {
+          const { data: purchase, error: pError } = await supabase.from('purchases').insert([{
+            total: p.total,
+            created_by: p.created_by,
+            created_at: p.timestamp
+          }]).select().single();
+
+          if (!pError && purchase) {
+            let allItemsSynced = true;
+            for (const item of p.items) {
+              const { error: piError } = await supabase.from('purchase_items').insert([{
+                purchase_id: purchase.id,
+                product_id: item.id,
+                quantity: item.qty,
+                cost: item.cost,
+                purchase_number: purchase.purchase_number
+              }]);
+
+              if (piError) {
+                allItemsSynced = false;
+                console.error('Error sync purchase item:', piError);
+                continue;
+              }
+
+              const currentData = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
+              const currentStock = currentData.data ? currentData.data.stock : 0;
+              await supabase.from('inventory').update({ stock: currentStock + item.qty }).eq('product_id', item.id);
+            }
+
+            if (allItemsSynced) {
+              await clearPendingItem('pending_purchases', p.id);
+              await logActivity(p.created_by, 'SYNC_COMPRA_OFFLINE', 'INVENTARIO', { purchase_id: purchase.id, total: p.total });
+            }
+          }
+        } catch (err) { console.error('Error sync compra:', err); }
+      }
+
+      await checkPendingItems();
+      fetchInventory();
+      console.log('Sincronización finalizada satisfactoriamente');
+    } catch (globalErr) {
+      console.error('Error global en sincronización:', globalErr);
+    } finally {
+      isSyncingRef.current = false;
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {
@@ -515,8 +554,19 @@ function App() {
           payment_method: paymentMethod,
           items: cart
         });
+
+        // Actualizar stock localmente para feedback inmediato en UI
+        setInventoryList(prev => prev.map(inv => {
+          const itemInCart = cart.find(c => c.id === inv.product_id);
+          if (itemInCart) {
+            return { ...inv, stock: inv.stock - itemInCart.quantity };
+          }
+          return inv;
+        }));
+
+        setHasPendingItems(true);
         alert("💾 Sin internet. Venta guardada localmente.");
-        setCart([]); setCustomerName(''); setCustomerPhone(''); fetchInventory();
+        setCart([]); setCustomerName(''); setCustomerPhone('');
         setLoading(false);
         return;
       }
@@ -664,11 +714,7 @@ function App() {
 
     const { data: expData } = await supabase.from('expenses').select('*').gte('fecha', financeStartDate).lte('fecha', financeEndDate);
 
-    console.log("📊 [FinanceModal Debug] Raw Expenses Data:", expData); // DEBUG: Check ticket_url
-
     const { data: purData } = await supabase.from('purchases').select(`*, purchase_items(*, products(name))`).gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59');
-
-    console.log("📊 [FinanceModal Debug] Raw Stock Data:", purData); // DEBUG: Check ticket_url for purchases
 
     const gastOps = expData?.reduce((a, e) => a + e.monto, 0) || 0;
     const gastStk = purData?.reduce((a, p) => a + p.total, 0) || 0;
@@ -841,14 +887,11 @@ function App() {
       let ticketUrl = null;
       // Solo intentamos subir la imagen si tenemos internet
       if (navigator.onLine && purchaseFile) {
-        console.log("📸 [App Debug] Iniciando subida de foto compra...");
         ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
-        console.log("📸 [App Debug] URL Compra generada:", ticketUrl);
       }
 
       if (!navigator.onLine) {
         // --- FLUJO OFFLINE ---
-        console.log("⚠️ [App Debug] Offline: No se subirá foto.");
         await savePendingPurchase({
           total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
           items: purchaseCart,
@@ -866,6 +909,7 @@ function App() {
         });
         setInventoryList(newInventory); // Actualizamos estado visual inmediatamente
 
+        setHasPendingItems(true);
         alert("📦 Sin internet. Compra guardada y stock actualizado localmente. Se sincronizará al volver la conexión.");
       } else {
         // --- FLUJO ONLINE ---
@@ -955,9 +999,7 @@ function App() {
       // 1. Subir Ticket una sola vez (si existe)
       let ticketUrl = null;
       if (expenseFile) {
-        console.log("📸 [App Debug] Iniciando subida de foto gasto...");
         ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
-        console.log("📸 [App Debug] URL Gasto generada:", ticketUrl);
       }
 
       const today = getMXDate();
@@ -973,6 +1015,7 @@ function App() {
             created_by: user.id
             // Offline no soporta subir fotos por ahora en esta versión
           });
+          setHasPendingItems(true);
         } else {
           const { error } = await supabase.from('expenses').insert([{
             concepto: item.concepto,
@@ -1075,10 +1118,30 @@ function App() {
             <div title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet'} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
               borderRadius: '50%', background: isOnline ? '#def7ec' : '#fde8e8',
-              color: isOnline ? '#27ae60' : '#e74c3c'
+              color: isOnline ? '#27ae60' : '#e74c3c',
+              position: 'relative'
             }}>
               {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" /> : <Wifi size={18} />) : <WifiOff size={18} />}
+              {hasPendingItems && !isSyncing && (
+                <div style={{
+                  position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px',
+                  borderRadius: '50%', backgroundColor: '#f1c40f', border: '2px solid #fff'
+                }} title="Datos pendientes de sincronizar" />
+              )}
             </div>
+            {isOnline && hasPendingItems && !isSyncing && (
+              <button
+                onClick={syncOfflineData}
+                title="Sincronizar datos pendientes"
+                className="btn-active-effect"
+                style={{
+                  background: '#f1c40f', color: '#fff', border: 'none', padding: '8px',
+                  borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <RefreshCw size={16} />
+              </button>
+            )}
             {userRole === 'admin' && (
               <>
                 <button onClick={() => setShowCatalog(true)} title="Gestión de Catálogo" className="btn-active-effect" style={{ background: '#4a3728', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><ClipboardList size={16} /></button>

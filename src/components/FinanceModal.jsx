@@ -502,24 +502,21 @@ const FinanceModal = ({
                                         {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
-                                                    {dailyExpensesList.map((exp) => {
-                                                        console.log(`🧾 Expense: ${exp.concepto}, Ticket URL:`, exp.ticket_url); // DEBUG
-                                                        return (
-                                                            <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                                <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
-                                                                    <div style={{ lineHeight: '1.4' }}>
-                                                                        {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span>
-                                                                        {exp.ticket_url && (
-                                                                            <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ marginLeft: '5px', color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
-                                                                            </a>
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                                <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(exp.monto).toFixed(2)}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
+                                                    {dailyExpensesList.map((exp) => (
+                                                        <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ lineHeight: '1.4' }}>
+                                                                    {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span>
+                                                                    {exp.ticket_url && (
+                                                                        <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ marginLeft: '5px', color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                                                                            <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(exp.monto).toFixed(2)}</td>
+                                                        </tr>
+                                                    ))}
                                                 </tbody>
                                             </table>
                                         )}
@@ -531,40 +528,37 @@ const FinanceModal = ({
                                         {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay compras de stock en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
-                                                    {dailyStockList.map((purch) => {
-                                                        console.log(`📦 Stock: #${purch.purchase_number}, Ticket URL:`, purch.ticket_url); // DEBUG
-                                                        return (
-                                                            <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                                <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-                                                                            <span style={{ fontWeight: '600' }}>#{purch.purchase_number || purch.id.toString().slice(0, 4)}</span>
-                                                                            <span style={{ color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
-                                                                            {purch.ticket_url && (
-                                                                                <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
-                                                                                    <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
-                                                                                </a>
-                                                                            )}
-                                                                        </div>
-                                                                        <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.4' }}>
-                                                                            {purch.purchase_items?.map((i, idx) => {
-                                                                                const totalLine = i.quantity * i.cost;
-                                                                                const unitCost = i.cost; // Ya está almacenado como unitario
-                                                                                return (
-                                                                                    <div key={idx} style={{ borderBottom: '1px dashed #eee', paddingBottom: '2px', marginBottom: '2px' }}>
-                                                                                        • <span style={{ fontWeight: 'bold' }}>{i.products?.name}</span>: {i.quantity} pz.
-                                                                                        <span style={{ marginLeft: '5px', color: '#e74c3c' }}>Total: ${totalLine.toFixed(2)}</span>
-                                                                                        <span style={{ marginLeft: '5px', background: '#eafaf1', padding: '1px 4px', borderRadius: '4px', color: '#27ae60', fontWeight: 'bold' }}>(${unitCost.toFixed(2)} c/u)</span>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </div>
+                                                    {dailyStockList.map((purch) => (
+                                                        <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
+                                                                        <span style={{ fontWeight: '600' }}>#{purch.purchase_number || purch.id.toString().slice(0, 4)}</span>
+                                                                        <span style={{ color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
+                                                                        {purch.ticket_url && (
+                                                                            <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
+                                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
+                                                                            </a>
+                                                                        )}
                                                                     </div>
-                                                                </td>
-                                                                <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(purch.total).toFixed(2)}</td>
-                                                            </tr>
-                                                        );
-                                                    })}
+                                                                    <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.4' }}>
+                                                                        {purch.purchase_items?.map((i, idx) => {
+                                                                            const totalLine = i.quantity * i.cost;
+                                                                            const unitCost = i.cost; // Ya está almacenado como unitario
+                                                                            return (
+                                                                                <div key={idx} style={{ borderBottom: '1px dashed #eee', paddingBottom: '2px', marginBottom: '2px' }}>
+                                                                                    • <span style={{ fontWeight: 'bold' }}>{i.products?.name}</span>: {i.quantity} pz.
+                                                                                    <span style={{ marginLeft: '5px', color: '#e74c3c' }}>Total: ${totalLine.toFixed(2)}</span>
+                                                                                    <span style={{ marginLeft: '5px', background: '#eafaf1', padding: '1px 4px', borderRadius: '4px', color: '#27ae60', fontWeight: 'bold' }}>(${unitCost.toFixed(2)} c/u)</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 'bold', color: '#e74c3c', width: '70px', verticalAlign: 'top' }}>-${parseFloat(purch.total).toFixed(2)}</td>
+                                                        </tr>
+                                                    ))}
                                                 </tbody>
                                             </table>
                                         )}

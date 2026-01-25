@@ -21,9 +21,17 @@ const SalesModal = ({
     selectedSale,
     userRole,
     updateSaleStatus,
-    markAsPaid
+    markAsPaid,
+    pendingSales = []
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
+
+    // Auto-switch tab if offline is active but becomes empty
+    useEffect(() => {
+        if (activeTab === 'offline' && pendingSales.length === 0) {
+            setActiveTab('pagadas');
+        }
+    }, [pendingSales.length, activeTab]);
 
     const handleExportSalesCSV = async () => {
         if (!sales || sales.length === 0) return;
@@ -129,23 +137,26 @@ const SalesModal = ({
     if (!showReport) return null;
 
     // LÓGICA DE FILTRADO
-    const filteredSales = sales.filter(s => {
-        if (activeTab === 'pagadas') {
-            // Mostrar pagadas (Efectivo/Tarjeta) y canceladas (para historial completo)
-            // Ocultar solo las "A Cuenta" que estan activas
-            return s.payment_method !== 'A Cuenta';
-        } else {
-            // activeTab === 'por_cobrar'
-            // Solo mostrar 'A Cuenta' que NO estén canceladas
-            return s.payment_method === 'A Cuenta' && s.status !== 'cancelado';
-        }
-    });
+    const filteredSales = activeTab === 'offline'
+        ? pendingSales
+        : sales.filter(s => {
+            if (activeTab === 'pagadas') {
+                return s.payment_method !== 'A Cuenta';
+            } else {
+                // activeTab === 'por_cobrar'
+                return s.payment_method === 'A Cuenta' && s.status !== 'cancelado';
+            }
+        });
 
     // SINGLE SOURCE OF TRUTH:
     // En lugar de usar 'selectedSale' directamente (que puede tener datos viejos),
     // buscamos la versión más reciente de esa venta en la lista 'sales' actualizada.
     // Si no se encuentra (ej. filtrado excesivo), usamos selectedSale como fallback o null.
-    const activeSale = selectedSale ? (sales.find(s => s.id === selectedSale.id) || selectedSale) : null;
+    const activeSale = selectedSale
+        ? (activeTab === 'offline'
+            ? pendingSales.find(s => s.id === selectedSale.id)
+            : sales.find(s => s.id === selectedSale.id)) || selectedSale
+        : null;
 
     const totalFiltered = filteredSales.reduce((acc, s) => acc + (s.status !== 'cancelado' ? s.total : 0), 0);
 
@@ -216,6 +227,21 @@ const SalesModal = ({
                     >
                         ⏳ POR COBRAR
                     </button>
+                    {pendingSales.length > 0 && (
+                        <button
+                            onClick={() => { setActiveTab('offline'); setSelectedSale(null); }}
+                            style={{
+                                flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
+                                background: activeTab === 'offline' ? '#fff' : 'transparent',
+                                color: '#f1c40f', fontWeight: '900', cursor: 'pointer',
+                                boxShadow: activeTab === 'offline' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            📶 OFFLINE ({pendingSales.length})
+                        </button>
+                    )}
                 </div>
 
                 {/* FILTRO DE FECHA (RANGO) */}
@@ -262,8 +288,8 @@ const SalesModal = ({
                         )}
                     </div>
 
-                    <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: activeTab === 'pagadas' ? '#27ae60' : '#e67e22' }}>
-                        {activeTab === 'pagadas' ? 'Total Ingresos:' : 'Total Pendiente:'} ${totalFiltered.toFixed(2)}
+                    <div style={{ marginLeft: 'auto', fontWeight: '900', fontSize: '18px', color: activeTab === 'pagadas' ? '#27ae60' : (activeTab === 'offline' ? '#f1c40f' : '#e67e22') }}>
+                        {activeTab === 'pagadas' ? 'Total Ingresos:' : (activeTab === 'offline' ? 'Total Offline:' : 'Total Pendiente:')} ${totalFiltered.toFixed(2)}
                     </div>
                 </div>
 
@@ -311,7 +337,7 @@ const SalesModal = ({
                                             }}
                                         >
                                             <td style={{ padding: '10px', color: '#000' }}>
-                                                {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {new Date(sale.created_at || sale.timestamp).toLocaleDateString()} {new Date(sale.created_at || sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </td>
                                             <td style={{ padding: '10px', color: '#000' }}>
                                                 {sale.customer_name}
@@ -331,13 +357,18 @@ const SalesModal = ({
                     {activeSale && (
                         <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
                             <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
-                                Nota #{activeSale.ticket_number || activeSale.id.slice(0, 4)}
+                                Nota #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}
                                 <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                                    {new Date(activeSale.created_at).toLocaleDateString()} · {new Date(activeSale.created_at).toLocaleTimeString()}
+                                    {new Date(activeSale.created_at || activeSale.timestamp).toLocaleDateString()} · {new Date(activeSale.created_at || activeSale.timestamp).toLocaleTimeString()}
                                 </div>
                             </h3>
                             <div style={{ marginBottom: '10px', color: '#000', fontSize: '13px' }}>
-                                {activeSale.sale_items?.map((item, i) => (
+                                {activeSale.items?.map((item, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                                        <span>{item.name} {item.quantity} x ${parseFloat(item.sale_price).toFixed(2)}</span>
+                                        <span style={{ fontWeight: 'bold' }}>${(item.sale_price * item.quantity).toFixed(2)}</span>
+                                    </div>
+                                )) || activeSale.sale_items?.map((item, i) => (
                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                         <span>{item.products?.name} {item.quantity} x ${parseFloat(item.price).toFixed(2)}</span>
                                         <span style={{ fontWeight: 'bold' }}>${(item.price * item.quantity).toFixed(2)}</span>
@@ -348,6 +379,11 @@ const SalesModal = ({
                                 <span>Total</span>
                                 <span>${parseFloat(activeSale.total).toFixed(2)}</span>
                             </div>
+                            {activeTab === 'offline' && (
+                                <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #ffeeba' }}>
+                                    ⚠️ Esta venta aún no se ha sincronizado con el servidor.
+                                </div>
+                            )}
                             <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {activeSale.status === 'recibido' && activeSale.payment_method !== 'A Cuenta' && (
                                     <button

@@ -62,6 +62,7 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const isSyncingRef = useRef(false);
   const [hasPendingItems, setHasPendingItems] = useState(false);
+  const [pendingSales, setPendingSales] = useState([]);
 
 
   // --- ESTADOS DE ARQUEO DE CAJA ---
@@ -170,25 +171,44 @@ function App() {
   const checkPendingItems = async () => {
     const { sales, expenses, purchases } = await getAllPendingItems();
     setHasPendingItems(sales.length > 0 || expenses.length > 0 || purchases.length > 0);
+    setPendingSales(sales);
   };
 
   const syncOfflineData = async () => {
+    console.log('🔄 Intento de sincronización. isSyncingRef:', isSyncingRef.current, 'online:', navigator.onLine);
     if (isSyncingRef.current || !navigator.onLine) return;
+    isSyncingRef.current = true; // LOCK INMEDIATO para evitar condiciones de carrera
 
     const { sales, expenses, purchases } = await getAllPendingItems();
+    console.log('📦 Items pendientes encontrados:', { sales: sales.length, expenses: expenses.length, purchases: purchases.length });
+
     if (sales.length === 0 && expenses.length === 0 && purchases.length === 0) {
       setHasPendingItems(false);
+      isSyncingRef.current = false; // Liberar lock si no hay nada
       return;
     }
 
-    isSyncingRef.current = true;
     setIsSyncing(true);
-    console.log('Sincronizando datos offline...');
+    console.log('🚀 Iniciando sincronización...');
 
     try {
       // Sync Ventas
       for (const s of sales) {
         try {
+          // 1. VERIFICAR SI YA EXISTE (Idempotencia)
+          // Usamos timestamp exacto original + usuario creador como llave única compuesta
+          const { data: existing } = await supabase.from('sales')
+            .select('id')
+            .eq('created_at', s.timestamp)
+            .eq('created_by', s.created_by)
+            .maybeSingle();
+
+          if (existing) {
+            console.warn(`⚠️ Venta offline ya sincronizada previamente (ID: ${existing.id}). Limpiando local...`);
+            await clearPendingItem('pending_sales', s.id);
+            continue; // Saltamos inserción
+          }
+
           const { data: sale, error: saleError } = await supabase.from('sales').insert([{
             total: s.total, status: s.status, created_by: s.created_by,
             customer_name: s.customer_name, payment_method: s.payment_method,
@@ -565,6 +585,7 @@ function App() {
         }));
 
         setHasPendingItems(true);
+        await checkPendingItems(); // Refresh pending sales list
         alert("💾 Sin internet. Venta guardada localmente.");
         setCart([]); setCustomerName(''); setCustomerPhone('');
         setLoading(false);
@@ -1332,6 +1353,7 @@ function App() {
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
         reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={fetchSales} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
         selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus} markAsPaid={markAsPaid}
+        pendingSales={pendingSales}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
 import { savePendingSale, savePendingExpense, savePendingPurchase, getAllPendingItems, clearPendingItem } from './utils/db';
+import { compressImage } from './utils/imageOptimizer';
 
 // Componentes
 import Login from './components/Login';
@@ -225,6 +226,14 @@ function App() {
             })));
 
             if (!itemsError) {
+              // ACTUALIZACIÓN DE INVENTARIO (FIX)
+              for (const item of s.items) {
+                const { data: invData } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
+                if (invData) {
+                  await supabase.from('inventory').update({ stock: invData.stock - item.quantity }).eq('product_id', item.id);
+                }
+              }
+
               await clearPendingItem('pending_sales', s.id);
               await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
             } else {
@@ -479,9 +488,19 @@ function App() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
+      // OPTIMIZACIÓN DE IMAGEN
+      let fileToUpload = file;
+      try {
+        if (file.type.startsWith('image/')) {
+          fileToUpload = await compressImage(file);
+        }
+      } catch (optErr) {
+        console.warn('Falló optimización de imagen, subiendo original:', optErr);
+      }
+
       const { data, error } = await supabase.storage
         .from('tickets')
-        .upload(fileName, file);
+        .upload(fileName, fileToUpload);
 
       if (error) throw error;
 

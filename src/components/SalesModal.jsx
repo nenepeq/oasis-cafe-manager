@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, RefreshCw, Download, Banknote, CreditCard } from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -27,6 +28,34 @@ const SalesModal = ({
     loadMoreSales
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
+    const [debts, setDebts] = useState([]);
+    const [loadingDebts, setLoadingDebts] = useState(false);
+
+    // Fetch DEBTS individually to ensure they are always up to date and ignore date filters
+    useEffect(() => {
+        if (activeTab === 'por_cobrar' && showReport) {
+            const fetchDebts = async () => {
+                setLoadingDebts(true);
+                try {
+                    const { data, error } = await supabase
+                        .from('sales')
+                        .select(`*, sale_items (*, products (name, sale_price))`)
+                        .eq('payment_method', 'A Cuenta')
+                        .neq('status', 'cancelado')
+                        .order('created_at', { ascending: false });
+
+                    if (!error) {
+                        setDebts(data || []);
+                    }
+                } catch (err) {
+                    console.error("Error fetching debts:", err);
+                } finally {
+                    setLoadingDebts(false);
+                }
+            };
+            fetchDebts();
+        }
+    }, [activeTab, showReport]);
 
     // Auto-switch tab if offline is active but becomes empty
     useEffect(() => {
@@ -139,16 +168,15 @@ const SalesModal = ({
     if (!showReport) return null;
 
     // LÓGICA DE FILTRADO
-    const filteredSales = activeTab === 'offline'
-        ? pendingSales
-        : sales.filter(s => {
-            if (activeTab === 'pagadas') {
-                return s.payment_method !== 'A Cuenta';
-            } else {
-                // activeTab === 'por_cobrar'
-                return s.payment_method === 'A Cuenta' && s.status !== 'cancelado';
-            }
-        });
+    let filteredSales = [];
+    if (activeTab === 'offline') {
+        filteredSales = pendingSales;
+    } else if (activeTab === 'por_cobrar') {
+        filteredSales = debts; // Use locally fetched debts
+    } else {
+        // activeTab === 'pagadas' (Default report behavior with date filter)
+        filteredSales = sales.filter(s => s.payment_method !== 'A Cuenta');
+    }
 
     // SINGLE SOURCE OF TRUTH:
     // En lugar de usar 'selectedSale' directamente (que puede tener datos viejos),
@@ -181,16 +209,17 @@ const SalesModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="glass-modal-content"
+                // className="glass-modal-content"
                 style={{
                     position: 'relative',
-                    // backgroundColor: '#fff', // Replaced by class
-                    padding: '20px',
-                    // borderRadius: '20px', // Replaced by class
+                    backgroundColor: '#fff',
+                    padding: '25px',
+                    borderRadius: '25px',
                     width: '95%',
                     maxWidth: '800px',
                     maxHeight: '90vh',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
                 }}
             >
                 <button
@@ -200,20 +229,22 @@ const SalesModal = ({
                     <X size={24} />
                 </button>
 
-                <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', paddingRight: '40px' }}>Reporte de Ventas</h2>
+                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 25px 0', fontSize: '22px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
                 {/* TABS SELECTOR */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', padding: '5px', borderRadius: '15px', borderBottom: '2px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', padding: '0 5px' }}>
                     <button
                         onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
-                            background: activeTab === 'pagadas' ? 'var(--bg-soft)' : 'transparent',
-                            color: activeTab === 'pagadas' ? 'var(--color-accent)' : 'var(--color-primary)',
+                            flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                            background: activeTab === 'pagadas' ? 'var(--color-accent)' : '#fff',
+                            color: activeTab === 'pagadas' ? '#fff' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
-                            borderBottom: activeTab === 'pagadas' ? '3px solid var(--color-accent)' : '3px solid transparent',
+                            border: activeTab === 'pagadas' ? 'none' : '2px solid var(--border-subtle)',
+                            boxShadow: activeTab === 'pagadas' ? '0 4px 10px rgba(46, 204, 113, 0.3)' : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            transform: activeTab === 'pagadas' ? 'translateY(-2px)' : 'none'
                         }}
                     >
                         ✅ VENTAS COBRADAS
@@ -221,28 +252,32 @@ const SalesModal = ({
                     <button
                         onClick={() => { setActiveTab('por_cobrar'); setSelectedSale(null); }}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
-                            background: activeTab === 'por_cobrar' ? 'var(--bg-soft)' : 'transparent',
-                            color: activeTab === 'por_cobrar' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                            background: activeTab === 'por_cobrar' ? 'var(--color-secondary)' : '#fff',
+                            color: activeTab === 'por_cobrar' ? '#fff' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
-                            borderBottom: activeTab === 'por_cobrar' ? '3px solid var(--color-secondary)' : '3px solid transparent',
+                            border: activeTab === 'por_cobrar' ? 'none' : '2px solid var(--border-subtle)',
+                            boxShadow: activeTab === 'por_cobrar' ? '0 4px 10px rgba(230, 126, 34, 0.3)' : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            transform: activeTab === 'por_cobrar' ? 'translateY(-2px)' : 'none'
                         }}
                     >
-                        ⏳ POR COBRAR
+                        ⏳ POR COBRAR ({debts.length})
                     </button>
                     {pendingSales.length > 0 && (
                         <button
                             onClick={() => { setActiveTab('offline'); setSelectedSale(null); }}
                             style={{
-                                flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
-                                background: activeTab === 'offline' ? 'var(--bg-soft)' : 'transparent',
-                                color: activeTab === 'offline' ? 'var(--color-warning)' : 'var(--color-primary)',
+                                flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                                background: activeTab === 'offline' ? 'var(--color-warning)' : '#fff',
+                                color: activeTab === 'offline' ? '#fff' : 'var(--color-primary)',
                                 fontWeight: '900', cursor: 'pointer',
-                                borderBottom: activeTab === 'offline' ? '3px solid var(--color-warning)' : '3px solid transparent',
+                                border: activeTab === 'offline' ? 'none' : '2px solid var(--border-subtle)',
+                                boxShadow: activeTab === 'offline' ? '0 4px 10px rgba(241, 196, 15, 0.3)' : 'none',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                transform: activeTab === 'offline' ? 'translateY(-2px)' : 'none'
                             }}
                         >
                             📶 OFFLINE ({pendingSales.length})

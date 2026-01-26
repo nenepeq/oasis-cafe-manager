@@ -1,17 +1,29 @@
 :root {
-  /* --- PREMIUM GLASS PALETTE --- */
-  --glass-bg: rgba(255, 255, 255, 0.45);
-  /* Base para paneles */
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  --glass-blur: blur(12px);
+  /* --- NEW STANDARD PALETTE (Oasis Vivid) --- */
+  --color-primary: #4a3728;
+  /* Coffee */
+  --color-secondary: #e67e22;
+  /* Orange */
+  --color-accent: #27ae60;
+  /* Green */
+  --color-warning: #f1c40f;
+  /* Yellow */
+  --color-danger: #e74c3c;
+  /* Red */
+
+  --bg-soft: #fdfbf9;
+  /* Cream/Paper */
+  --bg-surface: #ffffff;
+  /* White */
+  --border-subtle: #ece6df;
+  /* Light Beige */
 
   --text-main: #2c1810;
-  /* Café muy oscuro, casi negro */
   --text-secondary: #5d4037;
 
-  --primary-color: #e67e22;
-  --accent-color: #d35400;
+  /* Legacy Mappings (for backward compatibility) */
+  --primary-color: var(--color-secondary);
+  --accent-color: var(--color-accent);
 
   /* Gradiente de Fondo "Oasis" */
   --app-bg: radial-gradient(at 0% 0%, hsla(28, 100%, 74%, 0.4) 0px, transparent 50%),
@@ -40,22 +52,19 @@ body {
   height: 100%;
 }
 
-/* --- GLASS UTILITIES --- */
+/* --- FLAT UTILITIES (Formerly Glass) --- */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  /* Soft flat shadow */
   border-radius: 20px;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border-radius: 15px;
   transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -77,13 +86,14 @@ body {
   margin: 10px 0;
 }
 
-/* Modal Glass Styles */
+/* Modal Flat Styles */
 .glass-modal-content {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  /* Solid White */
+  border: 1px solid #f0f0f0;
+  /* Very subtle border */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  /* Deep flat shadow */
   border-radius: 25px;
   color: var(--text-main);
 }

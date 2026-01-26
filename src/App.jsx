@@ -805,7 +805,22 @@ function App() {
       }
     }
   }, [showFinances, financeStartDate, financeEndDate]);
+
+
+
+  useEffect(() => {
+    if (showFinances) {
+      calculateFinances();
+    }
+    // Always keep report updated when modals open
+    if (showReport) {
+      fetchSales();
+    }
+  }, [showFinances, financeStartDate, financeEndDate, showReport]);
+
+  // Previous useEffect for runCashArqueo stays here
   useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo]);
+
 
   // --- SALES PAGINATION STATE ---
   const [salesOffset, setSalesOffset] = useState(0);

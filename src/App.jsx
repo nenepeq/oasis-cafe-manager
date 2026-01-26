@@ -344,11 +344,21 @@ function App() {
       // Sync Gastos
       for (const e of expenses) {
         try {
+          // Idempotencia para gastos offline
+          const { data: existing } = await supabase.from('expenses')
+            .select('id')
+            .eq('created_at', e.timestamp)
+            .eq('created_by', e.created_by)
+            .maybeSingle();
+
+          if (existing) {
+            await clearPendingItem('pending_expenses', e.id);
+            continue;
+          }
+
           let ticketUrl = null;
           if (e.file) {
             try {
-              // Si hay un archivo guardado (Blob/File), lo subimos primero
-              // La imagen YA viene comprimida desde el modal
               ticketUrl = await uploadTicketImage(e.file, 'gastos');
             } catch (err) {
               console.error("Error subiendo imagen offline de gasto:", err);
@@ -361,7 +371,8 @@ function App() {
             monto: e.monto,
             fecha: e.fecha,
             created_by: e.created_by,
-            ticket_url: ticketUrl
+            ticket_url: ticketUrl,
+            created_at: e.timestamp
           }]);
           if (!error) {
             await clearPendingItem('pending_expenses', e.id);
@@ -373,6 +384,18 @@ function App() {
       // Sync Compras (Inventario)
       for (const p of purchases) {
         try {
+          // Idempotencia para compras offline
+          const { data: existing } = await supabase.from('purchases')
+            .select('id')
+            .eq('created_at', p.timestamp)
+            .eq('created_by', p.created_by)
+            .maybeSingle();
+
+          if (existing) {
+            await clearPendingItem('pending_purchases', p.id);
+            continue;
+          }
+
           let ticketUrl = null;
           if (p.file) {
             try {
@@ -406,8 +429,9 @@ function App() {
                 continue;
               }
 
-              const currentData = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-              const currentStock = currentData.data ? currentData.data.stock : 0;
+              // Actualización atómica de stock (re-fetching)
+              const { data: currentData } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
+              const currentStock = currentData ? currentData.stock : 0;
               await supabase.from('inventory').update({ stock: currentStock + item.qty }).eq('product_id', item.id);
             }
 
@@ -747,8 +771,10 @@ function App() {
       })));
 
       for (const item of cart) {
-        const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
-        await supabase.from('inventory').update({ stock: currentInvItem.stock - item.quantity }).eq('product_id', item.id);
+        const { data: currentInvItem } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
+        if (currentInvItem) {
+          await supabase.from('inventory').update({ stock: currentInvItem.stock - item.quantity }).eq('product_id', item.id);
+        }
       }
 
       alert("✅ Venta registrada");
@@ -1136,7 +1162,7 @@ function App() {
 
         for (const item of purchaseCart) {
           await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost, purchase_number: purchase.purchase_number }]);
-          const currentInv = inventoryList.find(inv => inv.product_id === item.id);
+          const { data: currentInv } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
           await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
         }
         alert("📦 Stock Actualizado");
@@ -1219,41 +1245,35 @@ function App() {
 
       const today = getMXDate();
 
-      // 2. Procesar cada ítem del carrito
-      for (const item of expenseCart) {
-        if (!navigator.onLine) {
+      // 2. Preparar inserción masiva
+      const timestamp = new Date().toISOString();
+
+      if (!navigator.onLine) {
+        for (const item of expenseCart) {
           await savePendingExpense({
             concepto: item.concepto,
             categoria: item.categoria,
             monto: item.monto,
             fecha: today,
             created_by: user.id,
-            file: expenseFile // Guardamos la imagen (ya comprimida) en IndexedDB
+            file: expenseFile,
+            timestamp // Usamos el mismo timestamp para todo el ticket
           });
-          setHasPendingItems(true);
-        } else {
-          let itemTicketUrl = ticketUrl; // Use the already uploaded ticketUrl for online items
-          // If there was a file associated with this specific item (e.g., from offline sync),
-          // and it wasn't uploaded yet, handle it here.
-          // However, in handleRegisterExpense, expenseFile is handled once outside the loop.
-          // The instruction seems to imply a scenario where 'item' might have a 'file' property,
-          // which is more typical for `syncOfflineData`'s `pendingExpenses` items.
-          // For `handleRegisterExpense`, `ticketUrl` is already determined.
-          // Assuming the instruction meant to add this logic to `syncOfflineData`'s expense loop,
-          // but applying it to `handleRegisterExpense` as per the snippet structure.
-          // If `item.file` were present and `ticketUrl` was null, we'd upload `item.file`.
-          // For now, we'll stick to the existing `ticketUrl` logic for `handleRegisterExpense`.
-
-          const { error } = await supabase.from('expenses').insert([{
-            concepto: item.concepto,
-            categoria: item.categoria,
-            monto: item.monto,
-            fecha: today,
-            created_by: user.id,
-            ticket_url: itemTicketUrl // Use the pre-uploaded ticketUrl
-          }]);
-          if (error) throw error;
         }
+        setHasPendingItems(true);
+      } else {
+        const expensesToInsert = expenseCart.map(item => ({
+          concepto: item.concepto,
+          categoria: item.categoria,
+          monto: item.monto,
+          fecha: today,
+          created_by: user.id,
+          ticket_url: ticketUrl,
+          created_at: timestamp // Protección contra duplicados
+        }));
+
+        const { error } = await supabase.from('expenses').insert(expensesToInsert);
+        if (error) throw error;
       }
 
       // 3. Log General

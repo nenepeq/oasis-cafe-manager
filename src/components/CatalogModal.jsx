@@ -224,7 +224,7 @@ const CatalogModal = ({
                             {products.map(p => (
                                 <div key={p.id} style={{
                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    padding: '12px 15px', borderRadius: '15px', border: '1px solid #eee', background: editingProduct?.id === p.id ? '#fff9c4' : '#fff'
+                                    padding: '12px 15px', borderRadius: '15px', border: '1px solid #eee', background: editingProduct?.id === p.id ? '#f0fff4' : '#fff'
                                 }}>
                                     <div>
                                         <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#4a3728' }}>{p.name}</div>
@@ -233,7 +233,7 @@ const CatalogModal = ({
                                     <div style={{ display: 'flex', gap: '5px' }}>
                                         <button
                                             onClick={() => handleEdit(p)}
-                                            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: '#fff9e6', cursor: 'pointer', color: '#3498db' }}
+                                            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: '#f0fff4', cursor: 'pointer', color: '#27ae60' }}
                                             title="Editar"
                                         >
                                             <Edit2 size={14} />

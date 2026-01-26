@@ -192,16 +192,17 @@ const InventoryModal = ({
                 </div>
 
                 {/* SELECTOR DE TABS */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', padding: '5px', borderRadius: '15px', borderBottom: '2px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', padding: '5px', borderRadius: '15px', borderBottom: '2px solid var(--border-subtle)', width: '100%', overflowX: 'auto' }}>
                     <button
                         onClick={() => setActiveTab('existencias')}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '12px',
+                            flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'existencias' ? 'rgba(39, 174, 96, 0.1)' : 'transparent',
                             color: activeTab === 'existencias' ? '#27ae60' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'existencias' ? '3px solid #27ae60' : '3px solid transparent',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap'
                         }}
                     >
                         EXISTENCIAS
@@ -209,12 +210,13 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('entradas')}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '12px',
+                            flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'entradas' ? 'rgba(52, 152, 219, 0.1)' : 'transparent',
                             color: activeTab === 'entradas' ? '#3498db' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'entradas' ? '3px solid #3498db' : '3px solid transparent',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap'
                         }}
                     >
                         ENTRADAS
@@ -222,12 +224,13 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('gastos')}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '12px',
+                            flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'gastos' ? 'rgba(230, 126, 34, 0.1)' : 'transparent',
                             color: activeTab === 'gastos' ? '#e67e22' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'gastos' ? '3px solid #e67e22' : '3px solid transparent',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap'
                         }}
                     >
                         GASTOS
@@ -235,12 +238,13 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('mermas')}
                         style={{
-                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '12px',
+                            flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'mermas' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
                             color: activeTab === 'mermas' ? '#e74c3c' : 'var(--color-primary)',
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'mermas' ? '3px solid #e74c3c' : '3px solid transparent',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            whiteSpace: 'nowrap'
                         }}
                     >
                         MERMAS

@@ -1,3 +1,27 @@
+:root {
+  /* --- PREMIUM GLASS PALETTE --- */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  /* Base para paneles */
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --glass-blur: blur(12px);
+
+  --text-main: #2c1810;
+  /* Café muy oscuro, casi negro */
+  --text-secondary: #5d4037;
+
+  --primary-color: #e67e22;
+  --accent-color: #d35400;
+
+  /* Gradiente de Fondo "Oasis" */
+  --app-bg: radial-gradient(at 0% 0%, hsla(28, 100%, 74%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(189, 100%, 56%, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(38, 100%, 74%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(16, 100%, 76%, 0.3) 0px, transparent 50%),
+    #fdfbf7;
+  /* Color base crema */
+}
+
 html,
 body {
   overflow: hidden !important;
@@ -5,12 +29,40 @@ body {
   margin: 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  /* position: fixed; removido para permitir scroll interno fluido */
+  background: var(--app-bg) !important;
+  background-attachment: fixed !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
 }
 
 #root {
   width: 100%;
   height: 100%;
+}
+
+/* --- GLASS UTILITIES --- */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 20px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 15px;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-card:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 /* Scrollbars Visibles y Elegantes */
@@ -20,145 +72,209 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 10px;
+  margin: 10px 0;
+}
+
+/* Modal Glass Styles */
+.glass-modal-content {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border-radius: 25px;
+  color: var(--text-main);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
 }
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #ccc transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Ocultar barra de desplazamiento manteniendo funcionalidad */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
 .no-scrollbar {
   -ms-overflow-style: none;
-  /* IE y Edge */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 /* Efecto 3D de presionado universal */
 .btn-active-effect {
-  transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  transition: all 0.2s ease;
   user-select: none;
   cursor: pointer;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-active-effect:active {
-  transform: scale(0.95) translateY(2px);
-  filter: brightness(0.9);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.3) !important;
+  transform: scale(0.96);
+  filter: brightness(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Tarjetas de productos uniformes y centradas */
+/* Tarjetas de productos (Ahora Glass) */
 .product-card {
   padding: 10px;
-  border-radius: 12px;
-  border: none;
-  background-color: #fff;
+  border-radius: 16px;
+  /* Más redondeado */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.55);
+  /* Glass feel */
+  backdrop-filter: blur(4px);
   text-align: center;
-  height: 120px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 125px;
+  /* Un poco más alto */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  /* Sombra más suave */
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100%;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Spingy transition */
   user-select: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Brillo al pasar el mouse (hover effect para desktop) */
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: 0.5s;
+}
+
+.product-card:hover::before {
+  left: 100%;
 }
 
 .product-card:active {
-  transform: scale(0.95) translateY(2px);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.2) !important;
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 /* Estado para productos agotados */
 .product-card.out-of-stock {
-  opacity: 0.7;
+  opacity: 0.85;
+  /* Más visible que antes */
   cursor: not-allowed;
-  filter: grayscale(0.4);
-  /* Reducido para ver mejor los detalles */
-  position: relative;
+  filter: grayscale(0.8);
+  background: rgba(220, 220, 220, 0.4);
   pointer-events: none;
-  /* Evita clics */
 }
 
 .product-card.out-of-stock::after {
   content: "AGOTADO";
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(255, 0, 0, 0.75);
-  /* Un poco más de opacidad para el rojo */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(231, 76, 60, 0.95);
   color: #fff;
-  padding: 3px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 0 0 8px 8px;
+  /* Rounded only at bottom */
   font-weight: 900;
   font-size: 11px;
-  /* Aumentado de 8px */
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  /* Slightly smaller to fit hanging style */
+  letter-spacing: 1px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   z-index: 10;
+  border: 1px solid white;
+  border-top: none;
 }
 
 .product-name {
-  font-weight: bold;
-  font-size: 11px;
-  color: #4a3728;
-  margin: 5px 0;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--text-main);
+  margin: 6px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 26px;
+  min-height: 28px;
   width: 100%;
   text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-/* --- RESPONSIVIDAD PROFESIONAL --- */
-
-/* Estilos base para las secciones principales (Desktop First overrides are handled below or via defaults) */
+/* --- SECCIONES PRINCIPALES (Paneles Flotantes) --- */
 .store-section {
-  flex: 2 !important; /* Default desktop ratio */
-  padding: 5px 15px 15px 15px;
+  flex: 2 !important;
+  margin: 15px;
+  margin-right: 7.5px;
+  /* Gap entre paneles */
+  padding: 20px !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+
+  /* Glass Panel Styles Applied via Class, but defaults here too */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 25px !important;
+  box-shadow: var(--glass-shadow);
 }
 
 .cart-section {
-  flex: 0.8 !important; /* Default desktop ratio */
-  background-color: #fff;
-  padding: 5px 15px 15px 15px;
-  border-left: 1px solid #eee;
+  flex: 0.9 !important;
+  /* Un poco más ancho */
+  margin: 15px;
+  margin-left: 7.5px;
+  /* Gap entre paneles */
+  padding: 20px !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+
+  /* Glass Panel Styles */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 25px !important;
+  box-shadow: var(--glass-shadow);
+  border-left: 1px solid var(--glass-border) !important;
+  /* Reset del borde antiguo */
 }
 
 .payment-buttons-grid {
   display: flex;
-  gap: 5px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
 /* Contenedor de tablas responsivo */
@@ -175,14 +291,15 @@ body {
   .cart-header-compact {
     margin-top: 20px !important;
   }
-  
+
   /* Ajuste de layout para dar más espacio al carrito en tablet */
   .store-section {
     flex: 1.5 !important;
   }
-  
+
   .cart-section {
-    flex: 1.2 !important; /* Aumentamos el ancho del carrito considerablemente */
+    flex: 1.2 !important;
+    /* Aumentamos el ancho del carrito considerablemente */
   }
 
   /* Si aún así es estrecho, permitimos que los botones se apilen si es crítico, 
@@ -205,7 +322,6 @@ body {
 @media (max-width: 600px) {
   .cart-header-compact {
     margin-top: 0 !important;
-    /* En móvil se queda arriba para ahorrar espacio */
   }
 
   .app-container {
@@ -214,35 +330,40 @@ body {
     overflow: hidden !important;
     width: 100% !important;
     display: flex !important;
+    background: var(--app-bg) !important;
   }
 
   .store-section {
     flex: 1 !important;
-    height: 50% !important;
-    /* Mitad superior proporcional */
-    max-height: 50% !important;
+    height: 60% !important;
+    /* Más espacio para tienda en móvil */
+    max-height: 60% !important;
     overflow: hidden !important;
-    /* El padre NO scrollea */
     display: flex !important;
     flex-direction: column !important;
-    border-bottom: 2px solid #eee !important;
-    padding: 10px 15px !important;
-    box-sizing: border-box !important;
+
+    /* Mobile Glass Reset */
+    margin: 10px !important;
+    border-radius: 20px !important;
+    padding: 15px !important;
+    border-bottom: 1px solid var(--glass-border) !important;
   }
 
   .cart-section {
     flex: 1 !important;
-    height: 50% !important;
-    /* Mitad inferior proporcional */
-    max-height: 50% !important;
+    height: 40% !important;
+    /* Menos para carrito */
+    max-height: 40% !important;
     overflow: hidden !important;
-    /* El padre NO scrollea */
     display: flex !important;
     flex-direction: column !important;
+
+    /* Mobile Glass Reset */
+    margin: 0 10px 10px 10px !important;
+    border-radius: 20px !important;
     border-top: none !important;
-    border-left: none !important;
-    padding: 10px 15px !important;
-    box-sizing: border-box !important;
+    border-left: 1px solid var(--glass-border) !important;
+    padding: 15px !important;
   }
 
   /* Scrollbar visible y funcional */
@@ -251,7 +372,6 @@ body {
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    /* Permite scroll vertical */
     flex: 1 !important;
     min-height: 0 !important;
   }
@@ -319,18 +439,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #ffffff;
+  background: transparent;
+  /* Allow body gradient to show */
   overflow: hidden;
 }
 
 .login-card {
-  background-color: #ffffff;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 40px;
   border-radius: 30px;
   width: 380px;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   box-sizing: border-box;
 }
 
@@ -402,6 +525,8 @@ body {
     margin-bottom: 15px;
   }
 
+
+
   .login-form {
     gap: 10px;
     /* Reducción de gap para ganar espacio */
@@ -416,5 +541,42 @@ body {
     padding: 12px;
     font-size: 14px;
     margin-top: 5px;
+  }
+}
+
+/* Responsive Search Button Control - MOVED TO ROOT LOCATION */
+.mobile-fab-only {
+  display: flex !important;
+}
+
+.desktop-search-inline {
+  display: none !important;
+}
+
+@media (min-width: 601px) {
+  .mobile-fab-only {
+    display: none !important;
+  }
+
+  .desktop-search-inline {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e67e22, #d35400) !important;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 10px rgba(230, 126, 34, 0.4);
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-left: 5px;
+    color: white !important;
+    flex-shrink: 0;
+  }
+
+  .desktop-search-inline:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #d35400, #e67e22) !important;
   }
 }

@@ -22,7 +22,9 @@ const SalesModal = ({
     userRole,
     updateSaleStatus,
     markAsPaid,
-    pendingSales = []
+    pendingSales = [],
+    hasMoreSales,
+    loadMoreSales
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar'
 
@@ -179,11 +181,12 @@ const SalesModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
+                className="glass-modal-content"
                 style={{
                     position: 'relative',
-                    backgroundColor: '#fff',
+                    // backgroundColor: '#fff', // Replaced by class
                     padding: '20px',
-                    borderRadius: '20px',
+                    // borderRadius: '20px', // Replaced by class
                     width: '95%',
                     maxWidth: '800px',
                     maxHeight: '90vh',
@@ -200,7 +203,7 @@ const SalesModal = ({
                 <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
                 {/* TABS SELECTOR */}
-                <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', background: '#f0ece6', padding: '5px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', background: '#fff9e6', padding: '5px', borderRadius: '15px' }}>
                     <button
                         onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
                         style={{
@@ -352,10 +355,24 @@ const SalesModal = ({
                                 </tbody>
                             </table>
                         )}
+                        {hasMoreSales && !loading && filteredSales.length > 0 && activeTab !== 'offline' && (
+                            <button
+                                onClick={loadMoreSales}
+                                className="btn-active-effect"
+                                style={{
+                                    width: '100%', padding: '15px', marginTop: '10px',
+                                    background: '#f1f1f1', color: '#4a3728',
+                                    border: '1px solid #ddd', borderRadius: '10px',
+                                    fontWeight: 'bold', cursor: 'pointer'
+                                }}
+                            >
+                                ⬇️ CARGAR MÁS VENTAS ANTERIORES...
+                            </button>
+                        )}
                     </div>
 
                     {activeSale && (
-                        <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '15px', border: '1px solid #eee' }}>
+                        <div style={{ flex: 1, backgroundColor: '#fffbf0', padding: '15px', borderRadius: '15px', border: '1px solid #f3e5d8' }}>
                             <h3 style={{ marginTop: 0, color: '#000', fontSize: '16px' }}>
                                 Nota #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}
                                 <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>

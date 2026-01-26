@@ -287,11 +287,12 @@ const FinanceModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
+                className="glass-modal-content"
                 style={{
                     position: 'relative',
-                    backgroundColor: '#fff',
+                    // backgroundColor: '#fff', // Replaced by class
                     padding: '30px',
-                    borderRadius: '30px',
+                    // borderRadius: '30px', // Replaced by class
                     width: '95%',
                     maxWidth: '1000px',
                     maxHeight: '90vh',
@@ -360,7 +361,7 @@ const FinanceModal = ({
                         </div>
 
                         {/* SELECTOR DE PESTAÑAS */}
-                        <div style={{ background: '#f0f0f0', padding: '5px', borderRadius: '15px', display: 'flex', alignSelf: 'flex-end' }}>
+                        <div style={{ background: '#fff9e6', padding: '5px', borderRadius: '15px', display: 'flex', alignSelf: 'flex-end' }}>
                             <button
                                 onClick={() => setActiveTab('data')}
                                 style={{
@@ -479,7 +480,7 @@ const FinanceModal = ({
                                                 <span>Costo Productos + Gastos</span>
                                                 <span>{percentageExpenses.toFixed(2)}%</span>
                                             </div>
-                                            <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
+                                            <div style={{ width: '100%', height: '10px', background: '#fdeadd', borderRadius: '5px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div>
                                             </div>
                                         </div>
@@ -488,7 +489,7 @@ const FinanceModal = ({
                                                 <span>Margen Neto (Bolsa)</span>
                                                 <span>{finData.margen.toFixed(2)}%</span>
                                             </div>
-                                            <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden' }}>
+                                            <div style={{ width: '100%', height: '10px', background: '#fdeadd', borderRadius: '5px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${finData.margen > 0 ? finData.margen : 0}%`, height: '100%', background: '#27ae60' }}></div>
                                             </div>
                                         </div>

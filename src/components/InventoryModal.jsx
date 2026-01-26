@@ -155,12 +155,12 @@ const InventoryModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="modal-content-responsive"
+                className="modal-content-responsive glass-modal-content"
                 style={{
                     position: 'relative',
-                    backgroundColor: '#fff',
+                    // backgroundColor: '#fff', // Replaced by class
                     padding: '20px',
-                    borderRadius: '20px',
+                    // borderRadius: '20px', // Replaced by class
                     width: '95%',
                     maxWidth: '900px',
                     maxHeight: '90vh',
@@ -191,14 +191,15 @@ const InventoryModal = ({
                 </div>
 
                 {/* SELECTOR DE TABS */}
-                <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', background: '#f0ece6', padding: '5px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', padding: '5px', borderRadius: '15px', borderBottom: '2px solid var(--border-subtle)' }}>
                     <button
                         onClick={() => setActiveTab('existencias')}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none', fontSize: '11px',
-                            background: activeTab === 'existencias' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'existencias' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '13px',
+                            background: activeTab === 'existencias' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'existencias' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'existencias' ? '3px solid var(--color-secondary)' : '3px solid transparent',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -207,10 +208,11 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('entradas')}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none', fontSize: '11px',
-                            background: activeTab === 'entradas' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'entradas' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '13px',
+                            background: activeTab === 'entradas' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'entradas' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'entradas' ? '3px solid var(--color-secondary)' : '3px solid transparent',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -219,10 +221,11 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('gastos')}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none', fontSize: '11px',
-                            background: activeTab === 'gastos' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'gastos' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '13px',
+                            background: activeTab === 'gastos' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'gastos' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'gastos' ? '3px solid var(--color-secondary)' : '3px solid transparent',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -231,10 +234,11 @@ const InventoryModal = ({
                     <button
                         onClick={() => setActiveTab('mermas')}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none', fontSize: '11px',
-                            background: activeTab === 'mermas' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'mermas' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '13px',
+                            background: activeTab === 'mermas' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'mermas' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'mermas' ? '3px solid var(--color-secondary)' : '3px solid transparent',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -263,7 +267,7 @@ const InventoryModal = ({
                                 overflowY: 'auto'
                             }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
-                                    <thead style={{ background: '#f8f6f2' }}>
+                                    <thead style={{ background: 'var(--bg-highlight)', borderBottom: '2px solid var(--color-secondary)' }}>
                                         <tr>
                                             <th style={{ padding: '12px 5px', textAlign: 'left', color: '#000' }}>Producto</th>
                                             <th style={{ padding: '12px 5px', color: '#000', width: '70px', textAlign: 'center' }}>Stock</th>
@@ -272,7 +276,7 @@ const InventoryModal = ({
                                     </thead>
                                     <tbody>
                                         {inventoryList.map((inv, index) => (
-                                            <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                                            <tr key={index} style={{ borderBottom: '1px solid rgba(74, 55, 40, 0.1)' }}>
                                                 <td style={{
                                                     padding: '12px 5px',
                                                     color: '#000',

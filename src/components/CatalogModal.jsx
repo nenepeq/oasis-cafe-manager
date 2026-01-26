@@ -233,7 +233,7 @@ const CatalogModal = ({
                                     <div style={{ display: 'flex', gap: '5px' }}>
                                         <button
                                             onClick={() => handleEdit(p)}
-                                            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: '#f0f0f0', cursor: 'pointer', color: '#3498db' }}
+                                            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: '#fff9e6', cursor: 'pointer', color: '#3498db' }}
                                             title="Editar"
                                         >
                                             <Edit2 size={14} />

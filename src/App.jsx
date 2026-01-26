@@ -6,7 +6,7 @@ import {
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart,
   LogOut, IceCream, FileText, RefreshCw, CakeSlice,
   Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard,
-  Wifi, WifiOff, CloudSync, ClipboardList, Clock
+  Wifi, WifiOff, CloudSync, ClipboardList, Clock, Search
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
 import { savePendingSale, savePendingExpense, savePendingPurchase, getAllPendingItems, clearPendingItem } from './utils/db';
@@ -128,6 +128,96 @@ function App() {
   const [expenseFile, setExpenseFile] = useState(null);
   const [purchaseFile, setPurchaseFile] = useState(null);
 
+  // --- SPOTLIGHT SEARCH STATE ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [fabPosition, setFabPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 120 });
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+
+  // Refs for Click Outside Detection
+  const searchInputRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+  const mobileFabRef = useRef(null);
+
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isSearchOpen &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target) &&
+        (!desktopSearchRef.current || !desktopSearchRef.current.contains(event.target)) &&
+        (!mobileFabRef.current || !mobileFabRef.current.contains(event.target))
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  // Drag Handlers
+  const handleDragStart = (e) => {
+    isDragging.current = false;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragOffset.current = {
+      x: clientX - fabPosition.x,
+      y: clientY - fabPosition.y
+    };
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+  };
+
+  const handleDragMove = (e) => {
+    isDragging.current = true; // It moved, so it's a drag
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    // Prevent default scrolling on touch
+    if (e.touches && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e.preventDefault) e.preventDefault();
+
+    let newX = clientX - dragOffset.current.x;
+    let newY = clientY - dragOffset.current.y;
+
+    // Constrain to screen bounds (Button size approx 55px)
+    const buttonSize = 60; // 55px + padding margin safety
+    const maxX = window.innerWidth - buttonSize;
+    const maxY = window.innerHeight - buttonSize;
+
+    if (newX < 0) newX = 0;
+    if (newX > maxX) newX = maxX;
+    if (newY < 0) newY = 0;
+    if (newY > maxY) newY = maxY;
+
+    setFabPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = () => {
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+    document.removeEventListener('touchmove', handleDragMove);
+    document.removeEventListener('touchend', handleDragEnd);
+
+    // Snap to screen bounds logic could go here
+  };
+
+  const handleFabClick = () => {
+    if (!isDragging.current) {
+      setIsSearchOpen(!isSearchOpen);
+      if (!isSearchOpen) {
+        // Focus logic if needed
+      }
+    }
+  };
+
   // Categorías base (siempre visibles)
   const baseCategories = [
     'Bebidas Calientes', 'Alimentos', 'Frappés',
@@ -248,9 +338,24 @@ function App() {
       // Sync Gastos
       for (const e of expenses) {
         try {
+          let ticketUrl = null;
+          if (e.file) {
+            try {
+              // Si hay un archivo guardado (Blob/File), lo subimos primero
+              // La imagen YA viene comprimida desde el modal
+              ticketUrl = await uploadTicketImage(e.file, 'gastos');
+            } catch (err) {
+              console.error("Error subiendo imagen offline de gasto:", err);
+            }
+          }
+
           const { error } = await supabase.from('expenses').insert([{
-            concepto: e.concepto, categoria: e.categoria, monto: e.monto,
-            fecha: e.fecha, created_by: e.created_by
+            concepto: e.concepto,
+            categoria: e.categoria,
+            monto: e.monto,
+            fecha: e.fecha,
+            created_by: e.created_by,
+            ticket_url: ticketUrl
           }]);
           if (!error) {
             await clearPendingItem('pending_expenses', e.id);
@@ -262,10 +367,20 @@ function App() {
       // Sync Compras (Inventario)
       for (const p of purchases) {
         try {
+          let ticketUrl = null;
+          if (p.file) {
+            try {
+              ticketUrl = await uploadTicketImage(p.file, 'compras');
+            } catch (err) {
+              console.error("Error subiendo imagen offline de compra:", err);
+            }
+          }
+
           const { data: purchase, error: pError } = await supabase.from('purchases').insert([{
             total: p.total,
             created_by: p.created_by,
-            created_at: p.timestamp
+            created_at: p.timestamp,
+            ticket_url: ticketUrl
           }]).select().single();
 
           if (!pError && purchase) {
@@ -686,14 +801,53 @@ function App() {
   }, [showFinances, financeStartDate, financeEndDate]);
   useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo]);
 
-  const fetchSales = async () => {
+  // --- SALES PAGINATION STATE ---
+  const [salesOffset, setSalesOffset] = useState(0);
+  const [hasMoreSales, setHasMoreSales] = useState(true);
+  const SALES_LIMIT = 50;
+
+  const fetchSales = async (offset = 0) => {
     setLoading(true);
-    const { data, error } = await supabase.from('sales').select(`*, sale_items (*, products (name, sale_price))`)
-      .gte('created_at', reportStartDate + 'T00:00:00').lte('created_at', reportEndDate + 'T23:59:59').order('created_at', { ascending: false });
+
+    const from = offset;
+    const to = offset + SALES_LIMIT - 1;
+
+    let query = supabase.from('sales')
+      .select(`*, sale_items (*, products (name, sale_price))`)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    // Filtro de fecha
+    if (reportStartDate && reportEndDate) {
+      query = query
+        .gte('created_at', reportStartDate + 'T00:00:00')
+        .lte('created_at', reportEndDate + 'T23:59:59');
+    }
+
+    const { data, error } = await query;
+
     if (!error) {
-      setSales(data || []);
-      // Solo sumamos lo que NO es cancelado Y que NO es 'A Cuenta' (porque eso no ha entrado dinero real aun)
-      setTotalIngresosReporte((data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0));
+      if (offset === 0) {
+        setSales(data || []);
+        // Sumar TOTALES aproximados (visible)
+        // Para total exacto se requeriría otra query, pero por performance sumamos lo cargado
+        setTotalIngresosReporte((data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0));
+      } else {
+        setSales(prev => [...prev, ...data]);
+        // Actualizar sumatoria
+        const newSum = (data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0);
+        setTotalIngresosReporte(prev => prev + newSum);
+      }
+
+      // Si recibimos menos registros que el límite, no hay más
+      if (data.length < SALES_LIMIT) {
+        setHasMoreSales(false);
+      } else {
+        setHasMoreSales(true);
+      }
+      setSalesOffset(offset);
+    } else {
+      console.error("Error fetching sales:", error);
     }
     setLoading(false);
   };
@@ -935,8 +1089,8 @@ function App() {
         await savePendingPurchase({
           total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
           items: purchaseCart,
-          created_by: user.id
-          // La imagen se pierde en versión offline actual, se notifica al usuario
+          created_by: user.id,
+          file: purchaseFile // Guardamos la imagen (ya comprimida) en IndexedDB
         });
 
         // Actualización Optimista del Stock Local
@@ -1052,18 +1206,30 @@ function App() {
             categoria: item.categoria,
             monto: item.monto,
             fecha: today,
-            created_by: user.id
-            // Offline no soporta subir fotos por ahora en esta versión
+            created_by: user.id,
+            file: expenseFile // Guardamos la imagen (ya comprimida) en IndexedDB
           });
           setHasPendingItems(true);
         } else {
+          let itemTicketUrl = ticketUrl; // Use the already uploaded ticketUrl for online items
+          // If there was a file associated with this specific item (e.g., from offline sync),
+          // and it wasn't uploaded yet, handle it here.
+          // However, in handleRegisterExpense, expenseFile is handled once outside the loop.
+          // The instruction seems to imply a scenario where 'item' might have a 'file' property,
+          // which is more typical for `syncOfflineData`'s `pendingExpenses` items.
+          // For `handleRegisterExpense`, `ticketUrl` is already determined.
+          // Assuming the instruction meant to add this logic to `syncOfflineData`'s expense loop,
+          // but applying it to `handleRegisterExpense` as per the snippet structure.
+          // If `item.file` were present and `ticketUrl` was null, we'd upload `item.file`.
+          // For now, we'll stick to the existing `ticketUrl` logic for `handleRegisterExpense`.
+
           const { error } = await supabase.from('expenses').insert([{
             concepto: item.concepto,
             categoria: item.categoria,
             monto: item.monto,
             fecha: today,
             created_by: user.id,
-            ticket_url: ticketUrl
+            ticket_url: itemTicketUrl // Use the pre-uploaded ticketUrl
           }]);
           if (error) throw error;
         }
@@ -1134,7 +1300,11 @@ function App() {
     return <Coffee size={35} color="#8b5a2b" />;
   };
 
-  const filteredProducts = selectedCategory === 'Todos' ? products : products.filter(p => (p.category || '').trim() === selectedCategory);
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedCategory === 'Todos' ? true : (p.category || '').trim() === selectedCategory;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   if (!user) return <Login onLogin={fetchProfile} />;
 
@@ -1143,29 +1313,30 @@ function App() {
       display: 'flex',
       height: '100dvh', // Altura dinámica para móviles
       width: '100%',
-      backgroundColor: '#f8f6f2',
+      // backgroundColor: '#f8f6f2', REMOVED for Glass Theme
       overflowX: 'hidden',
       overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
     }}>
 
       {/* SECCIÓN TIENDA */}
-      <div className="store-section" style={{ display: 'flex', flexDirection: 'column', padding: '5px 15px 15px 15px' }}>
+      <div className="store-section">
         <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.png" alt="Oasis" style={{ height: '35px' }} />
+            <img src="/logo.png" alt="Oasis" style={{ height: '35px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
             <div title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet'} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
-              borderRadius: '50%', background: isOnline ? '#def7ec' : '#fde8e8',
-              color: isOnline ? '#27ae60' : '#e74c3c',
+              borderRadius: '50%', background: isOnline ? 'rgba(39, 174, 96, 0.2)' : 'rgba(231, 76, 60, 0.2)',
+              color: isOnline ? '#2d6a4f' : '#c0392b',
+              border: isOnline ? '1px solid rgba(39, 174, 96, 0.3)' : '1px solid rgba(231, 76, 60, 0.3)',
               position: 'relative'
             }}>
               {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" /> : <Wifi size={18} />) : <WifiOff size={18} />}
               {hasPendingItems && !isSyncing && (
                 <div style={{
                   position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px',
-                  borderRadius: '50%', backgroundColor: '#f1c40f', border: '2px solid #fff'
+                  borderRadius: '50%', backgroundColor: '#f1c40f', border: '2px solid #fff', boxShadow: '0 0 5px rgba(0,0,0,0.2)'
                 }} title="Datos pendientes de sincronizar" />
               )}
             </div>
@@ -1196,10 +1367,25 @@ function App() {
           </div>
         </div>
 
-        <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '5px' }}>
-          {categories.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className="btn-active-effect" style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#fff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
+          <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', flex: 1 }}>
+            {categories.map(cat => (
+              <button key={cat} onClick={() => setSelectedCategory(cat)} className="btn-active-effect" style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#fff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</button>
+            ))}
+          </div>
+
+          {/* Static Search Button for Desktop/Tablet */}
+          {/* Only show if NO modals are open (same logic as mobile) */}
+          {!showReport && !showInventory && !showFinances && !showCashArqueo && !showStarProducts && !showCatalog && (
+            <div
+              ref={desktopSearchRef}
+              className="desktop-search-inline"
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              title="Buscar producto"
+            >
+              {isSearchOpen ? <X size={24} strokeWidth={3} /> : <Search size={24} strokeWidth={3} />}
+            </div>
+          )}
         </div>
 
         <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
@@ -1236,7 +1422,7 @@ function App() {
       </div>
 
       {/* SECCIÓN CARRITO */}
-      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column', padding: '5px 15px 15px 15px', backgroundColor: '#fff', borderLeft: '1px solid #eee' }}>
+      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="cart-header-compact" style={{ height: '25px', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
           <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <ShoppingCart size={18} /> Carrito
@@ -1370,9 +1556,11 @@ function App() {
       />
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
-        reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={fetchSales} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
+        reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={() => fetchSales(0)} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
         selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus} markAsPaid={markAsPaid}
         pendingSales={pendingSales}
+        loadMoreSales={() => fetchSales(salesOffset + 50)}
+        hasMoreSales={hasMoreSales}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}
@@ -1387,6 +1575,72 @@ function App() {
       <CatalogModal
         showCatalog={showCatalog} setShowCatalog={setShowCatalog} userRole={userRole} products={products} fetchProducts={fetchProducts} fetchInventory={fetchInventory} categories={categories}
       />
+
+      {/* SPOTLIGHT SEARCH FAB & INPUT - Only visible if no modals are open */}
+      {!showReport && !showInventory && !showFinances && !showCashArqueo && !showStarProducts && !showCatalog && (
+        <div
+          ref={mobileFabRef}
+          className="mobile-fab-only"
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onClick={handleFabClick}
+          style={{
+            position: 'fixed',
+            left: fabPosition.x,
+            top: fabPosition.y,
+            width: '55px',
+            height: '55px',
+            borderRadius: '50%',
+            // High Visibility Style
+            background: 'linear-gradient(135deg, #e67e22, #d35400)', // Vibrant Orange gradient
+            border: '2px solid #fff', // White border for separation
+            boxShadow: '0 4px 15px rgba(230, 126, 34, 0.6)', // Orange glow shadow
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'grab',
+            zIndex: 2000,
+            touchAction: 'none',
+            transition: isDragging.current ? 'none' : 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Bouncy effect
+          }}
+        >
+          {isSearchOpen ? <X size={28} color="#fff" strokeWidth={3} /> : <Search size={28} color="#fff" strokeWidth={3} />}
+        </div>
+      )}
+
+      {isSearchOpen && !showReport && !showInventory && !showFinances && !showCashArqueo && !showStarProducts && !showCatalog && (
+        <div
+          ref={searchInputRef}
+          style={{
+            position: 'fixed',
+            top: '100px', // Just below header roughly
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            maxWidth: '400px',
+            zIndex: 1999
+          }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar producto..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '15px 20px',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 255, 255, 0.5)',
+              background: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(15px)',
+              fontSize: '16px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+              outline: 'none',
+              color: '#333'
+            }}
+          />
+        </div>
+      )}
 
     </div>
   );

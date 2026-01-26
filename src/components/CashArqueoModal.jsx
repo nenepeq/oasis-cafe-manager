@@ -178,12 +178,12 @@ const CashArqueoModal = ({
             >
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    className="modal-content-responsive"
+                    className="modal-content-responsive glass-modal-content"
                     style={{
                         position: 'relative',
-                        backgroundColor: '#fff',
+                        // backgroundColor: '#fff', // Replaced by class
                         padding: '30px',
-                        borderRadius: '30px',
+                        // borderRadius: '30px', // Replaced by class
                         width: '95%',
                         maxWidth: '500px',
                         maxHeight: '90vh',
@@ -260,26 +260,30 @@ const CashArqueoModal = ({
                             </div>
                         ) : (
                             <>
-                                <div style={{ background: '#f8f6f2', padding: '10px 15px', borderRadius: '12px', fontSize: '12px', color: '#4a3728', border: '1px solid #eee' }}>
+                                <div style={{ background: '#fff9e6', padding: '10px 15px', borderRadius: '12px', fontSize: '12px', color: '#4a3728', border: '1px solid #f3e5d8' }}>
                                     <strong>Iniciado:</strong> {new Date(activeShift.start_time).toLocaleString()}
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                    <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '10px', color: '#166534', fontWeight: 'bold' }}>VENTAS (+EFEC)</div>
-                                        <div style={{ fontSize: '18px', fontWeight: '900', color: '#15803d' }}>${cashReportData.ventasEfectivo.toFixed(2)}</div>
-                                    </div>
-                                    <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '10px', color: '#991b1b', fontWeight: 'bold' }}>GASTOS (-EFEC)</div>
-                                        <div style={{ fontSize: '18px', fontWeight: '900', color: '#dc2626' }}>-${cashReportData.gastosEfectivo.toFixed(2)}</div>
-                                    </div>
-                                </div>
+                                {userRole === 'admin' && (
+                                    <>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                            <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '10px', color: '#166534', fontWeight: 'bold' }}>VENTAS (+EFEC)</div>
+                                                <div style={{ fontSize: '18px', fontWeight: '900', color: '#15803d' }}>${cashReportData.ventasEfectivo.toFixed(2)}</div>
+                                            </div>
+                                            <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '10px', color: '#991b1b', fontWeight: 'bold' }}>GASTOS (-EFEC)</div>
+                                                <div style={{ fontSize: '18px', fontWeight: '900', color: '#dc2626' }}>-${cashReportData.gastosEfectivo.toFixed(2)}</div>
+                                            </div>
+                                        </div>
 
-                                <div style={{ background: '#4a3728', padding: '20px', borderRadius: '15px', textAlign: 'center', color: '#fff' }}>
-                                    <div style={{ fontSize: '12px', opacity: 0.8 }}>SALDO ESPERADO EN CAJA</div>
-                                    <div style={{ fontSize: '30px', fontWeight: '900' }}>${cashReportData.esperado.toFixed(2)}</div>
-                                    <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '5px' }}>(Fondo Inicial: ${activeShift.initial_fund})</div>
-                                </div>
+                                        <div style={{ background: '#4a3728', padding: '20px', borderRadius: '15px', textAlign: 'center', color: '#fff' }}>
+                                            <div style={{ fontSize: '12px', opacity: 0.8 }}>SALDO ESPERADO EN CAJA</div>
+                                            <div style={{ fontSize: '30px', fontWeight: '900' }}>${cashReportData.esperado.toFixed(2)}</div>
+                                            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '5px' }}>(Fondo Inicial: ${activeShift.initial_fund})</div>
+                                        </div>
+                                    </>
+                                )}
 
                                 <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
@@ -296,12 +300,14 @@ const CashArqueoModal = ({
                                     />
                                 </div>
 
-                                <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
-                                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
-                                    <div style={{ fontSize: '24px', fontWeight: '900', color: cashReportData.diferencia === 0 ? '#27ae60' : (cashReportData.diferencia > 0 ? '#3498db' : '#e74c3c') }}>
-                                        {cashReportData.diferencia >= 0 ? '+' : ''}${cashReportData.diferencia.toFixed(2)}
+                                {userRole === 'admin' && (
+                                    <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
+                                        <div style={{ fontSize: '24px', fontWeight: '900', color: cashReportData.diferencia === 0 ? '#27ae60' : (cashReportData.diferencia > 0 ? '#3498db' : '#e74c3c') }}>
+                                            {cashReportData.diferencia >= 0 ? '+' : ''}${cashReportData.diferencia.toFixed(2)}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <textarea
                                     placeholder="Observaciones del turno..."

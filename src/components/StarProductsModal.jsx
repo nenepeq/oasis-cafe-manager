@@ -110,12 +110,12 @@ const StarProductsModal = ({
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="modal-content-responsive"
+                className="modal-content-responsive glass-modal-content"
                 style={{
                     position: 'relative',
-                    backgroundColor: '#fff',
+                    // backgroundColor: '#fff', // Replaced by class
                     padding: '30px',
-                    borderRadius: '30px',
+                    // borderRadius: '30px', // Replaced by class
                     width: '95%',
                     maxWidth: '700px',
                     maxHeight: '85vh',
@@ -162,7 +162,7 @@ const StarProductsModal = ({
                 </div>
 
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#f8f6f2', padding: '15px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#fffaf0', padding: '15px', borderRadius: '15px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
                         <input

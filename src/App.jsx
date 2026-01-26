@@ -148,9 +148,12 @@ function App() {
         searchInputRef.current &&
         !searchInputRef.current.contains(event.target) &&
         (!desktopSearchRef.current || !desktopSearchRef.current.contains(event.target)) &&
-        (!mobileFabRef.current || !mobileFabRef.current.contains(event.target))
+        (!mobileFabRef.current || !mobileFabRef.current.contains(event.target)) &&
+        !event.target.closest('.product-card') && // Ignore clicks on products
+        !event.target.closest('.cart-section')    // Ignore clicks on cart
       ) {
         setIsSearchOpen(false);
+        setSearchQuery(''); // Clear query on close
       }
     };
 
@@ -211,6 +214,9 @@ function App() {
 
   const handleFabClick = () => {
     if (!isDragging.current) {
+      if (isSearchOpen) {
+        setSearchQuery(''); // Clear query when closing manually
+      }
       setIsSearchOpen(!isSearchOpen);
       if (!isSearchOpen) {
         // Focus logic if needed
@@ -1380,7 +1386,10 @@ function App() {
             <div
               ref={desktopSearchRef}
               className="desktop-search-inline"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              onClick={() => {
+                if (isSearchOpen) setSearchQuery('');
+                setIsSearchOpen(!isSearchOpen);
+              }}
               title="Buscar producto"
             >
               {isSearchOpen ? <X size={24} strokeWidth={3} /> : <Search size={24} strokeWidth={3} />}

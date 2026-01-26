@@ -203,14 +203,15 @@ const SalesModal = ({
                 <h2 style={{ color: '#000000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
                 {/* TABS SELECTOR */}
-                <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', background: '#fff9e6', padding: '5px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', padding: '5px', borderRadius: '15px', borderBottom: '2px solid var(--border-subtle)' }}>
                     <button
                         onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
-                            background: activeTab === 'pagadas' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'pagadas' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
+                            background: activeTab === 'pagadas' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'pagadas' ? 'var(--color-accent)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'pagadas' ? '3px solid var(--color-accent)' : '3px solid transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                             transition: 'all 0.2s'
                         }}
@@ -220,10 +221,11 @@ const SalesModal = ({
                     <button
                         onClick={() => { setActiveTab('por_cobrar'); setSelectedSale(null); }}
                         style={{
-                            flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
-                            background: activeTab === 'por_cobrar' ? '#fff' : 'transparent',
-                            color: '#e67e22', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'por_cobrar' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
+                            background: activeTab === 'por_cobrar' ? 'var(--bg-soft)' : 'transparent',
+                            color: activeTab === 'por_cobrar' ? 'var(--color-secondary)' : 'var(--color-primary)',
+                            fontWeight: '900', cursor: 'pointer',
+                            borderBottom: activeTab === 'por_cobrar' ? '3px solid var(--color-secondary)' : '3px solid transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                             transition: 'all 0.2s'
                         }}
@@ -234,10 +236,11 @@ const SalesModal = ({
                         <button
                             onClick={() => { setActiveTab('offline'); setSelectedSale(null); }}
                             style={{
-                                flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
-                                background: activeTab === 'offline' ? '#fff' : 'transparent',
-                                color: '#f1c40f', fontWeight: '900', cursor: 'pointer',
-                                boxShadow: activeTab === 'offline' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                                flex: 1, padding: '12px', borderRadius: '12px 12px 0 0', border: 'none',
+                                background: activeTab === 'offline' ? 'var(--bg-soft)' : 'transparent',
+                                color: activeTab === 'offline' ? 'var(--color-warning)' : 'var(--color-primary)',
+                                fontWeight: '900', cursor: 'pointer',
+                                borderBottom: activeTab === 'offline' ? '3px solid var(--color-warning)' : '3px solid transparent',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                 transition: 'all 0.2s'
                             }}

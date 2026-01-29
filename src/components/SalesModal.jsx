@@ -343,7 +343,12 @@ const SalesModal = ({
                                 Define el objetivo de ventas brutas para el mes actual. Este valor se utilizará en los indicadores de rendimiento del dashboard.
                             </p>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: window.innerWidth < 600 ? 'column' : 'row',
+                                alignItems: 'stretch',
+                                gap: '15px'
+                            }}>
                                 <div style={{ position: 'relative', flex: 1 }}>
                                     <DollarSign size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#95a5a6' }} />
                                     <input
@@ -366,7 +371,7 @@ const SalesModal = ({
                                     onClick={handleSaveGoal}
                                     disabled={isSavingGoal}
                                     style={{
-                                        padding: '12px 25px',
+                                        padding: '15px 25px',
                                         background: '#3498db',
                                         color: '#fff',
                                         borderRadius: '10px',
@@ -375,9 +380,11 @@ const SalesModal = ({
                                         cursor: isSavingGoal ? 'not-allowed' : 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
+                                        justifyContent: 'center',
                                         gap: '8px',
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 6px rgba(52, 152, 219, 0.2)'
+                                        boxShadow: '0 4px 6px rgba(52, 152, 219, 0.2)',
+                                        fontSize: '14px'
                                     }}
                                 >
                                     {isSavingGoal ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} />}

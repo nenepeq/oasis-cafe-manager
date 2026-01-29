@@ -32,7 +32,8 @@ export const savePendingSale = async (saleData) => {
     const db = await openDB();
     const tx = db.transaction('pending_sales', 'readwrite');
     const store = tx.objectStore('pending_sales');
-    store.add({ ...saleData, timestamp: new Date().toISOString() });
+    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
+    store.add({ ...saleData, timestamp: saleData.timestamp || new Date().toISOString() });
     return new Promise((resolve) => {
         tx.oncomplete = () => resolve();
     });
@@ -42,7 +43,8 @@ export const savePendingExpense = async (expenseData) => {
     const db = await openDB();
     const tx = db.transaction('pending_expenses', 'readwrite');
     const store = tx.objectStore('pending_expenses');
-    store.add({ ...expenseData, timestamp: new Date().toISOString() });
+    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
+    store.add({ ...expenseData, timestamp: expenseData.timestamp || new Date().toISOString() });
     return new Promise((resolve) => {
         tx.oncomplete = () => resolve();
     });
@@ -52,7 +54,8 @@ export const savePendingPurchase = async (purchaseData) => {
     const db = await openDB();
     const tx = db.transaction('pending_purchases', 'readwrite');
     const store = tx.objectStore('pending_purchases');
-    store.add({ ...purchaseData, timestamp: new Date().toISOString() });
+    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
+    store.add({ ...purchaseData, timestamp: purchaseData.timestamp || new Date().toISOString() });
     return new Promise((resolve) => {
         tx.oncomplete = () => resolve();
     });

@@ -1,0 +1,227 @@
+{
+    "name": "Oasis Cafe - Resumen Diario (20:00 H)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 20 * * *"
+                        }
+                    ]
+                },
+                "timezone": "America/Mexico_City"
+            },
+            "id": "schedule-trigger",
+            "name": "Disparador 20:00 CDMX",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                0,
+                300
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "noop",
+            "name": "Preparar Ejecución",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://uvclbuxgegmhnlflowjz.supabase.co/rest/v1/sales?created_at=gte.{{ $now.format('yyyy-MM-dd') }}T00:00:00&status=neq.cancelado&select=total",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "consultar-ventas",
+            "name": "Consultar Ventas Hoy",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://uvclbuxgegmhnlflowjz.supabase.co/rest/v1/inventory?select=product_name,stock&order=product_name.asc",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "consultar-inventario",
+            "name": "Consultar Inventario",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://uvclbuxgegmhnlflowjz.supabase.co/rest/v1/cash_shifts?select=actual_cash,expected_cash,difference,status&order=start_time.desc&limit=1",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "consultar-turno",
+            "name": "Consultar Ultimo Turno",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Obtener todos los datos usando $node\nconst ventasItems = $node['Consultar Ventas Hoy'].json;\nconst inventarioItems = $node['Consultar Inventario'].json;\nconst turnoItems = $node['Consultar Ultimo Turno'].json;\n\nconst today = new Date().toLocaleDateString('es-MX', {timeZone: 'America/Mexico_City'});\n\n// Calcular total de ventas\nconst totalVentas = Array.isArray(ventasItems) ? ventasItems.reduce((sum, v) => sum + (v.total || 0), 0) : 0;\nconst numVentas = Array.isArray(ventasItems) ? ventasItems.length : 0;\n\n// Formatear inventario\nlet stockListado = '';\nif (Array.isArray(inventarioItems) && inventarioItems.length > 0) {\n  inventarioItems.forEach(item => {\n    const nombre = item.product_name || 'Sin nombre';\n    const stock = item.stock || 0;\n    const emoji = stock <= 2 ? '\ud83d\udd34' : stock <= 5 ? '\ud83d\udfe0' : stock <= 10 ? '\u26a0\ufe0f' : '\u2705';\n    stockListado += `${emoji} ${nombre}: ${stock} uds\\n`;\n  });\n} else {\n  stockListado = '_Sin datos de inventario_';\n}\n\n// Datos de arqueo\nconst turnoData = Array.isArray(turnoItems) && turnoItems.length > 0 ? turnoItems[0] : {};\nconst esperado = turnoData.expected_cash || 0;\nconst real = turnoData.actual_cash || 0;\nconst diferencia = turnoData.difference || 0;\nconst estadoTurno = turnoData.status === 'closed' ? 'Cerrado' : 'Abierto';\nconst difEmoji = diferencia === 0 ? '\u2705' : diferencia > 0 ? '\ud83d\udfe2' : '\ud83d\udd34';\n\nconst message = `\u2615 *RESUMEN DIARIO OASIS CAF\u00c9* \u2615\\n\ud83d\udcc5 ${today}\\n\\n\ud83d\udcb0 *VENTAS DEL D\u00cdA*\\nN\u00famero de ventas: ${numVentas}\\nTotal recaudado: $${totalVentas.toFixed(2)}\\n\\n\ud83d\udce6 *INVENTARIO ACTUAL*\\n${stockListado}\\n\ud83d\udcca *ARQUEO DE CAJA*\\nEstado: ${estadoTurno}\\nEfectivo esperado: $${esperado.toFixed(2)}\\nEfectivo real: $${real.toFixed(2)}\\n${difEmoji} Diferencia: $${diferencia.toFixed(2)}\\n\\n_Reporte generado autom\u00e1ticamente a las 20:00 H_`;\n\nreturn [{ json: { message } }];"
+            },
+            "id": "code-format",
+            "name": "Formatear Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "1765256468",
+                "text": "={{$json.message}}",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "telegram-send",
+            "name": "Enviar a Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                1200,
+                300
+            ],
+            "credentials": {
+                "telegramApi": {
+                    "id": "cWikd052lGXB6ZtQ",
+                    "name": "Telegram PACO"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Disparador 20:00 CDMX": {
+            "main": [
+                [
+                    {
+                        "node": "Preparar Ejecución",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparar Ejecución": {
+            "main": [
+                [
+                    {
+                        "node": "Consultar Ventas Hoy",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar Ventas Hoy": {
+            "main": [
+                [
+                    {
+                        "node": "Consultar Inventario",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar Inventario": {
+            "main": [
+                [
+                    {
+                        "node": "Consultar Ultimo Turno",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar Ultimo Turno": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Formatear Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar a Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "tags": []
+}

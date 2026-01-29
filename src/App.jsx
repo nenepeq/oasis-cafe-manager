@@ -35,6 +35,18 @@ const getMXDate = () => {
   }).format(new Date());
 };
 
+/**
+ * Función Helper para obtener timestamp ISO ajustado a zona horaria de México
+ * Evita que registros nocturnos (después de las 6 PM) aparezcan como del día siguiente
+ * @returns {string} Timestamp ISO en zona horaria America/Mexico_City
+ */
+const getMXTimestamp = () => {
+  const now = new Date();
+  // Convertir a zona horaria de México
+  const mxDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  return mxDate.toISOString();
+};
+
 function App() {
   // --- ESTADOS DE AUTENTICACIÓN Y PERFIL ---
   const [user, setUser] = useState(null);
@@ -734,7 +746,8 @@ function App() {
           created_by: user.id,
           customer_name: customerName.trim() || 'Cliente Mostrador',
           payment_method: paymentMethod,
-          items: cart
+          items: cart,
+          timestamp: getMXTimestamp() // Usar zona horaria de México
         });
 
         // Actualizar stock localmente para feedback inmediato en UI
@@ -971,7 +984,7 @@ function App() {
     }
     setLoading(true);
     try {
-      const startTime = activeShift ? activeShift.start_time : new Date().toISOString();
+      const startTime = activeShift ? activeShift.start_time : getMXTimestamp();
 
       // Ventas en efectivo desde que abrió el turno
       const { data: vData } = await supabase.from('sales')
@@ -1010,7 +1023,7 @@ function App() {
       initial_fund: cashInitialFund,
       opened_by: user.id,
       status: 'open',
-      start_time: new Date().toISOString()
+      start_time: getMXTimestamp() // Usar zona horaria de México
     }]).select().single();
 
     if (!error) {
@@ -1029,7 +1042,7 @@ function App() {
 
     setLoading(true);
     const { error } = await supabase.from('cash_shifts').update({
-      end_time: new Date().toISOString(),
+      end_time: getMXTimestamp(), // Usar zona horaria de México
       actual_cash: cashPhysicalCount,
       expected_cash: cashReportData.esperado,
       difference: cashReportData.diferencia,
@@ -1135,7 +1148,8 @@ function App() {
           total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
           items: purchaseCart,
           created_by: user.id,
-          file: purchaseFile // Guardamos la imagen (ya comprimida) en IndexedDB
+          file: purchaseFile, // Guardamos la imagen (ya comprimida) en IndexedDB
+          timestamp: getMXTimestamp() // Usar zona horaria de México
         });
 
         // Actualización Optimista del Stock Local
@@ -1250,7 +1264,7 @@ function App() {
       const today = getMXDate();
 
       // 2. Preparar inserción masiva
-      const timestamp = new Date().toISOString();
+      const timestamp = getMXTimestamp(); // Usar zona horaria de México
 
       if (!navigator.onLine) {
         for (const item of expenseCart) {

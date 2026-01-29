@@ -140,6 +140,45 @@ function App() {
   const [expenseFile, setExpenseFile] = useState(null);
   const [purchaseFile, setPurchaseFile] = useState(null);
 
+  // --- ESTADO DE CONFIGURACIÓN ---
+  const [salesGoal, setSalesGoal] = useState(50000);
+
+  const fetchSalesGoal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'sales_goal')
+        .maybeSingle();
+
+      if (!error && data) {
+        setSalesGoal(parseFloat(data.value) || 50000);
+      } else if (!error && !data) {
+        // Si no existe, intentar leer de localStorage como fallback inicial
+        const saved = localStorage.getItem('oasis_sales_goal');
+        if (saved) setSalesGoal(parseFloat(saved));
+      }
+    } catch (err) {
+      console.error('Error fetching sales goal:', err);
+    }
+  };
+
+  const updateSalesGoalInDB = async (newGoal) => {
+    setSalesGoal(newGoal);
+    localStorage.setItem('oasis_sales_goal', newGoal.toString());
+
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'sales_goal', value: newGoal.toString() });
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error('Error updating sales goal:', err);
+      return { success: false, error: err };
+    }
+  };
+
   // --- SPOTLIGHT SEARCH STATE ---
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -579,6 +618,7 @@ function App() {
       fetchProducts();
       fetchInventory();
       fetchActiveShift();
+      fetchSalesGoal();
     }
   }, [user]);
 
@@ -958,7 +998,7 @@ function App() {
   const calculateFinances = async () => {
     if (userRole !== 'admin') return;
     setLoading(true);
-    const { data: salesData } = await supabase.from('sales').select(`id, total, created_at, status, customer_name, payment_method, sale_items (quantity, products (cost_price))`)
+    const { data: salesData } = await supabase.from('sales').select(`id, total, created_at, status, customer_name, payment_method, sale_items (quantity, price, products (name, cost_price))`)
       .gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59').neq('status', 'cancelado');
 
     let ingresos = 0, costoProds = 0;
@@ -1616,6 +1656,7 @@ function App() {
         showFinances={showFinances} setShowFinances={setShowFinances} userRole={userRole} financeStartDate={financeStartDate} setFinanceStartDate={setFinanceStartDate}
         financeEndDate={financeEndDate} setFinanceEndDate={setFinanceEndDate} calculateFinances={calculateFinances} loading={loading} finData={finData}
         dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList} dailySalesList={dailySalesList}
+        salesGoal={salesGoal}
       />
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
@@ -1624,6 +1665,7 @@ function App() {
         pendingSales={pendingSales}
         loadMoreSales={() => fetchSales(salesOffset + 50)}
         hasMoreSales={hasMoreSales}
+        salesGoal={salesGoal} setSalesGoal={updateSalesGoalInDB}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}

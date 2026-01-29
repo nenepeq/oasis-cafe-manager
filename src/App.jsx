@@ -142,6 +142,39 @@ function App() {
 
   // --- ESTADO DE CONFIGURACIÓN ---
   const [salesGoal, setSalesGoal] = useState(50000);
+  const [monthlySalesTotal, setMonthlySalesTotal] = useState(0);
+
+  const fetchMonthlySalesTotal = async () => {
+    try {
+      const now = new Date();
+      // Obtener mes y año en CDMX
+      const mxDateStr = now.toLocaleString('en-US', { timeZone: 'America/Mexico_City', year: 'numeric', month: 'numeric', day: 'numeric' });
+      const [month, day, year] = mxDateStr.split(',')[0].split('/').map(n => parseInt(n));
+
+      // Primer día del mes (en formato YYYY-MM-DD para Supabase)
+      const startStr = `${year}-${String(month).padStart(2, '0')}-01T00:00:00`;
+
+      // Último día del mes
+      const lastDay = new Date(year, month, 0);
+      const endStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}T23:59:59`;
+
+      const { data, error } = await supabase
+        .from('sales')
+        .select('total')
+        .neq('status', 'cancelado')
+        .neq('payment_method', 'A Cuenta')
+        .gte('created_at', startStr)
+        .lte('created_at', endStr)
+        .limit(5000);
+
+      if (!error && data) {
+        const total = data.reduce((acc, s) => acc + (s.total || 0), 0);
+        setMonthlySalesTotal(total);
+      }
+    } catch (err) {
+      console.error('Error fetching monthly sales total:', err);
+    }
+  };
 
   const fetchSalesGoal = async () => {
     try {
@@ -548,6 +581,7 @@ function App() {
 
       // 2. Refresco completo para asegurar consistencia (relaciones, totales calculados, etc)
       fetchSales();
+      fetchMonthlySalesTotal();
       if (userRole === 'admin') calculateFinances();
     };
   }); // Sin array de dependencias, se actualiza en cada render
@@ -619,6 +653,7 @@ function App() {
       fetchInventory();
       fetchActiveShift();
       fetchSalesGoal();
+      fetchMonthlySalesTotal();
     }
   }, [user]);
 
@@ -862,6 +897,7 @@ function App() {
     if (showReport && user) {
       if (reportStartDate <= reportEndDate) {
         fetchSales();
+        fetchMonthlySalesTotal();
       } else {
         setSales([]);
         setTotalIngresosReporte(0);
@@ -872,6 +908,7 @@ function App() {
     if (showFinances && user && userRole === 'admin') {
       if (financeStartDate <= financeEndDate) {
         calculateFinances();
+        fetchMonthlySalesTotal();
       } else {
         setFinData({
           ingresos: 0, costoProductos: 0, gastosOps: 0, gastosStock: 0,
@@ -888,10 +925,12 @@ function App() {
   useEffect(() => {
     if (showFinances) {
       calculateFinances();
+      fetchMonthlySalesTotal();
     }
     // Always keep report updated when modals open
     if (showReport) {
       fetchSales();
+      fetchMonthlySalesTotal();
     }
   }, [showFinances, financeStartDate, financeEndDate, showReport]);
 
@@ -989,6 +1028,7 @@ function App() {
 
       fetchSales();
       calculateFinances();
+      fetchMonthlySalesTotal();
       setSelectedSale(null);
 
     } catch (err) { alert('Error al cobrar: ' + err.message); }
@@ -1657,6 +1697,7 @@ function App() {
         financeEndDate={financeEndDate} setFinanceEndDate={setFinanceEndDate} calculateFinances={calculateFinances} loading={loading} finData={finData}
         dailyExpensesList={dailyExpensesList} dailyStockList={dailyStockList} dailySalesList={dailySalesList}
         salesGoal={salesGoal}
+        monthlySalesTotal={monthlySalesTotal}
       />
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
@@ -1666,6 +1707,7 @@ function App() {
         loadMoreSales={() => fetchSales(salesOffset + 50)}
         hasMoreSales={hasMoreSales}
         salesGoal={salesGoal} setSalesGoal={updateSalesGoalInDB}
+        monthlySalesTotal={monthlySalesTotal}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}

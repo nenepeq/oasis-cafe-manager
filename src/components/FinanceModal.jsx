@@ -24,7 +24,8 @@ const FinanceModal = ({
     dailyExpensesList,
     dailyStockList,
     dailySalesList,
-    salesGoal
+    salesGoal,
+    monthlySalesTotal
 }) => {
     const [activeTab, setActiveTab] = useState('data'); // 'data' o 'charts'
 
@@ -77,9 +78,9 @@ const FinanceModal = ({
         const validSales = dailySalesList.filter(s => s.status !== 'cancelado');
         const averageTicket = validSales.length > 0 ? finData.ingresos / validSales.length : 0;
 
-        // Meta mensual (dinámica)
-        const monthlyGoal = salesGoal || 50000; // Meta ejemplo
-        const goalProgress = (finData.ingresos / monthlyGoal) * 100;
+        // Meta mensual (dinámica - Siempre el mes completo)
+        const monthlyGoal = salesGoal || 50000;
+        const goalProgress = (monthlySalesTotal / monthlyGoal) * 100;
 
         return {
             ingresosVariation,
@@ -680,33 +681,47 @@ const FinanceModal = ({
                                 </div>
                             </div>
 
-                            {/* META MENSUAL */}
+                            {/* META MENSUAL (DISEÑO PREMIUM) */}
                             <div style={{
                                 background: '#fff',
-                                border: '1px solid #e5e7eb',
+                                border: '2px solid #e2e8f0',
                                 padding: '18px',
-                                borderRadius: '15px',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                borderRadius: '20px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                position: 'relative',
+                                overflow: 'hidden'
                             }}>
-                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', marginBottom: '8px' }}>
-                                    🎯 META MENSUAL
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', marginBottom: '12px' }}>
+                                    <span style={{ fontSize: '18px' }}>🎯</span>
+                                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>META MENSUAL</span>
                                 </div>
-                                <div style={{ fontSize: '24px', fontWeight: '900', color: '#000', marginBottom: '8px' }}>
-                                    ${finData.ingresos.toLocaleString()} <span style={{ fontSize: '14px', color: '#666', fontWeight: 'normal' }}>de ${comparisonMetrics.monthlyGoal.toLocaleString()}</span>
+
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '28px', fontWeight: '900', color: '#1f2937' }}>
+                                        ${monthlySalesTotal.toLocaleString()}
+                                    </span>
+                                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                                        de ${parseFloat(salesGoal || 0).toLocaleString()}
+                                    </span>
                                 </div>
-                                <div style={{ fontSize: '18px', fontWeight: '900', color: comparisonMetrics.goalProgress >= 100 ? '#16a34a' : '#3b82f6', marginBottom: '8px' }}>
-                                    {Math.min(comparisonMetrics.goalProgress, 100).toFixed(0)}% Alcanzado
+
+                                <div style={{ fontSize: '20px', fontWeight: '900', color: '#3b82f6', marginBottom: '10px' }}>
+                                    {((monthlySalesTotal / (salesGoal || 1)) * 100).toFixed(0)}% Alcanzado
                                 </div>
-                                <div style={{ width: '100%', height: '8px', background: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+
+                                <div style={{ width: '100%', height: '10px', background: '#f3f4f6', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
                                     <div style={{
-                                        width: `${Math.min(comparisonMetrics.goalProgress, 100)}%`,
+                                        width: `${Math.min((monthlySalesTotal / (salesGoal || 1)) * 100, 100)}%`,
                                         height: '100%',
-                                        background: comparisonMetrics.goalProgress >= 100 ? '#16a34a' : '#3b82f6',
-                                        transition: 'width 0.3s ease'
+                                        backgroundColor: monthlySalesTotal >= salesGoal ? '#10b981' : '#3b82f6',
+                                        transition: 'width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                                     }}></div>
                                 </div>
-                                <div style={{ fontSize: '10px', color: '#666', marginTop: '6px' }}>
-                                    {comparisonMetrics.goalProgress >= 100 ? '🎉 ¡Meta alcanzada!' : `Nos falta vender: $${Math.max(0, comparisonMetrics.monthlyGoal - finData.ingresos).toFixed(2)}`}
+
+                                <div style={{ fontSize: '12px', color: '#4b5563', fontWeight: '500' }}>
+                                    {monthlySalesTotal >= salesGoal
+                                        ? '✅ ¡OBJETIVO LOGRADO!'
+                                        : `Falta: $${Math.max(0, (salesGoal || 0) - monthlySalesTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                                 </div>
                             </div>
 

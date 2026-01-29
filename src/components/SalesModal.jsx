@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Settings, Target, TrendingUp } from 'lucide-react';
+import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Settings, Target, TrendingUp, Hourglass } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -27,7 +27,8 @@ const SalesModal = ({
     hasMoreSales,
     loadMoreSales,
     salesGoal,
-    setSalesGoal
+    setSalesGoal,
+    monthlySalesTotal = 0
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar' | 'config'
     const [localSalesGoal, setLocalSalesGoal] = useState(salesGoal);
@@ -246,7 +247,7 @@ const SalesModal = ({
                             fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
                         }}
                     >
-                        ⏳ CTA. COBRAR ({debts.length})
+                        <Hourglass size={14} /> POR COBRAR ({debts.length})
                     </button>
                     {pendingSales.length > 0 && (
                         <button
@@ -286,39 +287,52 @@ const SalesModal = ({
                         gap: '12px',
                         marginBottom: '20px'
                     }}>
-                        {/* TOTAL ACUMULADO */}
+                        {/* TOTAL ACUMULADO DEL MES */}
                         <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1.5px solid #bbf7d0', padding: '15px', borderRadius: '15px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', marginBottom: '5px' }}>
                                 <TrendingUp size={16} />
-                                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>VENTAS ACUMULADAS</span>
+                                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>INGRESOS ACUMULADOS (MES)</span>
                             </div>
                             <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>
-                                ${totalIngresosReporte.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${monthlySalesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div style={{ fontSize: '10px', color: '#166534', marginTop: '4px', fontWeight: 'bold' }}>
-                                (Efectivo + Tarjetas)
+                                {new Date().toLocaleString('es-MX', { month: 'long' }).toUpperCase()} {new Date().getFullYear()}
                             </div>
                         </div>
 
-                        {/* PROGRESO META */}
+                        {/* PROGRESO META MENSUAL */}
                         <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', padding: '15px', borderRadius: '15px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4b5563', marginBottom: '8px' }}>
-                                <Target size={16} />
-                                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>PROGRESO META</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4b5563', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '18px' }}>🎯</span>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#6b7280' }}>META MENSUAL</span>
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#1f2937', marginBottom: '8px' }}>
-                                {((totalIngresosReporte / (salesGoal || 1)) * 100).toFixed(1)}%
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '26px', fontWeight: '900', color: '#1f2937' }}>
+                                    ${monthlySalesTotal.toLocaleString()}
+                                </span>
+                                <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    de ${parseFloat(salesGoal || 0).toLocaleString()}
+                                </span>
                             </div>
-                            <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
+
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#3b82f6', marginBottom: '10px' }}>
+                                {((monthlySalesTotal / (salesGoal || 1)) * 100).toFixed(0)}% Alcanzado
+                            </div>
+
+                            <div style={{ width: '100%', height: '10px', background: '#f3f4f6', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
                                 <div style={{
-                                    width: `${Math.min((totalIngresosReporte / (salesGoal || 1)) * 100, 100)}%`,
+                                    width: `${Math.min((monthlySalesTotal / (salesGoal || 1)) * 100, 100)}%`,
                                     height: '100%',
-                                    backgroundColor: totalIngresosReporte >= salesGoal ? '#10b981' : '#3b82f6',
-                                    transition: 'width 0.5s ease-out'
+                                    backgroundColor: monthlySalesTotal >= salesGoal ? '#10b981' : '#3b82f6',
+                                    transition: 'width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                                 }}></div>
                             </div>
-                            <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '6px' }}>
-                                Meta: ${parseFloat(salesGoal || 0).toLocaleString()}
+
+                            <div style={{ fontSize: '12px', color: '#4b5563', fontWeight: '500' }}>
+                                {monthlySalesTotal >= salesGoal
+                                    ? '✅ ¡OBJETIVO MENSUAL LOGRADO!'
+                                    : `Nos falta vender: $${Math.max(0, salesGoal - monthlySalesTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                             </div>
                         </div>
                     </div>

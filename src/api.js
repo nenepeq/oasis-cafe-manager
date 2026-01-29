@@ -13,9 +13,10 @@ export const getProducts = async () => {
  * Crea un nuevo producto y su entrada inicial en el inventario.
  */
 export const createProduct = async (productData) => {
+  const { stock, ...cleanProductData } = productData;
   const { data, error } = await supabase
     .from('products')
-    .insert([productData])
+    .insert([cleanProductData])
     .select()
     .single();
 
@@ -28,7 +29,7 @@ export const createProduct = async (productData) => {
       product_id: data.id,
       product_name: data.name,
       category: data.category,
-      stock: 0
+      stock: productData.stock || 0
     }]);
 
   if (invError) {
@@ -43,9 +44,10 @@ export const createProduct = async (productData) => {
  * Actualiza un producto existente.
  */
 export const updateProduct = async (id, productData) => {
+  const { stock, ...cleanProductData } = productData;
   const result = await supabase
     .from('products')
-    .update(productData)
+    .update(cleanProductData)
     .eq('id', id)
     .select()
     .single();
@@ -71,6 +73,18 @@ export const deleteProduct = async (id) => {
     .from('products')
     .delete()
     .eq('id', id);
+
+  return result;
+};
+
+/**
+ * Actualiza directamente el stock de un producto en la tabla de inventario.
+ */
+export const updateStock = async (productId, newStock) => {
+  const result = await supabase
+    .from('inventory')
+    .update({ stock: newStock })
+    .eq('product_id', productId);
 
   return result;
 };

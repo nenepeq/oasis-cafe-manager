@@ -1622,7 +1622,7 @@ function App() {
         starEndDate={starEndDate} setStarEndDate={setStarEndDate} fetchStarProducts={fetchStarProducts} starData={starData} kpiData={kpiData}
       />
       <CatalogModal
-        showCatalog={showCatalog} setShowCatalog={setShowCatalog} userRole={userRole} products={products} fetchProducts={fetchProducts} fetchInventory={fetchInventory} categories={categories}
+        showCatalog={showCatalog} setShowCatalog={setShowCatalog} userRole={userRole} products={products} inventoryList={inventoryList} fetchProducts={fetchProducts} fetchInventory={fetchInventory} categories={categories}
       />
 
       {/* SPOTLIGHT SEARCH FAB & INPUT - Only visible if no modals are open */}

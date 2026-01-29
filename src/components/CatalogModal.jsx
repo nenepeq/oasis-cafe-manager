@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Save, Plus, Trash2, Edit2, ClipboardList, AlertCircle, RefreshCw } from 'lucide-react';
-import { createProduct, updateProduct, deleteProduct } from '../api';
+import { X, Save, Plus, Trash2, Edit2, ClipboardList, AlertCircle, RefreshCw, Package } from 'lucide-react';
+import { createProduct, updateProduct, deleteProduct, updateStock } from '../api';
 
 /**
  * Modal para la Gestión del Catálogo de Productos
@@ -10,6 +10,7 @@ const CatalogModal = ({
     setShowCatalog,
     userRole,
     products,
+    inventoryList,
     fetchProducts,
     fetchInventory,
     categories
@@ -19,9 +20,10 @@ const CatalogModal = ({
     const [editingProduct, setEditingProduct] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
-        category: categories[1] || '', // Evitamos 'Todos'
+        category: categories[1] || '',
         sale_price: 0,
         cost_price: 0,
+        stock: 0,
         is_visible: true
     });
 
@@ -37,6 +39,7 @@ const CatalogModal = ({
             category: formCategories[0] || '',
             sale_price: 0,
             cost_price: 0,
+            stock: 0,
             is_visible: true
         });
         setActiveTab('form');
@@ -44,12 +47,16 @@ const CatalogModal = ({
 
     const handleEdit = (product) => {
         setEditingProduct(product);
+        // Buscar el stock real en la lista de inventario que recibimos por props
+        const currentStock = inventoryList.find(inv => inv.product_id === product.id)?.stock || 0;
+
         setFormData({
             name: product.name,
             category: product.category,
             sale_price: product.sale_price,
             cost_price: product.cost_price || 0,
-            is_visible: product.is_visible !== false // Manejo de NULLs
+            stock: currentStock,
+            is_visible: product.is_visible !== false
         });
         setActiveTab('form');
     };
@@ -66,13 +73,18 @@ const CatalogModal = ({
             if (editingProduct) {
                 const { error } = await updateProduct(editingProduct.id, formData);
                 if (error) throw error;
-                alert("✅ Producto actualizado con éxito");
+                // Ajuste de stock si es necesario
+                const { error: stockError } = await updateStock(editingProduct.id, formData.stock);
+                if (stockError) console.error("Error al ajustar stock:", stockError);
+
+                alert("✅ Producto y Stock actualizados con éxito");
             } else {
                 const { error } = await createProduct(formData);
                 if (error) throw error;
                 alert("✅ Producto creado con éxito");
             }
             await fetchProducts();
+            if (fetchInventory) await fetchInventory();
             handleOpenCreate();
             setActiveTab('list');
         } catch (err) {
@@ -224,6 +236,23 @@ const CatalogModal = ({
                                             required
                                         />
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#27ae60', marginBottom: '5px' }}>STOCK ACTUAL (AJUSTE DIRECTO)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="number"
+                                            value={formData.stock || 0}
+                                            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                                            placeholder="0"
+                                            style={{ width: '100%', padding: '12px', paddingLeft: '40px', borderRadius: '12px', border: '1px solid #27ae60', fontSize: '14px', backgroundColor: '#f0fff4', fontWeight: 'bold' }}
+                                        />
+                                        <Package size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#27ae60' }} />
+                                    </div>
+                                    <p style={{ margin: '5px 0 0 0', fontSize: '10px', color: '#666', fontStyle: 'italic' }}>
+                                        * Al guardar se actualizará el inventario automáticamente.
+                                    </p>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8f9fa', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }}>

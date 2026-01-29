@@ -267,6 +267,13 @@ const CatalogModal = ({
                                     </button>
                                 </div>
                             </form>
+
+                            <div style={{ marginTop: '25px', padding: '15px', borderRadius: '15px', background: '#fff3cd', color: '#856404', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <AlertCircle size={20} />
+                                <p style={{ margin: 0, fontSize: '12px' }}>
+                                    <b>Nota:</b> Al crear un producto nuevo, se habilitará automáticamente en el inventario con <b>stock cero</b>. No olvides registrar su entrada de mercancía para poder venderlo.
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -314,15 +321,23 @@ const CatalogModal = ({
                                     </div>
                                 ))}
                             </div>
+
+                            <div style={{ marginTop: '25px', padding: '20px', borderRadius: '15px', background: '#e3f2fd', color: '#0d47a1', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #bbdefb' }}>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <AlertCircle size={20} />
+                                    <p style={{ margin: 0, fontSize: '12px' }}>
+                                        <b>Nota:</b> Los productos marcados como <b style={{ color: '#e74c3c' }}>(OCULTO)</b> no aparecen en la tienda principal, pero conservan su registro aquí.
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', borderTop: '1px solid #bbdefb', paddingTop: '10px' }}>
+                                    <Edit2 size={18} />
+                                    <p style={{ margin: 0, fontSize: '12px' }}>
+                                        <b>Tip:</b> Usa el icono del <b>lápiz</b> para editar precios, categorías o visibilidad al instante.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     )}
-                </div>
-
-                <div style={{ marginTop: '25px', padding: '15px', borderRadius: '15px', background: '#fff3cd', color: '#856404', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <AlertCircle size={20} />
-                    <p style={{ margin: 0, fontSize: '12px' }}>
-                        <b>Nota:</b> Al crear un producto nuevo, se habilitará automáticamente en el inventario con <b>stock cero</b>. No olvides registrar su entrada de mercancía para poder venderlo.
-                    </p>
                 </div>
             </div>
         </div>

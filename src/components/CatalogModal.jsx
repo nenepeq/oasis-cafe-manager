@@ -20,7 +20,8 @@ const CatalogModal = ({
         name: '',
         category: categories[1] || '', // Evitamos 'Todos'
         sale_price: 0,
-        cost_price: 0
+        cost_price: 0,
+        is_visible: true
     });
 
     if (!showCatalog || userRole !== 'admin') return null;
@@ -34,7 +35,8 @@ const CatalogModal = ({
             name: '',
             category: formCategories[0] || '',
             sale_price: 0,
-            cost_price: 0
+            cost_price: 0,
+            is_visible: true
         });
     };
 
@@ -44,7 +46,8 @@ const CatalogModal = ({
             name: product.name,
             category: product.category,
             sale_price: product.sale_price,
-            cost_price: product.cost_price || 0
+            cost_price: product.cost_price || 0,
+            is_visible: product.is_visible !== false // Manejo de NULLs
         });
     };
 
@@ -188,6 +191,19 @@ const CatalogModal = ({
                                 </div>
                             </div>
 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8f9fa', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }}>
+                                <input
+                                    type="checkbox"
+                                    id="is_visible"
+                                    checked={formData.is_visible}
+                                    onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                />
+                                <label htmlFor="is_visible" style={{ fontSize: '14px', fontWeight: 'bold', color: '#4a3728', cursor: 'pointer' }}>
+                                    PRODUCTO VISIBLE EN TIENDA
+                                </label>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                 <button
                                     type="submit"
@@ -228,7 +244,10 @@ const CatalogModal = ({
                                 }}>
                                     <div>
                                         <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#4a3728' }}>{p.name}</div>
-                                        <div style={{ fontSize: '11px', color: '#8b5a2b' }}>{p.category} • <span style={{ color: '#27ae60', fontWeight: 'bold' }}>${parseFloat(p.sale_price).toFixed(2)}</span></div>
+                                        <div style={{ fontSize: '11px', color: '#8b5a2b' }}>
+                                            {p.category} • <span style={{ color: '#27ae60', fontWeight: 'bold' }}>${parseFloat(p.sale_price).toFixed(2)}</span>
+                                            {p.is_visible === false && <span style={{ color: '#e74c3c', marginLeft: '5px', fontWeight: 'bold' }}>(OCULTO)</span>}
+                                        </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '5px' }}>
                                         <button

@@ -21,10 +21,15 @@ export const createProduct = async (productData) => {
 
   if (error) return { data: null, error };
 
-  // Crear entrada en inventario (solo enviamos product_id como se solicitó)
+  // Crear entrada en inventario (mapeando campos para evitar NULLs)
   const { error: invError } = await supabase
     .from('inventory')
-    .insert([{ product_id: data.id }]);
+    .insert([{
+      product_id: data.id,
+      product_name: data.name,
+      category: data.category,
+      stock: 0
+    }]);
 
   if (invError) {
     console.error("Error al crear registro de inventario:", invError);

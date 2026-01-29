@@ -418,6 +418,7 @@ function App() {
               const { error: piError } = await supabase.from('purchase_items').insert([{
                 purchase_id: purchase.id,
                 product_id: item.id,
+                product_name: item.name,
                 quantity: item.qty,
                 cost: item.cost,
                 purchase_number: purchase.purchase_number
@@ -429,10 +430,7 @@ function App() {
                 continue;
               }
 
-              // Actualización atómica de stock (re-fetching)
-              const { data: currentData } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-              const currentStock = currentData ? currentData.stock : 0;
-              await supabase.from('inventory').update({ stock: currentStock + item.qty }).eq('product_id', item.id);
+              // La actualización de stock se maneja automáticamente en la DB vía triggers
             }
 
             if (allItemsSynced) {
@@ -1161,9 +1159,15 @@ function App() {
         }]).select().single();
 
         for (const item of purchaseCart) {
-          await supabase.from('purchase_items').insert([{ purchase_id: purchase.id, product_id: item.id, quantity: item.qty, cost: item.cost, purchase_number: purchase.purchase_number }]);
-          const { data: currentInv } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-          await supabase.from('inventory').update({ stock: (currentInv?.stock || 0) + item.qty }).eq('product_id', item.id);
+          await supabase.from('purchase_items').insert([{
+            purchase_id: purchase.id,
+            product_id: item.id,
+            product_name: item.name,
+            quantity: item.qty,
+            cost: item.cost,
+            purchase_number: purchase.purchase_number
+          }]);
+          // La actualización de stock se maneja automáticamente en la DB vía triggers
         }
         alert("📦 Stock Actualizado");
 
@@ -1344,7 +1348,8 @@ function App() {
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === 'Todos' ? true : (p.category || '').trim() === selectedCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const isVisible = p.is_visible !== false;
+    return matchesCategory && matchesSearch && isVisible;
   });
 
   if (!user) return <Login onLogin={fetchProfile} />;

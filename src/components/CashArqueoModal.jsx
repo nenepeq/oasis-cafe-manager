@@ -181,20 +181,22 @@ const CashArqueoModal = ({
                     className="modal-content-responsive glass-modal-content"
                     style={{
                         position: 'relative',
-                        // backgroundColor: '#fff', // Replaced by class
+                        backgroundColor: 'var(--bg-secondary)',
                         padding: '30px',
-                        // borderRadius: '30px', // Replaced by class
+                        borderRadius: '30px',
                         width: '95%',
                         maxWidth: '500px',
                         maxHeight: '90vh',
-                        overflowY: 'auto'
+                        overflowY: 'auto',
+                        boxShadow: 'var(--card-shadow)',
+                        color: 'var(--text-primary)'
                     }}
                 >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <Banknote size={30} color="#e67e22" />
-                                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '24px' }}>
+                                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: 0, fontSize: '24px' }}>
                                     {activeShift ? 'Turno Activo' : 'Abrir Turno'}
                                 </h2>
                             </div>
@@ -203,8 +205,8 @@ const CashArqueoModal = ({
                                 className="btn-active-effect"
                                 style={{
                                     padding: '8px 16px',
-                                    background: '#4a3728',
-                                    color: '#fff',
+                                    background: 'var(--bg-highlight)',
+                                    color: 'var(--text-primary)',
                                     border: 'none',
                                     borderRadius: '10px',
                                     fontSize: '12px',
@@ -217,7 +219,7 @@ const CashArqueoModal = ({
                         </div>
                         <button
                             onClick={() => setShowCashArqueo(false)}
-                            style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}
+                            style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
                         >
                             <X size={30} />
                         </button>
@@ -226,8 +228,8 @@ const CashArqueoModal = ({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
 
                         {!activeShift ? (
-                            <div style={{ backgroundColor: '#fdfbf9', padding: '20px', borderRadius: '20px', border: '2px solid #e67e22' }}>
-                                <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#4a3728', display: 'block', marginBottom: '10px' }}>FONDO INICIAL DE CAJA ($)</label>
+                            <div style={{ backgroundColor: 'var(--bg-primary)', padding: '20px', borderRadius: '20px', border: '2px solid #e67e22' }}>
+                                <label style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '10px' }}>FONDO INICIAL DE CAJA ($)</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -236,7 +238,7 @@ const CashArqueoModal = ({
                                         const val = parseFloat(e.target.value);
                                         setCashInitialFund(isNaN(val) ? 0 : Math.max(0, val));
                                     }}
-                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '24px', fontWeight: 'bold', backgroundColor: '#fff', color: '#333', marginBottom: '20px' }}
+                                    style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '24px', fontWeight: 'bold', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', marginBottom: '20px' }}
                                     placeholder="0.00"
                                     autoFocus
                                 />
@@ -260,7 +262,7 @@ const CashArqueoModal = ({
                             </div>
                         ) : (
                             <>
-                                <div style={{ background: '#fff9e6', padding: '10px 15px', borderRadius: '12px', fontSize: '12px', color: '#4a3728', border: '1px solid #f3e5d8' }}>
+                                <div style={{ background: 'var(--bg-primary)', padding: '10px 15px', borderRadius: '12px', fontSize: '12px', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
                                     <strong>Iniciado:</strong> {new Date(activeShift.start_time).toLocaleString()}
                                 </div>
 
@@ -277,7 +279,7 @@ const CashArqueoModal = ({
                                             </div>
                                         </div>
 
-                                        <div style={{ background: '#4a3728', padding: '20px', borderRadius: '15px', textAlign: 'center', color: '#fff' }}>
+                                        <div style={{ background: 'var(--bg-highlight)', padding: '20px', borderRadius: '15px', textAlign: 'center', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
                                             <div style={{ fontSize: '12px', opacity: 0.8 }}>SALDO ESPERADO EN CAJA</div>
                                             <div style={{ fontSize: '30px', fontWeight: '900' }}>${cashReportData.esperado.toFixed(2)}</div>
                                             <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '5px' }}>(Fondo Inicial: ${activeShift.initial_fund})</div>
@@ -285,7 +287,7 @@ const CashArqueoModal = ({
                                     </>
                                 )}
 
-                                <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
+                                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '15px', borderRadius: '15px', border: '2px solid #3498db' }}>
                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#3498db', display: 'block', marginBottom: '5px' }}>EFECTIVO FÍSICO CONTADO ($)</label>
                                     <input
                                         type="number"
@@ -295,7 +297,7 @@ const CashArqueoModal = ({
                                             const val = parseFloat(e.target.value);
                                             setCashPhysicalCount(isNaN(val) ? 0 : Math.max(0, val));
                                         }}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: '#333', backgroundColor: '#fff' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #3498db', fontSize: '22px', fontWeight: '900', color: 'var(--text-primary)', backgroundColor: 'var(--bg-primary)' }}
                                         placeholder="0.00"
                                     />
                                 </div>
@@ -313,7 +315,7 @@ const CashArqueoModal = ({
                                     placeholder="Observaciones del turno..."
                                     value={cashObservations}
                                     onChange={(e) => setCashObservations(e.target.value)}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #ddd', minHeight: '60px', fontSize: '13px', backgroundColor: '#fff', color: '#333' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', minHeight: '60px', fontSize: '13px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                                 />
 
                                 <button
@@ -323,7 +325,7 @@ const CashArqueoModal = ({
                                         width: '100%',
                                         padding: '15px',
                                         background: (loading || cashPhysicalCount <= 0) ? '#ddd' : '#27ae60',
-                                        color: '#fff',
+                                        color: (loading || cashPhysicalCount <= 0) ? '#000' : '#fff',
                                         border: 'none',
                                         borderRadius: '12px',
                                         fontWeight: '900',
@@ -348,11 +350,11 @@ const CashArqueoModal = ({
                     <div
                         onClick={(e) => e.stopPropagation()}
                         className="modal-content-responsive"
-                        style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '85vh', overflowY: 'auto' }}
+                        style={{ backgroundColor: 'var(--bg-secondary)', padding: '30px', borderRadius: '30px', width: '95%', maxWidth: '900px', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--card-shadow)', color: 'var(--text-primary)' }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Turnos</h2>
+                                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: 0, fontSize: '22px' }}>Historial de Turnos</h2>
                                 {arqueoHistory.length > 0 && (
                                     <button
                                         onClick={handleExportHistoryCSV}
@@ -365,14 +367,14 @@ const CashArqueoModal = ({
                             </div>
                             <button
                                 onClick={() => setShowArqueoHistory(false)}
-                                style={{ border: 'none', color: '#000', background: 'none', cursor: 'pointer' }}
+                                style={{ border: 'none', color: 'var(--text-primary)', background: 'none', cursor: 'pointer' }}
                             >
                                 <X size={24} />
                             </button>
                         </div>
                         <div className="table-container">
                             <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '12px' }}>
-                                <thead style={{ background: '#4a3728', color: '#fff' }}>
+                                <thead style={{ background: 'var(--bg-highlight)', color: 'var(--text-primary)' }}>
                                     <tr>
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Inicio / Fin</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Fondo</th>
@@ -389,7 +391,7 @@ const CashArqueoModal = ({
                                         <tr><td colSpan="8" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>No hay registros</td></tr>
                                     ) : (
                                         arqueoHistory.map((h, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                                            <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                 <td style={{ padding: '12px' }}>
                                                     <div style={{ fontWeight: 'bold' }}>{new Date(h.start_time).toLocaleString()}</div>
                                                     <div style={{ fontSize: '10px', color: '#999' }}>Fin: {h.end_time ? new Date(h.end_time).toLocaleString() : '---'}</div>

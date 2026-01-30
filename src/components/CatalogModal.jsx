@@ -123,31 +123,33 @@ const CatalogModal = ({
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    position: 'relative', backgroundColor: '#fff', padding: '25px',
+                    position: 'relative', backgroundColor: 'var(--bg-secondary)', padding: '25px',
                     borderRadius: '25px', width: '95%', maxWidth: '800px',
-                    maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                    maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--card-shadow)',
+                    color: 'var(--text-primary)'
                 }}
             >
                 <button
                     onClick={() => setShowCatalog(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#666' }}
+                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
                 >
                     <X size={24} />
                 </button>
 
-                <h2 style={{ color: '#4a3728', fontWeight: '900', marginTop: 0, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '20px' }}>
+                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', marginTop: 0, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '20px' }}>
                     <ClipboardList size={26} /> Gestión de Catálogo
                 </h2>
 
                 {/* SELECTOR DE PESTAÑAS */}
-                <div style={{ display: 'flex', background: '#f8f4f0', padding: '5px', borderRadius: '15px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '5px', borderRadius: '15px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
                     <button
                         onClick={handleOpenCreate}
                         style={{
                             flex: 1, padding: '12px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: 'bold',
-                            backgroundColor: activeTab === 'form' ? '#fff' : 'transparent',
-                            color: activeTab === 'form' ? '#27ae60' : '#8b5a2b',
-                            boxShadow: activeTab === 'form' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                            backgroundColor: activeTab === 'form' ? 'var(--bg-secondary)' : 'transparent',
+                            color: activeTab === 'form' ? 'var(--green_btn_primary)' : 'var(--text-primary)',
+                            opacity: activeTab === 'form' ? 1 : 0.6,
+                            boxShadow: activeTab === 'form' ? 'var(--card-shadow)' : 'none',
                             cursor: 'pointer', transition: 'all 0.3s',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
                         }}
@@ -162,9 +164,10 @@ const CatalogModal = ({
                         }}
                         style={{
                             flex: 1, padding: '12px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: 'bold',
-                            backgroundColor: activeTab === 'list' ? '#fff' : 'transparent',
-                            color: activeTab === 'list' ? '#4a3728' : '#8b5a2b',
-                            boxShadow: activeTab === 'list' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                            backgroundColor: activeTab === 'list' ? 'var(--bg-secondary)' : 'transparent',
+                            color: activeTab === 'list' ? 'var(--text-primary)' : 'var(--text-primary)',
+                            opacity: activeTab === 'list' ? 1 : 0.6,
+                            boxShadow: activeTab === 'list' ? 'var(--card-shadow)' : 'none',
                             cursor: 'pointer', transition: 'all 0.3s'
                         }}
                     >
@@ -175,24 +178,24 @@ const CatalogModal = ({
                 <div>
                     {/* FORMULARIO */}
                     {activeTab === 'form' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '20px', border: '1px solid #f1ece6' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#4a3728', marginTop: 0, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ background: 'var(--bg-primary)', padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', marginTop: 0, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {editingProduct ? <><Edit2 size={18} /> Editar: {editingProduct.name}</> : <><Plus size={18} /> Nuevo Producto</>}
                             </h3>
                             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#8b5a2b', marginBottom: '5px' }}>NOMBRE DEL PRODUCTO</label>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>NOMBRE DEL PRODUCTO</label>
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="Ej. Café Americano 16oz"
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#8b5a2b', marginBottom: '5px' }}>CATEGORÍA</label>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>CATEGORÍA</label>
                                     <select
                                         value={formData.category}
                                         onChange={(e) => {
@@ -205,57 +208,57 @@ const CatalogModal = ({
                                                 setFormData({ ...formData, category: e.target.value });
                                             }
                                         }}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '14px', backgroundColor: '#fff' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                                     >
                                         {!formCategories.includes(formData.category) && formData.category && (
                                             <option value={formData.category}>{formData.category}</option>
                                         )}
                                         {formCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                        <option value="__NEW__" style={{ fontWeight: 'bold', color: '#27ae60' }}>+ Nueva Categoría...</option>
+                                        <option value="__NEW__" style={{ fontWeight: 'bold', color: 'var(--green_btn_primary)' }}>+ Nueva Categoría...</option>
                                     </select>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#8b5a2b', marginBottom: '5px' }}>$ COSTO</label>
+                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>$ COSTO</label>
                                         <input
                                             type="number"
                                             step="0.01"
                                             value={formData.cost_price || ''}
                                             onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '14px' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#8b5a2b', marginBottom: '5px' }}>$ PRECIO</label>
+                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>$ PRECIO</label>
                                         <input
                                             type="number"
                                             step="0.01"
                                             value={formData.sale_price || ''}
                                             onChange={(e) => setFormData({ ...formData, sale_price: parseFloat(e.target.value) || 0 })}
-                                            style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold', color: '#27ae60' }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', fontWeight: 'bold', color: 'var(--green_btn_primary)', backgroundColor: 'var(--bg-secondary)' }}
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#27ae60', marginBottom: '5px' }}>STOCK ACTUAL (AJUSTE DIRECTO)</label>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--green_btn_primary)', marginBottom: '5px' }}>STOCK ACTUAL (AJUSTE DIRECTO)</label>
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="number"
                                             value={formData.stock || 0}
                                             onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                                             placeholder="0"
-                                            style={{ width: '100%', padding: '12px', paddingLeft: '40px', borderRadius: '12px', border: '1px solid #27ae60', fontSize: '14px', backgroundColor: '#f0fff4', fontWeight: 'bold' }}
+                                            style={{ width: '100%', padding: '12px', paddingLeft: '40px', borderRadius: '12px', border: '1px solid var(--green_btn_primary)', fontSize: '14px', backgroundColor: 'var(--bg-secondary)', fontWeight: 'bold', color: 'var(--text-primary)' }}
                                         />
-                                        <Package size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#27ae60' }} />
+                                        <Package size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--green_btn_primary)' }} />
                                     </div>
-                                    <p style={{ margin: '5px 0 0 0', fontSize: '10px', color: '#666', fontStyle: 'italic' }}>
+                                    <p style={{ margin: '5px 0 0 0', fontSize: '10px', color: 'var(--text-primary)', fontStyle: 'italic', opacity: 0.8 }}>
                                         * Al guardar se actualizará el inventario automáticamente.
                                     </p>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8f9fa', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-secondary)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                     <input
                                         type="checkbox"
                                         id="is_visible"
@@ -263,7 +266,7 @@ const CatalogModal = ({
                                         onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
                                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                                     />
-                                    <label htmlFor="is_visible" style={{ fontSize: '14px', fontWeight: 'bold', color: '#4a3728', cursor: 'pointer' }}>
+                                    <label htmlFor="is_visible" style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)', cursor: 'pointer' }}>
                                         PRODUCTO VISIBLE EN TIENDA
                                     </label>
                                 </div>
@@ -288,8 +291,8 @@ const CatalogModal = ({
                                             setActiveTab('list');
                                         }}
                                         style={{
-                                            flex: 1, padding: '15px', borderRadius: '12px', border: '1px solid #ddd',
-                                            backgroundColor: '#fff', color: '#666', fontWeight: 'bold', cursor: 'pointer'
+                                            flex: 1, padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                            backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 'bold', cursor: 'pointer'
                                         }}
                                     >
                                         VOLVER
@@ -320,14 +323,14 @@ const CatalogModal = ({
                                 ) : products.map(p => (
                                     <div key={p.id} style={{
                                         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                        padding: '12px', borderRadius: '18px', border: '1px solid #eee', background: '#fff',
-                                        boxShadow: '0 2px 5px rgba(0,0,0,0.02)', position: 'relative'
+                                        padding: '12px', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
+                                        boxShadow: 'var(--card-shadow)', position: 'relative'
                                     }}>
                                         <div style={{ marginBottom: '10px' }}>
-                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#4a3728', lineHeight: '1.2', marginBottom: '4px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '4px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
                                                 {p.name}
                                             </div>
-                                            <div style={{ fontSize: '10px', color: '#8b5a2b', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div style={{ fontSize: '10px', color: '#e67e22', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                 <div>{p.category}</div>
                                                 <div style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '12px' }}>${parseFloat(p.sale_price).toFixed(2)}</div>
                                                 {p.is_visible === false && <span style={{ color: '#e74c3c', fontSize: '9px', fontWeight: 'bold' }}>• OCULTO</span>}

@@ -6,7 +6,8 @@ import {
   Coffee, Snowflake, CupSoda, Utensils, ShoppingCart,
   LogOut, IceCream, FileText, RefreshCw, CakeSlice,
   Banknote, RotateCcw, X, Package, PieChart, Award, Trash2, Plus, Minus, CreditCard,
-  Wifi, WifiOff, CloudSync, ClipboardList, Clock, Search
+  Wifi, WifiOff, CloudSync, ClipboardList, Clock, Search,
+  Sun, Moon // Iconos añadidos
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
 import { savePendingSale, savePendingExpense, savePendingPurchase, getAllPendingItems, clearPendingItem } from './utils/db';
@@ -41,10 +42,26 @@ const getMXDate = () => {
  * @returns {string} Timestamp ISO en zona horaria America/Mexico_City
  */
 const getMXTimestamp = () => {
-  const now = new Date();
-  // Convertir a zona horaria de México
-  const mxDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
-  return mxDate.toISOString();
+  // Obtener componentes de fecha/hora en zona horaria de México
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const values = {};
+  parts.forEach(({ type, value }) => {
+    values[type] = value;
+  });
+
+  // Construir string ISO en zona horaria de México (sin Z al final)
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`;
 };
 
 function App() {
@@ -77,6 +94,18 @@ function App() {
   const [hasPendingItems, setHasPendingItems] = useState(false);
   const [pendingSales, setPendingSales] = useState([]);
 
+
+  // --- TEMA (DARK MODE) ---
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   // --- ESTADOS DE ARQUEO DE CAJA ---
   const [activeShift, setActiveShift] = useState(null);
@@ -954,11 +983,16 @@ function App() {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    // Filtro de fecha
+    // Filtro de fecha con ajuste de Zona Horaria (UTC-6)
     if (reportStartDate && reportEndDate) {
+      // Fin del día local (23:59) es ~06:00 UTC del día siguiente
+      const endDateObj = new Date(reportEndDate);
+      endDateObj.setDate(endDateObj.getDate() + 1);
+      const nextDayStr = endDateObj.toISOString().split('T')[0];
+
       query = query
-        .gte('created_at', reportStartDate + 'T00:00:00')
-        .lte('created_at', reportEndDate + 'T23:59:59');
+        .gte('created_at', reportStartDate + 'T06:00:00') // 00:00 MX ~ 06:00 UTC
+        .lt('created_at', nextDayStr + 'T06:00:00');      // 00:00 MX día sig ~ 06:00 UTC día sig
     }
 
     const { data, error } = await query;
@@ -1038,15 +1072,22 @@ function App() {
   const calculateFinances = async () => {
     if (userRole !== 'admin') return;
     setLoading(true);
+    // Ajuste de Zona Horaria: Fin del día local (23:59) es ~06:00 UTC del día siguiente
+    const endDateTime = new Date(financeEndDate);
+    endDateTime.setDate(endDateTime.getDate() + 1);
+    const nextDayStr = endDateTime.toISOString().split('T')[0];
+
     const { data: salesData } = await supabase.from('sales').select(`id, total, created_at, status, customer_name, payment_method, sale_items (quantity, price, products (name, cost_price))`)
-      .gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59').neq('status', 'cancelado');
+      .gte('created_at', financeStartDate + 'T06:00:00').lt('created_at', nextDayStr + 'T06:00:00').neq('status', 'cancelado');
 
     let ingresos = 0, costoProds = 0;
     salesData?.forEach(s => { ingresos += s.total; s.sale_items?.forEach(i => costoProds += (i.quantity * (i.products?.cost_price || 0))); });
 
+    // Gastos usa columna 'fecha' tipo DATE, no TIMESTAMP, así que no requiere ajuste de horas
     const { data: expData } = await supabase.from('expenses').select('*').gte('fecha', financeStartDate).lte('fecha', financeEndDate);
 
-    const { data: purData } = await supabase.from('purchases').select(`*, purchase_items(*, products(name))`).gte('created_at', financeStartDate + 'T00:00:00').lte('created_at', financeEndDate + 'T23:59:59');
+    const { data: purData } = await supabase.from('purchases').select(`*, purchase_items(*, products(name))`)
+      .gte('created_at', financeStartDate + 'T06:00:00').lt('created_at', nextDayStr + 'T06:00:00');
 
     const gastOps = expData?.reduce((a, e) => a + e.monto, 0) || 0;
     const gastStk = purData?.reduce((a, p) => a + p.total, 0) || 0;
@@ -1366,8 +1407,8 @@ function App() {
           monto: item.monto,
           fecha: today,
           created_by: user.id,
-          ticket_url: ticketUrl,
-          created_at: timestamp // Protección contra duplicados
+          ticket_url: ticketUrl
+          // created_at automatico por BD (UTC)
         }));
 
         const { error } = await supabase.from('expenses').insert(expensesToInsert);
@@ -1453,7 +1494,9 @@ function App() {
       display: 'flex',
       height: '100dvh', // Altura dinámica para móviles
       width: '100%',
-      // backgroundColor: '#f8f6f2', REMOVED for Glass Theme
+      backgroundColor: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
+      transition: 'background-color 0.3s ease, color 0.3s ease',
       overflowX: 'hidden',
       overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
     }}>
@@ -1510,7 +1553,23 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
           <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', flex: 1 }}>
             {categories.map(cat => (
-              <button key={cat} onClick={() => setSelectedCategory(cat)} className="btn-active-effect" style={{ padding: '8px 16px', borderRadius: '15px', border: 'none', backgroundColor: selectedCategory === cat ? '#4a3728' : '#e0e0e0', color: selectedCategory === cat ? '#fff' : '#4a3728', fontWeight: 'bold', fontSize: '11px', whiteSpace: 'nowrap' }}>{cat.toUpperCase()}</button>
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="btn-active-effect"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '15px',
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: selectedCategory === cat ? 'var(--text-primary)' : 'var(--bg-secondary)',
+                  color: selectedCategory === cat ? 'var(--bg-primary)' : 'var(--text-primary)',
+                  fontWeight: 'bold',
+                  fontSize: '11px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {cat.toUpperCase()}
+              </button>
             ))}
           </div>
 
@@ -1553,10 +1612,15 @@ function App() {
                   onClick={() => addToCart(p)}
                   className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
                   disabled={isOutOfStock}
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-color)'
+                  }}
                 >
                   <div style={{ transform: 'scale(0.8)' }}>{getCategoryIcon(p)}</div>
-                  <div className="product-name">{p.name}</div>
-                  <div className="product-price">${parseFloat(p.sale_price).toFixed(2)}</div>
+                  <div className="product-name" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
+                  <div className="product-price" style={{ color: 'var(--green_btn_primary)' }}>${parseFloat(p.sale_price).toFixed(2)}</div>
                 </button>
               );
             })}
@@ -1565,10 +1629,28 @@ function App() {
       </div>
 
       {/* SECCIÓN CARRITO */}
-      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
         <div className="cart-header-compact" style={{ height: '25px', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-          <h2 style={{ color: '#4a3728', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <ShoppingCart size={18} /> Carrito
+            <button
+              onClick={toggleTheme}
+              className="btn-active-effect"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                marginLeft: '5px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: theme === 'dark' ? '#f1c40f' : '#f39c12'
+              }}
+              title={theme === 'dark' ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '8px' }}>
@@ -1588,12 +1670,13 @@ function App() {
               alignItems: 'center',
               padding: '10px',
               fontSize: '13px',
-              backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f4f4f4',
+              backgroundColor: idx % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
               borderRadius: '8px',
               marginBottom: '8px',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              border: '1px solid rgba(0,0,0,0.05)',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+              boxShadow: 'var(--card-shadow)',
+              border: '1px solid var(--border-color)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              color: 'var(--text-primary)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
@@ -1605,21 +1688,21 @@ function App() {
                   <Trash2 size={16} />
                 </button>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ color: '#4a3728', fontWeight: '800' }}>{item.name}</div>
+                  <div style={{ color: 'var(--text-primary)', fontWeight: '800' }}>{item.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#f0f0f0', borderRadius: '8px', padding: '2px 5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-highlight)', borderRadius: '8px', padding: '2px 5px', border: '1px solid var(--border-color)' }}>
                       <button
                         onClick={() => updateCartQty(item.id, -1)}
                         className="btn-active-effect"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '2px' }}
                       >
                         <Minus size={12} />
                       </button>
-                      <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: '#4a3728' }}>{item.quantity}</span>
+                      <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: 'var(--text-primary)' }}>{item.quantity}</span>
                       <button
                         onClick={() => updateCartQty(item.id, 1)}
                         className={`btn-active-effect ${((inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity) ? 'opacity-50 pointer-events-none' : ''}`}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#000', padding: '2px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '2px' }}
                         disabled={(inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity}
                       >
                         <Plus size={12} />

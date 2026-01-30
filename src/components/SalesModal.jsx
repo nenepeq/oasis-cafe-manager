@@ -55,11 +55,13 @@ const SalesModal = ({
     // ... (rest of initial implementation)
     const [loadingDebts, setLoadingDebts] = useState(false);
 
-    // Fetch DEBTS individually to ensure they are always up to date and ignore date filters
+    // Fetch DEBTS siempre que se abra el reporte para mostrar el contador actualizado
     useEffect(() => {
-        if (activeTab === 'por_cobrar' && showReport) {
+        if (showReport) {
             const fetchDebts = async () => {
-                setLoadingDebts(true);
+                // Solo mostrar loader si estamos en la pestaña de cobro, para no molestar en las otras
+                if (activeTab === 'por_cobrar') setLoadingDebts(true);
+
                 try {
                     const { data, error } = await supabase
                         .from('sales')
@@ -79,7 +81,7 @@ const SalesModal = ({
             };
             fetchDebts();
         }
-    }, [activeTab, showReport]);
+    }, [showReport, activeTab]); // Mantenemos activeTab para que si cambia a esa pestaña, refresque el loading state visualmente si es necesario, aunque los datos ya estarían cargando.
 
     // Auto-switch tab if offline is active but becomes empty
     useEffect(() => {
@@ -209,28 +211,29 @@ const SalesModal = ({
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    position: 'relative', backgroundColor: '#fff', padding: '25px', borderRadius: '25px',
+                    position: 'relative', backgroundColor: 'var(--bg-secondary)', padding: '25px', borderRadius: '25px',
                     width: '95%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                    color: 'var(--text-primary)'
                 }}
             >
                 <button
                     onClick={() => { setShowReport(false); setSelectedSale(null); }}
-                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}
+                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', zIndex: 10 }}
                 >
                     <X size={24} />
                 </button>
 
-                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 25px 0', fontSize: '22px', paddingRight: '40px' }}>Reporte de Ventas</h2>
+                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 25px 0', fontSize: '22px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
                 {/* TABS SELECTOR */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', padding: '5px', background: '#f5f5f5', borderRadius: '15px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', padding: '5px', background: 'var(--bg-primary)', borderRadius: '15px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
                         style={{
                             flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'pagadas' ? '#4a3728' : 'transparent',
-                            color: activeTab === 'pagadas' ? '#fff' : '#4a3728',
+                            background: activeTab === 'pagadas' ? '#27ae60' : 'transparent',
+                            color: activeTab === 'pagadas' ? '#fff' : '#27ae60',
                             fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
                             fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
                         }}
@@ -288,30 +291,20 @@ const SalesModal = ({
                         marginBottom: '20px'
                     }}>
                         {/* TOTAL ACUMULADO DEL MES */}
-                        <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1.5px solid #bbf7d0', padding: '15px', borderRadius: '15px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534', marginBottom: '5px' }}>
-                                <TrendingUp size={16} />
-                                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>INGRESOS ACUMULADOS (MES)</span>
-                            </div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>
-                                ${monthlySalesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#166534', marginTop: '4px', fontWeight: 'bold' }}>
-                                {new Date().toLocaleString('es-MX', { month: 'long' }).toUpperCase()} {new Date().getFullYear()}
-                            </div>
-                        </div>
+                        {/* TOTAL ACUMULADO DEL MES - ELIMINADO POR REDUNDANCIA */}
 
                         {/* PROGRESO META MENSUAL */}
-                        <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', padding: '15px', borderRadius: '15px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4b5563', marginBottom: '12px' }}>
+                        {/* PROGRESO META MENSUAL */}
+                        <div style={{ background: 'var(--bg-secondary)', border: '1.5px solid var(--border-color)', padding: '15px', borderRadius: '15px', boxShadow: 'var(--card-shadow)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', marginBottom: '12px' }}>
                                 <span style={{ fontSize: '18px' }}>🎯</span>
-                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#6b7280' }}>META MENSUAL</span>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>META MENSUAL</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '26px', fontWeight: '900', color: '#1f2937' }}>
+                                <span style={{ fontSize: '26px', fontWeight: '900', color: 'var(--text-primary)' }}>
                                     ${monthlySalesTotal.toLocaleString()}
                                 </span>
-                                <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                                <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
                                     de ${parseFloat(salesGoal || 0).toLocaleString()}
                                 </span>
                             </div>
@@ -320,7 +313,7 @@ const SalesModal = ({
                                 {((monthlySalesTotal / (salesGoal || 1)) * 100).toFixed(0)}% Alcanzado
                             </div>
 
-                            <div style={{ width: '100%', height: '10px', background: '#f3f4f6', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
+                            <div style={{ width: '100%', height: '10px', background: 'var(--bg-highlight)', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
                                 <div style={{
                                     width: `${Math.min((monthlySalesTotal / (salesGoal || 1)) * 100, 100)}%`,
                                     height: '100%',
@@ -329,7 +322,7 @@ const SalesModal = ({
                                 }}></div>
                             </div>
 
-                            <div style={{ fontSize: '12px', color: '#4b5563', fontWeight: '500' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>
                                 {monthlySalesTotal >= salesGoal
                                     ? '✅ ¡OBJETIVO MENSUAL LOGRADO!'
                                     : `Nos falta vender: $${Math.max(0, salesGoal - monthlySalesTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
@@ -339,21 +332,21 @@ const SalesModal = ({
                 )}
 
                 {activeTab === 'config' && userRole === 'admin' ? (
-                    <div style={{ padding: '20px', background: '#f9fbfd', borderRadius: '15px', border: '1px solid #e1e8ed' }}>
+                    <div style={{ padding: '20px', background: 'var(--bg-primary)', borderRadius: '15px', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                             <div style={{ padding: '10px', background: '#3498db', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Trophy size={20} color="#fff" />
                             </div>
-                            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>METAS</h3>
+                            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '18px' }}>METAS</h3>
                         </div>
 
-                        <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '12px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                                 <Target size={20} style={{ color: '#3498db' }} />
-                                <span style={{ fontWeight: 'bold', color: '#34495e' }}>Meta de Ventas Mensual</span>
+                                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Meta de Ventas Mensual</span>
                             </div>
 
-                            <p style={{ fontSize: '13px', color: '#7f8c8d', marginBottom: '15px', lineHeight: '1.4' }}>
+                            <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '15px', lineHeight: '1.4' }}>
                                 Define el objetivo de ventas brutas para el mes actual. Este valor se utilizará en los indicadores de rendimiento del dashboard.
                             </p>
 
@@ -364,7 +357,7 @@ const SalesModal = ({
                                 gap: '15px'
                             }}>
                                 <div style={{ position: 'relative', flex: 1 }}>
-                                    <DollarSign size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#95a5a6' }} />
+                                    <DollarSign size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-primary)' }} />
                                     <input
                                         type="number"
                                         value={localSalesGoal}
@@ -377,7 +370,8 @@ const SalesModal = ({
                                             fontSize: '18px',
                                             fontWeight: 'bold',
                                             outline: 'none',
-                                            color: '#2c3e50'
+                                            backgroundColor: 'var(--bg-primary)',
+                                            color: 'var(--text-primary)'
                                         }}
                                     />
                                 </div>
@@ -407,9 +401,9 @@ const SalesModal = ({
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '20px', padding: '15px', background: '#fffbea', borderRadius: '10px', border: '1px solid #ffe58f', display: 'flex', gap: '10px' }}>
+                        <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255, 235, 59, 0.1)', borderRadius: '10px', border: '1px solid #ffe58f', display: 'flex', gap: '10px' }}>
                             <span style={{ fontSize: '20px' }}>💡</span>
-                            <p style={{ margin: 0, fontSize: '12px', color: '#856404', lineHeight: '1.4' }}>
+                            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.4' }}>
                                 <strong>Consejo:</strong> Una meta realista motiva a tu equipo. Puedes ajustar este valor en cualquier momento y los cambios se verán reflejados inmediatamente en el dashboard de finanzas.
                             </p>
                         </div>
@@ -419,21 +413,37 @@ const SalesModal = ({
                         {/* FILTRO DE FECHA (RANGO) */}
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>DESDE:</span>
                                 <input
                                     type="date"
                                     value={reportStartDate}
                                     onChange={(e) => setReportStartDate(e.target.value)}
-                                    style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
+                                    style={{
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        fontSize: '14px',
+                                        backgroundColor: 'var(--bg-primary)',
+                                        color: 'var(--text-primary)',
+                                        colorScheme: 'dark'
+                                    }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>HASTA:</span>
                                 <input
                                     type="date"
                                     value={reportEndDate}
                                     onChange={(e) => setReportEndDate(e.target.value)}
-                                    style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
+                                    style={{
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        fontSize: '14px',
+                                        backgroundColor: 'var(--bg-primary)',
+                                        color: 'var(--text-primary)',
+                                        colorScheme: 'dark'
+                                    }}
                                 />
                             </div>
                             <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', alignSelf: 'flex-end' }}>
@@ -460,26 +470,26 @@ const SalesModal = ({
 
                         {reportStartDate > reportEndDate && (
                             <div style={{
-                                background: '#f8d7da', color: '#721c24', padding: '10px', borderRadius: '10px',
-                                marginBottom: '15px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #f5c6cb'
+                                background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '10px', borderRadius: '10px',
+                                marginBottom: '15px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #e74c3c'
                             }}>
                                 ⚠️ La fecha "Desde" no puede ser mayor a la fecha "Hasta".
                             </div>
                         )}
 
                         <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
-                            <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '15px' }}>
+                            <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '15px' }}>
                                 {loading ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>Cargando ventas...</div>
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)' }}>Cargando ventas...</div>
                                 ) : filteredSales.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>No hay ventas en esta sección</div>
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)' }}>No hay ventas en esta sección</div>
                                 ) : (
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                         <thead>
-                                            <tr style={{ background: '#f8f9fa', borderBottom: '1.5px solid #eee', position: 'sticky', top: 0, zIndex: 5 }}>
-                                                <th style={{ textAlign: 'left', padding: '12px', color: '#666' }}>Fecha/Hora</th>
-                                                <th style={{ textAlign: 'left', padding: '12px', color: '#666' }}>Cliente</th>
-                                                <th style={{ textAlign: 'right', padding: '12px', color: '#666' }}>Total</th>
+                                            <tr style={{ background: 'var(--bg-highlight)', borderBottom: '1.5px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 5 }}>
+                                                <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Fecha/Hora</th>
+                                                <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Cliente</th>
+                                                <th style={{ textAlign: 'right', padding: '12px', color: 'var(--text-primary)' }}>Total</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -488,19 +498,19 @@ const SalesModal = ({
                                                     key={sale.id}
                                                     onClick={() => setSelectedSale(sale)}
                                                     style={{
-                                                        borderBottom: '1px solid #eee',
+                                                        borderBottom: '1px solid var(--border-color)',
                                                         cursor: 'pointer',
-                                                        backgroundColor: activeSale?.id === sale.id ? '#e8f4fd' : 'transparent',
+                                                        backgroundColor: activeSale?.id === sale.id ? 'var(--bg-highlight)' : 'transparent',
                                                         transition: 'background 0.2s'
                                                     }}
                                                 >
                                                     <td style={{ padding: '12px' }}>
-                                                        <div style={{ fontWeight: '500', color: '#2c3e50' }}>{new Date(sale.created_at || sale.timestamp).toLocaleDateString()}</div>
-                                                        <div style={{ fontSize: '11px', color: '#95a5a6' }}>{new Date(sale.created_at || sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{new Date(sale.created_at || sale.timestamp).toLocaleDateString()}</div>
+                                                        <div style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{new Date(sale.created_at || sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
-                                                        <div style={{ fontWeight: '500', color: '#2c3e50' }}>{sale.customer_name}</div>
-                                                        {sale.payment_method && <div style={{ fontSize: '11px', color: '#95a5a6' }}>{sale.payment_method}</div>}
+                                                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{sale.customer_name}</div>
+                                                        {sale.payment_method && <div style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{sale.payment_method}</div>}
                                                     </td>
                                                     <td style={{ padding: '12px', textAlign: 'right' }}>
                                                         <div style={{ fontWeight: '900', color: sale.status === 'cancelado' ? '#bdc3c7' : '#27ae60' }}>
@@ -517,8 +527,8 @@ const SalesModal = ({
                                     <button
                                         onClick={loadMoreSales}
                                         style={{
-                                            width: '100%', padding: '12px', background: '#fff', color: '#3498db',
-                                            border: 'none', borderTop: '1px solid #eee', fontWeight: 'bold', cursor: 'pointer'
+                                            width: '100%', padding: '12px', background: 'var(--bg-primary)', color: '#3498db',
+                                            border: 'none', borderTop: '1px solid var(--border-color)', fontWeight: 'bold', cursor: 'pointer'
                                         }}
                                     >
                                         ⬇️ Cargar más...
@@ -527,11 +537,11 @@ const SalesModal = ({
                             </div>
 
                             {activeSale && (
-                                <div style={{ flex: 1, backgroundColor: '#fdfcfe', padding: '20px', borderRadius: '15px', border: '1.5px solid #f1f0f4', animation: 'fadeIn 0.3s ease' }}>
+                                <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', padding: '20px', borderRadius: '15px', border: '1.5px solid var(--border-color)', animation: 'fadeIn 0.3s ease', boxShadow: 'var(--card-shadow)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                                         <div>
-                                            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>Ticket #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}</h3>
-                                            <div style={{ fontSize: '12px', color: '#95a5a6', marginTop: '4px' }}>
+                                            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '18px' }}>Ticket #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}</h3>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '4px' }}>
                                                 {new Date(activeSale.created_at || activeSale.timestamp).toLocaleString()}
                                             </div>
                                         </div>
@@ -547,20 +557,20 @@ const SalesModal = ({
                                     <div style={{ marginBottom: '20px' }}>
                                         {(activeSale.items || activeSale.sale_items)?.map((item, i) => (
                                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-                                                <span style={{ color: '#34495e' }}>{item.quantity}x {item.name || item.products?.name}</span>
-                                                <span style={{ fontWeight: 'bold', color: '#2c3e50' }}>${((item.sale_price || item.price) * item.quantity).toFixed(2)}</span>
+                                                <span style={{ color: 'var(--text-primary)' }}>{item.quantity}x {item.name || item.products?.name}</span>
+                                                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>${((item.sale_price || item.price) * item.quantity).toFixed(2)}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div style={{ borderTop: '2px solid #eee', paddingTop: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#7f8c8d' }}>TOTAL</span>
+                                    <div style={{ borderTop: '2px solid var(--border-color)', paddingTop: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>TOTAL</span>
                                         <span style={{ fontWeight: '900', fontSize: '22px', color: '#27ae60' }}>${parseFloat(activeSale.total).toFixed(2)}</span>
                                     </div>
 
                                     <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {activeTab === 'offline' && (
-                                            <div style={{ padding: '10px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #ffeeba' }}>
+                                            <div style={{ padding: '10px', backgroundColor: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #f1c40f' }}>
                                                 ⚠️ Venta sin sincronizar
                                             </div>
                                         )}

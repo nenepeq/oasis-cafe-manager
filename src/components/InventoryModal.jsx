@@ -158,25 +158,26 @@ const InventoryModal = ({
                 // className="glass-modal-content" // REMOVED to match Catalog Style
                 style={{
                     position: 'relative',
-                    backgroundColor: '#fff',
+                    backgroundColor: 'var(--bg-secondary)',
                     padding: '25px',
                     borderRadius: '25px',
                     width: '95%',
                     maxWidth: '900px',
                     maxHeight: '90vh',
                     overflowY: 'auto',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                    boxShadow: 'var(--card-shadow)',
+                    color: 'var(--text-primary)'
                 }}
             >
                 <button
                     onClick={() => setShowInventory(false)}
-                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}
+                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', zIndex: 10 }}
                 >
                     <X size={24} />
                 </button>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingRight: '40px' }}>
-                    <h2 style={{ color: '#4a3728', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '12px', fontSize: '22px' }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '12px', fontSize: '22px' }}>
                         <Package size={28} /> Stock y Gastos
                     </h2>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -198,7 +199,8 @@ const InventoryModal = ({
                         style={{
                             flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'existencias' ? 'rgba(39, 174, 96, 0.1)' : 'transparent',
-                            color: activeTab === 'existencias' ? '#27ae60' : 'var(--color-primary)',
+                            color: activeTab === 'existencias' ? '#27ae60' : 'var(--text-primary)',
+                            opacity: activeTab === 'existencias' ? 1 : 0.6,
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'existencias' ? '3px solid #27ae60' : '3px solid transparent',
                             transition: 'all 0.2s',
@@ -212,7 +214,8 @@ const InventoryModal = ({
                         style={{
                             flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'entradas' ? 'rgba(52, 152, 219, 0.1)' : 'transparent',
-                            color: activeTab === 'entradas' ? '#3498db' : 'var(--color-primary)',
+                            color: activeTab === 'entradas' ? '#3498db' : 'var(--text-primary)',
+                            opacity: activeTab === 'entradas' ? 1 : 0.6,
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'entradas' ? '3px solid #3498db' : '3px solid transparent',
                             transition: 'all 0.2s',
@@ -226,7 +229,8 @@ const InventoryModal = ({
                         style={{
                             flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'gastos' ? 'rgba(230, 126, 34, 0.1)' : 'transparent',
-                            color: activeTab === 'gastos' ? '#e67e22' : 'var(--color-primary)',
+                            color: activeTab === 'gastos' ? '#e67e22' : 'var(--text-primary)',
+                            opacity: activeTab === 'gastos' ? 1 : 0.6,
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'gastos' ? '3px solid #e67e22' : '3px solid transparent',
                             transition: 'all 0.2s',
@@ -240,7 +244,8 @@ const InventoryModal = ({
                         style={{
                             flex: 1, padding: '12px 4px', borderRadius: '12px 12px 0 0', border: 'none', fontSize: '11px',
                             background: activeTab === 'mermas' ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
-                            color: activeTab === 'mermas' ? '#e74c3c' : 'var(--color-primary)',
+                            color: activeTab === 'mermas' ? '#e74c3c' : 'var(--text-primary)',
+                            opacity: activeTab === 'mermas' ? 1 : 0.6,
                             fontWeight: '900', cursor: 'pointer',
                             borderBottom: activeTab === 'mermas' ? '3px solid #e74c3c' : '3px solid transparent',
                             transition: 'all 0.2s',
@@ -254,9 +259,9 @@ const InventoryModal = ({
                 <div>
                     {/* SECCIÓN: EXISTENCIAS */}
                     {activeTab === 'existencias' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
+                        <div style={{ background: 'var(--bg-primary)', padding: '20px', borderRadius: '15px', border: '1px solid var(--border-color)', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000', margin: 0 }}>EXISTENCIAS ACTUALES</h3>
+                                <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', margin: 0 }}>EXISTENCIAS ACTUALES</h3>
                                 {inventoryList.length > 0 && (
                                     <button
                                         onClick={handleExportInventoryExcel}
@@ -269,19 +274,19 @@ const InventoryModal = ({
                             </div>
                             <div className="table-container no-scrollbar">
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
-                                    <thead style={{ background: 'var(--bg-highlight)', borderBottom: '2px solid var(--color-secondary)' }}>
+                                    <thead style={{ background: 'var(--bg-highlight)', borderBottom: '2px solid var(--border-color)' }}>
                                         <tr>
-                                            <th style={{ padding: '12px 5px', textAlign: 'left', color: '#000' }}>Producto</th>
-                                            <th style={{ padding: '12px 5px', color: '#000', width: '70px', textAlign: 'center' }}>Stock</th>
-                                            <th style={{ padding: '12px 5px', color: '#000', width: '50px', textAlign: 'center' }}>Info</th>
+                                            <th style={{ padding: '12px 5px', textAlign: 'left', color: 'var(--text-primary)' }}>Producto</th>
+                                            <th style={{ padding: '12px 5px', color: 'var(--text-primary)', width: '70px', textAlign: 'center' }}>Stock</th>
+                                            <th style={{ padding: '12px 5px', color: 'var(--text-primary)', width: '50px', textAlign: 'center' }}>Info</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {inventoryList.map((inv, index) => (
-                                            <tr key={index} style={{ borderBottom: '1px solid rgba(74, 55, 40, 0.1)' }}>
+                                            <tr key={index} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                                 <td style={{
                                                     padding: '12px 5px',
-                                                    color: '#000',
+                                                    color: 'var(--text-primary)',
                                                     fontWeight: '600',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
@@ -289,7 +294,7 @@ const InventoryModal = ({
                                                 }} title={inv.products?.name}>
                                                     {inv.products?.name}
                                                 </td>
-                                                <td style={{ padding: '12px 5px', textAlign: 'center', fontWeight: '900', color: '#000' }}>{inv.stock}</td>
+                                                <td style={{ padding: '12px 5px', textAlign: 'center', fontWeight: '900', color: 'var(--text-primary)' }}>{inv.stock}</td>
                                                 <td style={{ padding: '12px 5px', textAlign: 'center' }}>
                                                     {inv.stock === 0 ? (
                                                         <XCircle color="#e74c3c" size={16} />
@@ -309,14 +314,14 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: ENTRADAS DE INVENTARIO (CARRITO) */}
                     {activeTab === 'entradas' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE ENTRADAS (STOCK)</h3>
+                        <div style={{ background: 'var(--bg-primary)', padding: '20px', borderRadius: '15px', border: '1px solid var(--border-color)', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '15px' }}>REGISTRO DE ENTRADAS (STOCK)</h3>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                 <select
                                     value={selectedPurchaseProd}
                                     onChange={(e) => setSelectedPurchaseProd(e.target.value)}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                 >
                                     <option value="">Seleccionar producto...</option>
                                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -328,7 +333,7 @@ const InventoryModal = ({
                                         min="1"
                                         value={purchaseQty || ''}
                                         onChange={(e) => setPurchaseQty(parseInt(e.target.value) || 0)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     />
                                     <input
                                         type="number"
@@ -337,7 +342,7 @@ const InventoryModal = ({
                                         step="0.01"
                                         value={purchaseCost || ''}
                                         onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     />
                                 </div>
                                 <button
@@ -365,18 +370,18 @@ const InventoryModal = ({
 
                             {/* LISTA DE ÍTEMS EN EL TICKET DE ENTRADA */}
                             <div style={{ marginBottom: '20px' }}>
-                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '10px' }}>PRODUCTOS A INGRESAR:</h4>
+                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '10px' }}>PRODUCTOS A INGRESAR:</h4>
                                 {purchaseCart.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px', background: '#f5f5f5', borderRadius: '10px', border: '1px dashed #ccc' }}>
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)', fontSize: '13px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px dashed var(--border-color)' }}>
                                         No hay productos agregados aún
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {purchaseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                                                 <div>
                                                     <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
-                                                    <div style={{ fontSize: '11px', color: '#666' }}>{item.qty} unids x ${item.cost.toFixed(2)} unit.</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.qty} unids x ${item.cost.toFixed(2)} unit.</div>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <span style={{ fontWeight: '900', color: '#27ae60' }}>${(item.qty * item.cost).toFixed(2)}</span>
@@ -392,7 +397,7 @@ const InventoryModal = ({
                             </div>
 
                             {/* FOTO DEL TICKET GLOBAL (COMPRAS) */}
-                            <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '20px' }}>
+                            <div style={{ background: 'var(--bg-secondary)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <button
                                         onClick={() => document.getElementById('purchase-file-input').click()}
@@ -424,7 +429,7 @@ const InventoryModal = ({
                                 disabled={loading || purchaseCart.length === 0}
                                 style={{
                                     width: '100%', padding: '15px', background: (loading || purchaseCart.length === 0) ? '#ccc' : '#27ae60',
-                                    color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
+                                    color: (loading || purchaseCart.length === 0) ? '#666' : '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
                                     cursor: (loading || purchaseCart.length === 0) ? 'not-allowed' : 'pointer'
                                 }}
                             >
@@ -435,12 +440,12 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: GASTOS DE OPERACIÓN (CARRITO) */}
                     {activeTab === 'gastos' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE GASTOS (POR TICKET)</h3>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '15px', border: '1px solid var(--border-color)', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '15px' }}>REGISTRO DE GASTOS (POR TICKET)</h3>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '10px' }}>
-                                    <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}>
+                                    <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}>
                                         {expenseCategories.map((cat, idx) => <option key={idx} value={cat} disabled={cat.startsWith('---')}>{cat}</option>)}
                                     </select>
                                     <input
@@ -450,7 +455,7 @@ const InventoryModal = ({
                                         step="0.01"
                                         value={expenseMonto || ''}
                                         onChange={(e) => setExpenseMonto(parseFloat(e.target.value) || 0)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     />
                                 </div>
                                 <input
@@ -458,7 +463,7 @@ const InventoryModal = ({
                                     placeholder="Concepto (ej. Detergente, Jabón, Pan...)"
                                     value={expenseConcepto}
                                     onChange={(e) => setExpenseConcepto(e.target.value)}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                 />
                                 <button
                                     onClick={() => {
@@ -480,18 +485,18 @@ const InventoryModal = ({
 
                             {/* LISTA DE ÍTEMS EN EL TICKET */}
                             <div style={{ marginBottom: '20px' }}>
-                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#666', marginBottom: '10px' }}>ÍTEMS EN ESTE TICKET:</h4>
+                                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '10px' }}>ÍTEMS EN ESTE TICKET:</h4>
                                 {expenseCart.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '13px', background: '#f5f5f5', borderRadius: '10px', border: '1px dashed #ccc' }}>
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)', fontSize: '13px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px dashed var(--border-color)' }}>
                                         No hay ítems agregados aún
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {expenseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                                                 <div>
                                                     <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.concepto}</div>
-                                                    <div style={{ fontSize: '11px', color: '#666' }}>{item.categoria}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.categoria}</div>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <span style={{ fontWeight: '900', color: '#e74c3c' }}>${item.monto.toFixed(2)}</span>
@@ -507,7 +512,7 @@ const InventoryModal = ({
                             </div>
 
                             {/* FOTO DEL TICKET GLOBAL */}
-                            <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '20px' }}>
+                            <div style={{ background: 'var(--bg-secondary)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <button
                                         onClick={() => document.getElementById('expense-file-input').click()}
@@ -539,7 +544,7 @@ const InventoryModal = ({
                                 disabled={loading || expenseCart.length === 0}
                                 style={{
                                     width: '100%', padding: '15px', background: (loading || expenseCart.length === 0) ? '#ccc' : '#27ae60',
-                                    color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
+                                    color: (loading || expenseCart.length === 0) ? '#000' : '#fff', border: 'none', borderRadius: '12px', fontWeight: '900', fontSize: '16px',
                                     cursor: (loading || expenseCart.length === 0) ? 'not-allowed' : 'pointer'
                                 }}
                             >
@@ -550,13 +555,13 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: MERMAS */}
                     {activeTab === 'mermas' && (
-                        <div style={{ background: '#f8d7da', padding: '20px', borderRadius: '15px', border: '2px solid #dc3545', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#721c24', marginBottom: '15px' }}>REGISTRO DE MERMAS Y BAJAS</h3>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '15px', border: '2px solid #e74c3c', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#e74c3c', marginBottom: '15px' }}>REGISTRO DE MERMAS Y BAJAS</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <select
                                     value={selectedShrinkageProd}
                                     onChange={(e) => setSelectedShrinkageProd(e.target.value)}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                 >
                                     <option value="">Seleccionar producto...</option>
                                     {products.map(p => {
@@ -572,12 +577,12 @@ const InventoryModal = ({
                                         min="1"
                                         value={shrinkageQty || ''}
                                         onChange={(e) => setShrinkageQty(parseInt(e.target.value) || 0)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     />
                                     <select
                                         value={shrinkageReason}
                                         onChange={(e) => setShrinkageReason(e.target.value)}
-                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', fontSize: '14px' }}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     >
                                         <option value="Dañado">Dañado / Defectuoso</option>
                                         <option value="Vencido">Vencido / Caducado</option>
@@ -594,7 +599,7 @@ const InventoryModal = ({
                                     style={{
                                         width: '100%',
                                         padding: '15px',
-                                        background: loading ? '#ccc' : (selectedShrinkageProd && shrinkageQty > 0 ? '#dc3545' : '#ddd'),
+                                        background: loading ? '#ccc' : (selectedShrinkageProd && shrinkageQty > 0 ? '#e74c3c' : '#555'),
                                         color: '#fff',
                                         border: 'none',
                                         borderRadius: '10px',
@@ -606,7 +611,7 @@ const InventoryModal = ({
                                 >
                                     {loading ? <Loader2 size={18} className="animate-spin" /> : 'REGISTRAR BAJA DE STOCK'}
                                 </button>
-                                <p style={{ fontSize: '11px', color: '#721c24', fontStyle: 'italic', marginTop: '5px' }}>
+                                <p style={{ fontSize: '11px', color: '#e74c3c', fontStyle: 'italic', marginTop: '5px' }}>
                                     * Esta acción descontará el stock e incluirá un registro en gastos con valor $0 para control administrativo.
                                 </p>
                             </div>

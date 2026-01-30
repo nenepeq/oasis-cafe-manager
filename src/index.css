@@ -7,18 +7,51 @@
 
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* VARIABLES DE TEMA: MODO CLARO (Default) */
+  --bg-primary: #f8f6f2;
+  --bg-secondary: #ffffff;
+  --bg-highlight: #f0fdf4;
+  --text-primary: #4a3728;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --green_btn_primary: #27ae60;
+  --green_btn_hover: #45a049;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+
   line-height: 1.5;
   font-weight: 400;
 
-  /* Forzamos modo claro para Oasis Café */
   color-scheme: light;
-  color: #4a3728;
-  background-color: #f8f6f2;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* VARIABLES: MODO OSCURO */
+[data-theme="dark"] {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-highlight: #2c2c2c;
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --border-color: #333333;
+  --green_btn_primary: #1e8449;
+  --green_btn_hover: #196f3d;
+  --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}
+
+/* PLACEHOLDERS EN MODO OSCURO */
+[data-theme="dark"] ::placeholder {
+  color: var(--text-primary);
+  opacity: 1;
 }
 
 a {
@@ -139,8 +172,10 @@ button:focus-visible {
 
   .product-card {
     height: 125px !important;
-    /* Altura incrementada para 13px */
     padding: 5px !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color);
   }
 
   .product-name {
@@ -155,9 +190,10 @@ button:focus-visible {
     flex: none !important;
     width: 100% !important;
     border-left: none !important;
-    border-top: 4px solid #4a3728 !important;
+    border-top: 4px solid var(--text-primary) !important;
     padding: 20px !important;
-    background-color: #fff !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
     min-height: 400px;
   }
 }

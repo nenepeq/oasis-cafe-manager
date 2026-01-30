@@ -113,35 +113,37 @@ const StarProductsModal = ({
                 className="modal-content-responsive glass-modal-content"
                 style={{
                     position: 'relative',
-                    // backgroundColor: '#fff', // Replaced by class
+                    backgroundColor: 'var(--bg-secondary)',
                     padding: '30px',
-                    // borderRadius: '30px', // Replaced by class
+                    borderRadius: '30px',
                     width: '95%',
                     maxWidth: '700px',
                     maxHeight: '85vh',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    boxShadow: 'var(--card-shadow)',
+                    color: 'var(--text-primary)'
                 }}
             >
                 <button
                     onClick={() => setShowStarProducts(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000' }}
+                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
                 >
                     <X size={30} />
                 </button>
 
-                <h2 style={{ color: '#4a3728', fontWeight: '900', margin: '0 0 10px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
+                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 10px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
                     <Award size={30} color="#f1c40f" /> Inteligencia de Negocio
                 </h2>
 
                 {/* SELECTOR DE TABS */}
-                <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', background: '#f0ece6', padding: '5px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '20px', background: 'var(--bg-primary)', padding: '5px', borderRadius: '15px', border: '1px solid var(--border-color)' }}>
                     <button
                         onClick={() => setActiveTab('ranking')}
                         style={{
                             flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
-                            background: activeTab === 'ranking' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'ranking' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            background: activeTab === 'ranking' ? 'var(--bg-secondary)' : 'transparent',
+                            color: 'var(--text-primary)', fontWeight: '900', cursor: 'pointer',
+                            boxShadow: activeTab === 'ranking' ? 'var(--card-shadow)' : 'none',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -151,9 +153,9 @@ const StarProductsModal = ({
                         onClick={() => setActiveTab('kpis')}
                         style={{
                             flex: 1, padding: '10px', borderRadius: '12px', border: 'none',
-                            background: activeTab === 'kpis' ? '#fff' : 'transparent',
-                            color: '#4a3728', fontWeight: '900', cursor: 'pointer',
-                            boxShadow: activeTab === 'kpis' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
+                            background: activeTab === 'kpis' ? 'var(--bg-secondary)' : 'transparent',
+                            color: 'var(--text-primary)', fontWeight: '900', cursor: 'pointer',
+                            boxShadow: activeTab === 'kpis' ? 'var(--card-shadow)' : 'none',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -162,23 +164,23 @@ const StarProductsModal = ({
                 </div>
 
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#fffaf0', padding: '15px', borderRadius: '15px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: 'var(--bg-primary)', padding: '15px', borderRadius: '15px', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>DESDE:</span>
                         <input
                             type="date"
                             value={starStartDate}
                             onChange={(e) => setStarStartDate(e.target.value)}
-                            style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }}
+                            style={{ padding: '8px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>HASTA:</span>
                         <input
                             type="date"
                             value={starEndDate}
                             onChange={(e) => setStarEndDate(e.target.value)}
-                            style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd' }}
+                            style={{ padding: '8px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignSelf: 'flex-end' }}>
@@ -198,7 +200,7 @@ const StarProductsModal = ({
                 {activeTab === 'ranking' ? (
                     <div className="table-container">
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
-                            <thead style={{ background: '#4a3728', color: '#fff' }}>
+                            <thead style={{ background: 'var(--bg-highlight)', color: 'var(--text-primary)' }}>
                                 <tr>
                                     <th style={{ padding: '10px 5px', textAlign: 'left' }}>Producto</th>
                                     <th style={{ padding: '10px 5px', textAlign: 'center', width: '60px' }}>Cant.</th>
@@ -207,13 +209,13 @@ const StarProductsModal = ({
                             </thead>
                             <tbody>
                                 {starData.length === 0 ? (
-                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#888' }}>No hay datos</td></tr>
+                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>No hay datos</td></tr>
                                 ) : (
                                     starData.map((item, idx) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                             <td style={{
                                                 padding: '10px 5px',
-                                                color: '#4a3728',
+                                                color: 'var(--text-primary)',
                                                 fontWeight: 'bold',
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
@@ -221,7 +223,7 @@ const StarProductsModal = ({
                                             }} title={item.name}>
                                                 {idx < 3 ? '⭐ ' : ''}{item.name}
                                             </td>
-                                            <td style={{ padding: '10px 5px', textAlign: 'center', fontWeight: '900', color: '#000000' }}>{item.totalQty}</td>
+                                            <td style={{ padding: '10px 5px', textAlign: 'center', fontWeight: '900', color: 'var(--text-primary)' }}>{item.totalQty}</td>
                                             <td style={{ padding: '10px 5px', textAlign: 'right', color: '#27ae60', fontWeight: '900' }}>
                                                 ${item.totalRevenue.toFixed(2)}
                                             </td>

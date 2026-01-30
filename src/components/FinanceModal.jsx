@@ -325,7 +325,7 @@ const FinanceModal = ({
     };
 
     const innerCircleStyle = {
-        background: '#fff',
+        background: 'var(--bg-secondary)',
         width: '80px',
         height: '80px',
         borderRadius: '50%',
@@ -358,45 +358,65 @@ const FinanceModal = ({
                 className="glass-modal-content"
                 style={{
                     position: 'relative',
-                    // backgroundColor: '#fff', // Replaced by class
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
                     padding: '30px',
-                    // borderRadius: '30px', // Replaced by class
+                    borderRadius: '30px',
                     width: '95%',
                     maxWidth: '1000px',
                     maxHeight: '90vh',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    boxShadow: 'var(--card-shadow)'
                 }}
             >
                 <button
                     onClick={() => setShowFinances(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: '#000000', zIndex: 10 }}
+                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', zIndex: 10 }}
                 >
                     <X size={30} />
                 </button>
 
                 <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-                    <h2 style={{ color: '#000', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
                         <PieChart size={28} /> Reporte Financiero
                     </h2>
 
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>DESDE:</span>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>DESDE:</span>
                                 <input
                                     type="date"
                                     value={financeStartDate}
                                     onChange={(e) => setFinanceStartDate(e.target.value)}
-                                    style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }}
+                                    style={{
+                                        padding: '10px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border-color)',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        backgroundColor: 'var(--bg-primary)',
+                                        color: 'var(--text-primary)',
+                                        colorScheme: 'dark'
+                                    }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#888' }}>HASTA:</span>
+                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>HASTA:</span>
                                 <input
                                     type="date"
                                     value={financeEndDate}
                                     onChange={(e) => setFinanceEndDate(e.target.value)}
-                                    style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ddd', fontSize: '14px', fontWeight: 'bold' }}
+                                    style={{
+                                        padding: '10px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border-color)',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        backgroundColor: 'var(--bg-primary)',
+                                        color: 'var(--text-primary)',
+                                        colorScheme: 'dark'
+                                    }}
                                 />
                             </div>
                             <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
@@ -429,16 +449,17 @@ const FinanceModal = ({
                         </div>
 
                         {/* SELECTOR DE PESTAÑAS */}
-                        <div style={{ background: '#fff9e6', padding: '5px', borderRadius: '15px', display: 'flex', alignSelf: 'flex-end' }}>
+                        <div style={{ background: 'var(--bg-primary)', padding: '5px', borderRadius: '15px', display: 'flex', alignSelf: 'flex-end', border: '1px solid var(--border-color)' }}>
                             <button
                                 onClick={() => setActiveTab('data')}
                                 style={{
                                     padding: '8px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold',
-                                    backgroundColor: activeTab === 'data' ? '#fff' : 'transparent',
-                                    color: activeTab === 'data' ? '#4a3728' : '#888',
+                                    backgroundColor: activeTab === 'data' ? 'var(--bg-secondary)' : 'transparent',
+                                    color: 'var(--text-primary)',
                                     boxShadow: activeTab === 'data' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'all 0.3s ease',
+                                    opacity: activeTab === 'data' ? 1 : 0.7
                                 }}
                             >
                                 <TableIcon size={18} /> DATOS
@@ -448,8 +469,8 @@ const FinanceModal = ({
                                 style={{
                                     padding: '8px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold',
-                                    backgroundColor: activeTab === 'charts' ? '#fff' : 'transparent',
-                                    color: activeTab === 'charts' ? '#4a3728' : '#888',
+                                    backgroundColor: activeTab === 'charts' ? 'var(--bg-secondary)' : 'transparent',
+                                    color: activeTab === 'charts' ? 'var(--text-primary)' : 'var(--text-secondary)',
                                     boxShadow: activeTab === 'charts' ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
                                     transition: 'all 0.3s ease'
                                 }}
@@ -486,16 +507,16 @@ const FinanceModal = ({
                             gap: '10px',
                             marginBottom: '20px',
                             paddingBottom: '15px',
-                            borderBottom: '2px solid #f0f0f0'
+                            borderBottom: '2px solid var(--border-color)'
                         }}>
-                            <Target size={24} style={{ color: '#4a3728' }} />
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#4a3728' }}>
+                            <Target size={24} style={{ color: 'var(--text-primary)' }} />
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>
                                 Resumen Ejecutivo del Periodo
                             </h3>
                             <div style={{
                                 marginLeft: 'auto',
                                 fontSize: '11px',
-                                color: '#888',
+                                color: 'var(--text-primary)',
                                 textAlign: 'right'
                             }}>
                                 <div>Comparado con periodo anterior</div>
@@ -542,7 +563,7 @@ const FinanceModal = ({
                                             </span>
                                         </>
                                     )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: '#666', marginTop: '5px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
                                         <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
                                         <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
                                     </div>
@@ -581,7 +602,7 @@ const FinanceModal = ({
                                             </span>
                                         </>
                                     )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: '#666', marginTop: '5px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
                                         <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
                                         <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
                                     </div>
@@ -620,7 +641,7 @@ const FinanceModal = ({
                                             </span>
                                         </>
                                     )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: '#666', marginTop: '5px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
                                         <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
                                         <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
                                     </div>
@@ -636,17 +657,17 @@ const FinanceModal = ({
                         }}>
                             {/* MARGEN DE RENTABILIDAD */}
                             <div style={{
-                                background: '#fff',
-                                border: '1px solid #e5e7eb',
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-color)',
                                 padding: '18px',
                                 borderRadius: '15px',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}>
-                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
                                     📊 MARGEN RENTABILIDAD
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-                                    <span style={{ fontSize: '28px', fontWeight: '900', color: '#000' }}>
+                                    <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
                                         {finData.margen.toFixed(1)}%
                                     </span>
                                     <span style={{
@@ -664,43 +685,43 @@ const FinanceModal = ({
 
                             {/* TICKET PROMEDIO */}
                             <div style={{
-                                background: '#fff',
-                                border: '1px solid #e5e7eb',
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-color)',
                                 padding: '18px',
                                 borderRadius: '15px',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}>
-                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
                                     🎫 TICKET PROMEDIO
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: '900', color: '#000' }}>
+                                <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
                                     ${comparisonMetrics.averageTicket.toFixed(2)}
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-primary)', marginTop: '4px' }}>
                                     {comparisonMetrics.totalSales} ventas realizadas
                                 </div>
                             </div>
 
                             {/* META MENSUAL (DISEÑO PREMIUM) */}
                             <div style={{
-                                background: '#fff',
-                                border: '2px solid #e2e8f0',
+                                background: 'var(--bg-secondary)',
+                                border: '2px solid var(--border-color)',
                                 padding: '18px',
                                 borderRadius: '20px',
                                 boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                                 position: 'relative',
                                 overflow: 'hidden'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', marginBottom: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', marginBottom: '12px' }}>
                                     <span style={{ fontSize: '18px' }}>🎯</span>
                                     <span style={{ fontSize: '12px', fontWeight: 'bold' }}>META MENSUAL</span>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '28px', fontWeight: '900', color: '#1f2937' }}>
+                                    <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text-primary)' }}>
                                         ${monthlySalesTotal.toLocaleString()}
                                     </span>
-                                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
                                         de ${parseFloat(salesGoal || 0).toLocaleString()}
                                     </span>
                                 </div>
@@ -711,14 +732,13 @@ const FinanceModal = ({
 
                                 <div style={{ width: '100%', height: '10px', background: '#f3f4f6', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
                                     <div style={{
-                                        width: `${Math.min((monthlySalesTotal / (salesGoal || 1)) * 100, 100)}%`,
                                         height: '100%',
-                                        backgroundColor: monthlySalesTotal >= salesGoal ? '#10b981' : '#3b82f6',
+                                        backgroundColor: monthlySalesTotal >= salesGoal ? 'var(--color-accent)' : 'var(--color-secondary)',
                                         transition: 'width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                                     }}></div>
                                 </div>
 
-                                <div style={{ fontSize: '12px', color: '#4b5563', fontWeight: '500' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>
                                     {monthlySalesTotal >= salesGoal
                                         ? '✅ ¡OBJETIVO LOGRADO!'
                                         : `Falta: $${Math.max(0, (salesGoal || 0) - monthlySalesTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
@@ -727,19 +747,19 @@ const FinanceModal = ({
 
                             {/* PRODUCTO TOP */}
                             <div style={{
-                                background: '#fff',
-                                border: '1px solid #e5e7eb',
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-color)',
                                 padding: '18px',
                                 borderRadius: '15px',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}>
-                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
                                     🔥 PRODUCTO TOP
                                 </div>
-                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '4px', lineHeight: '1.2' }}>
+                                <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '4px', lineHeight: '1.2' }}>
                                     {comparisonMetrics.topProduct.name}
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#666' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-primary)' }}>
                                     {comparisonMetrics.topProduct.quantity} unidades vendidas
                                 </div>
                             </div>
@@ -748,7 +768,7 @@ const FinanceModal = ({
                 )}
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '50px', color: '#999', fontSize: '18px' }}>Analizando datos...</div>
+                    <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text-secondary)', fontSize: '18px' }}>Analizando datos...</div>
                 ) : (
                     <>
                         {activeTab === 'charts' ? (
@@ -788,12 +808,12 @@ const FinanceModal = ({
                                 </div>
 
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '30px' }}>
-                                    <div style={{ flex: 1, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Distribución de Flujo</h3>
+                                    <div style={{ flex: 1, minWidth: '300px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '25px', padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: 'var(--text-primary)' }}>Distribución de Flujo</h3>
                                         <div style={donutStyle}>
                                             <div style={innerCircleStyle}>
-                                                <span style={{ fontSize: '20px', fontWeight: '900', color: '#000' }}>{percentageProfit > 0 ? percentageProfit.toFixed(2) : 0}%</span>
-                                                <span style={{ fontSize: '10px', color: '#888' }}>Rentabilidad</span>
+                                                <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)' }}>{percentageProfit > 0 ? percentageProfit.toFixed(2) : 0}%</span>
+                                                <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Rentabilidad</span>
                                             </div>
                                         </div>
                                         <div style={{ marginTop: '20px', width: '100%' }}>
@@ -838,15 +858,15 @@ const FinanceModal = ({
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
                                     {/* 1.- GASTOS OPERATIVOS (IZQUIERDA) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
-                                        {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>Sin gastos operativos en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
+                                        {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>Sin gastos operativos en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyExpensesList.map((exp) => (
-                                                        <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                        <tr key={exp.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                            <td style={{ padding: '8px 0', color: 'var(--text-primary)', wordBreak: 'break-word', verticalAlign: 'top' }}>
                                                                 <div style={{ lineHeight: '1.4' }}>
-                                                                    {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: '#999' }}>({exp.categoria})</span>
+                                                                    {exp.fecha} - {exp.concepto} <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>({exp.categoria})</span>
                                                                     {exp.ticket_url && (
                                                                         <a href={exp.ticket_url} target="_blank" rel="noreferrer" style={{ marginLeft: '5px', color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
                                                                             <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
@@ -864,29 +884,29 @@ const FinanceModal = ({
 
                                     {/* 2.- ENTRADAS DE STOCK (MEDIO) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
-                                        {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay compras de stock en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
+                                        {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>No hay compras de stock en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyStockList.map((purch) => (
-                                                        <tr key={purch.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                        <tr key={purch.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                            <td style={{ padding: '8px 0', color: 'var(--text-primary)', wordBreak: 'break-word', verticalAlign: 'top' }}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
                                                                         <span style={{ fontWeight: '600' }}>#{purch.purchase_number || purch.id.toString().slice(0, 4)}</span>
-                                                                        <span style={{ color: '#888' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
+                                                                        <span style={{ color: '#ffffff' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
                                                                         {purch.ticket_url && (
                                                                             <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
                                                                                 <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
                                                                             </a>
                                                                         )}
                                                                     </div>
-                                                                    <div style={{ fontSize: '10px', color: '#888', fontStyle: 'italic', lineHeight: '1.4' }}>
+                                                                    <div style={{ fontSize: '10px', color: '#ffffff', fontStyle: 'italic', lineHeight: '1.4' }}>
                                                                         {purch.purchase_items?.map((i, idx) => {
                                                                             const totalLine = i.quantity * i.cost;
                                                                             const unitCost = i.cost; // Ya está almacenado como unitario
                                                                             return (
-                                                                                <div key={idx} style={{ borderBottom: '1px dashed #eee', paddingBottom: '2px', marginBottom: '2px' }}>
+                                                                                <div key={idx} style={{ borderBottom: '1px dashed var(--border-color)', paddingBottom: '2px', marginBottom: '2px' }}>
                                                                                     • <span style={{ fontWeight: 'bold' }}>{i.products?.name}</span>: {i.quantity} pz.
                                                                                     <span style={{ marginLeft: '5px', color: '#e74c3c' }}>Total: ${totalLine.toFixed(2)}</span>
                                                                                     <span style={{ marginLeft: '5px', background: '#eafaf1', padding: '1px 4px', borderRadius: '4px', color: '#27ae60', fontWeight: 'bold' }}>(${unitCost.toFixed(2)} c/u)</span>
@@ -906,17 +926,17 @@ const FinanceModal = ({
 
                                     {/* 3.- VENTAS DETALLADAS (DERECHA) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
-                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#999' }}>No hay ventas en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
+                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>No hay ventas en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailySalesList.map((sale) => (
-                                                        <tr key={sale.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                            <td style={{ padding: '8px 0', color: '#555', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                        <tr key={sale.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                            <td style={{ padding: '8px 0', color: 'var(--text-primary)', wordBreak: 'break-word', verticalAlign: 'top' }}>
                                                                 <div style={{ fontWeight: '600' }}>
                                                                     #{sale.ticket_number || sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
                                                                 </div>
-                                                                <div style={{ fontSize: '10px', color: '#999' }}>
+                                                                <div style={{ fontSize: '10px', color: '#ffffff' }}>
                                                                     {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </div>
                                                             </td>

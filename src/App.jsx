@@ -139,6 +139,7 @@ function App() {
   const [totalIngresosReporte, setTotalIngresosReporte] = useState(0);
   const [reportStartDate, setReportStartDate] = useState(getMXDate());
   const [reportEndDate, setReportEndDate] = useState(getMXDate());
+  const [reportExpenses, setReportExpenses] = useState([]);
 
   // --- ESTADOS DE FINANZAS ---
   const [financeStartDate, setFinanceStartDate] = useState(getMXDate());
@@ -168,6 +169,10 @@ function App() {
   const [expenseCart, setExpenseCart] = useState([]);
   const [expenseFile, setExpenseFile] = useState(null);
   const [purchaseFile, setPurchaseFile] = useState(null);
+  const [expenseCategories, setExpenseCategories] = useState([
+    'Insumos y Alimentos', 'Empaques y Desechables', 'Operación del Local', 'Personal', 'Finanzas y Control', 'Otros'
+  ]);
+  const [expenseSuggestions, setExpenseSuggestions] = useState([]);
 
   // --- ESTADO DE CONFIGURACIÓN ---
   const [salesGoal, setSalesGoal] = useState(50000);
@@ -350,13 +355,7 @@ function App() {
     return ['Todos', ...Array.from(uniqueCats).sort()];
   }, [products]);
 
-  const expenseCategories = [
-    '---☕ INSUMOS Y ALIMENTOS ☕---', 'Agua purificada', 'Azúcar', 'Café molido', 'Canela', 'Chobani', 'Crema batida', 'Embutidos', 'Endulzantes', 'Hielo', 'Jarabes saborizantes', 'Lácteos', 'Pan', 'Té', 'Vegetales',
-    '---🧾 EMPAQUES Y DESECHABLES 🧾---', 'Cucharas y agitadores', 'Etiquetas o stickers', 'Fajitas para Café 50 pz', 'Popotes', 'Servilletas', 'Tapa Plana para vaso 16 oz Inix 50 pz', 'Tapa Traveler Negra 100 pz 12, 16, 20 oz', 'Vaso Cristal 16 oz Inix 473 ml 50 pz', 'Vaso Papel 16 oz blanco 50 pz',
-    '--- 🏪OPERACIÓN DEL LOCAL 🏪---', 'Limpieza y sanitizantes', 'Servicios básicos',
-    '---👥 PERSONAL 👥---', 'Nómina',
-    '---📉 FINANZAS Y CONTROL 📉---', 'Otros'
-  ];
+
 
   // --- EFECTOS INICIALES Y CARGA DE DATOS ---
   useEffect(() => {
@@ -926,9 +925,11 @@ function App() {
     if (showReport && user) {
       if (reportStartDate <= reportEndDate) {
         fetchSales();
+        fetchReportExpenses();
         fetchMonthlySalesTotal();
       } else {
         setSales([]);
+        setReportExpenses([]);
         setTotalIngresosReporte(0);
       }
     }
@@ -1019,6 +1020,32 @@ function App() {
       setSalesOffset(offset);
     } else {
       console.error("Error fetching sales:", error);
+    }
+    setLoading(false);
+  };
+
+
+
+  const fetchReportExpenses = async () => {
+    setLoading(true);
+    try {
+      // Gastos usa columna 'fecha' tipo DATE
+      const { data, error, count } = await supabase
+        .from('expenses')
+        .select('*', { count: 'exact' })
+        .gte('fecha', reportStartDate)
+        .lte('fecha', reportEndDate)
+        .order('fecha', { ascending: false });
+
+      if (!error) {
+        console.log(`[DEBUG] Expenses found: ${data?.length || 0} (Total count: ${count}) for range ${reportStartDate} to ${reportEndDate}`);
+        setReportExpenses(data || []);
+      } else {
+        console.error("[DEBUG] Error fetching report expenses:", error);
+        alert(`Error al cargar gastos: ${error.message}. Verifica las políticas RLS en Supabase.`);
+      }
+    } catch (err) {
+      console.error("[DEBUG] Catch error fetching report expenses:", err);
     }
     setLoading(false);
   };
@@ -1768,6 +1795,7 @@ function App() {
         purchaseCost={purchaseCost} setPurchaseCost={setPurchaseCost} purchaseCart={purchaseCart} setPurchaseCart={setPurchaseCart} handleRegisterPurchase={handleRegisterPurchase}
         expenseCategoria={expenseCategoria} setExpenseCategoria={setExpenseCategoria} expenseMonto={expenseMonto} setExpenseMonto={setExpenseMonto}
         expenseConcepto={expenseConcepto} setExpenseConcepto={setExpenseConcepto} expenseCategories={expenseCategories}
+        expenseSuggestions={expenseSuggestions}
         expenseCart={expenseCart} setExpenseCart={setExpenseCart} handleRegisterExpense={handleRegisterExpense}
         expenseFile={expenseFile} setExpenseFile={setExpenseFile} purchaseFile={purchaseFile} setPurchaseFile={setPurchaseFile}
         selectedShrinkageProd={selectedShrinkageProd} setSelectedShrinkageProd={setSelectedShrinkageProd}
@@ -1784,13 +1812,12 @@ function App() {
       />
       <SalesModal
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
-        reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={() => fetchSales(0)} totalIngresosReporte={totalIngresosReporte} loading={loading} sales={sales}
+        reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={() => fetchSales(0)} loading={loading} sales={sales}
         selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus} markAsPaid={markAsPaid}
         pendingSales={pendingSales}
         loadMoreSales={() => fetchSales(salesOffset + 50)}
         hasMoreSales={hasMoreSales}
         salesGoal={salesGoal} setSalesGoal={updateSalesGoalInDB}
-        monthlySalesTotal={monthlySalesTotal}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}

@@ -16,7 +16,6 @@ const SalesModal = ({
     reportEndDate,
     setReportEndDate,
     fetchSales,
-    totalIngresosReporte,
     loading,
     sales,
     selectedSale,
@@ -27,8 +26,7 @@ const SalesModal = ({
     hasMoreSales,
     loadMoreSales,
     salesGoal,
-    setSalesGoal,
-    monthlySalesTotal = 0
+    setSalesGoal
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar' | 'config'
     const [localSalesGoal, setLocalSalesGoal] = useState(salesGoal);
@@ -199,6 +197,8 @@ const SalesModal = ({
 
     const totalFiltered = filteredSales.reduce((acc, s) => acc + (s.status !== 'cancelado' ? s.total : 0), 0);
 
+
+
     return (
         <div
             onClick={() => { setShowReport(false); setSelectedSale(null); }}
@@ -282,54 +282,7 @@ const SalesModal = ({
                     )}
                 </div>
 
-                {/* RESUMEN RÁPIDO (KPIs) - Solo se muestra en pestañas de ventas */}
-                {activeTab !== 'config' && (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                        gap: '12px',
-                        marginBottom: '20px'
-                    }}>
-                        {/* TOTAL ACUMULADO DEL MES */}
-                        {/* TOTAL ACUMULADO DEL MES - ELIMINADO POR REDUNDANCIA */}
 
-                        {/* PROGRESO META MENSUAL */}
-                        {/* PROGRESO META MENSUAL */}
-                        <div style={{ background: 'var(--bg-secondary)', border: '1.5px solid var(--border-color)', padding: '15px', borderRadius: '15px', boxShadow: 'var(--card-shadow)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '18px' }}>🎯</span>
-                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>META MENSUAL</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '26px', fontWeight: '900', color: 'var(--text-primary)' }}>
-                                    ${monthlySalesTotal.toLocaleString()}
-                                </span>
-                                <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
-                                    de ${parseFloat(salesGoal || 0).toLocaleString()}
-                                </span>
-                            </div>
-
-                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#3b82f6', marginBottom: '10px' }}>
-                                {((monthlySalesTotal / (salesGoal || 1)) * 100).toFixed(0)}% Alcanzado
-                            </div>
-
-                            <div style={{ width: '100%', height: '10px', background: 'var(--bg-highlight)', borderRadius: '5px', overflow: 'hidden', marginBottom: '12px' }}>
-                                <div style={{
-                                    width: `${Math.min((monthlySalesTotal / (salesGoal || 1)) * 100, 100)}%`,
-                                    height: '100%',
-                                    backgroundColor: monthlySalesTotal >= salesGoal ? '#10b981' : '#3b82f6',
-                                    transition: 'width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                                }}></div>
-                            </div>
-
-                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>
-                                {monthlySalesTotal >= salesGoal
-                                    ? '✅ ¡OBJETIVO MENSUAL LOGRADO!'
-                                    : `Nos falta vender: $${Math.max(0, salesGoal - monthlySalesTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {activeTab === 'config' && userRole === 'admin' ? (
                     <div style={{ padding: '20px', background: 'var(--bg-primary)', borderRadius: '15px', border: '1px solid var(--border-color)' }}>

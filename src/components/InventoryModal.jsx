@@ -34,6 +34,7 @@ const InventoryModal = ({
     purchaseFile,
     setPurchaseFile,
     expenseCategories,
+    expenseSuggestions,
     expenseCart,
     setExpenseCart,
     handleRegisterExpense,
@@ -50,6 +51,8 @@ const InventoryModal = ({
     const [expensePreview, setExpensePreview] = useState(null);
     const [purchasePreview, setPurchasePreview] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
 
     // Limpiar previsualizaciones cuando los archivos se resetean en App.jsx
     useEffect(() => {
@@ -445,9 +448,49 @@ const InventoryModal = ({
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '10px' }}>
-                                    <select value={expenseCategoria} onChange={(e) => setExpenseCategoria(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}>
-                                        {expenseCategories.map((cat, idx) => <option key={idx} value={cat} disabled={cat.startsWith('---')}>{cat}</option>)}
-                                    </select>
+                                    {!isAddingNewCategory ? (
+                                        <select
+                                            value={expenseCategoria}
+                                            onChange={(e) => {
+                                                if (e.target.value === 'NEW_CATEGORY') {
+                                                    setIsAddingNewCategory(true);
+                                                    setExpenseCategoria('');
+                                                } else {
+                                                    setExpenseCategoria(e.target.value);
+                                                }
+                                            }}
+                                            style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
+                                        >
+                                            <option value="" disabled>Seleccionar categoría...</option>
+                                            {expenseCategories.map((cat, idx) => (
+                                                <option key={idx} value={cat}>{cat}</option>
+                                            ))}
+                                            <option value="NEW_CATEGORY" style={{ fontWeight: 'bold', color: '#3498db' }}>+ NUEVA CATEGORÍA...</option>
+                                        </select>
+                                    ) : (
+                                        <div style={{ position: 'relative', display: 'flex', gap: '5px' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Nombre de categoría..."
+                                                value={newCategoryName}
+                                                onChange={(e) => {
+                                                    setNewCategoryName(e.target.value);
+                                                    setExpenseCategoria(e.target.value);
+                                                }}
+                                                autoFocus
+                                                style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '2px solid #3498db', fontSize: '14px' }}
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    setIsAddingNewCategory(false);
+                                                    setExpenseCategoria('Otros');
+                                                }}
+                                                style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '0 5px' }}
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+                                    )}
                                     <input
                                         type="number"
                                         placeholder="$ Monto"
@@ -458,22 +501,39 @@ const InventoryModal = ({
                                         style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
                                     />
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="Concepto (ej. Detergente, Jabón, Pan...)"
-                                    value={expenseConcepto}
-                                    onChange={(e) => setExpenseConcepto(e.target.value)}
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        list="expense-suggestions"
+                                        placeholder="Concepto (ej. Detergente, Jabón, Pan...)"
+                                        value={expenseConcepto}
+                                        onChange={(e) => setExpenseConcepto(e.target.value)}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontSize: '14px' }}
+                                    />
+                                    <datalist id="expense-suggestions">
+                                        {(expenseSuggestions || []).map((sugg, i) => (
+                                            <option key={i} value={sugg} />
+                                        ))}
+                                    </datalist>
+                                </div>
                                 <button
                                     onClick={() => {
                                         if (expenseConcepto.trim() && expenseMonto > 0) {
-                                            setExpenseCart([...expenseCart, { concepto: expenseConcepto.trim(), categoria: expenseCategoria, monto: expenseMonto }]);
+                                            setExpenseCart([...expenseCart, {
+                                                concepto: expenseConcepto.trim(),
+                                                categoria: expenseCategoria || 'Otros',
+                                                monto: expenseMonto
+                                            }]);
                                             setExpenseConcepto('');
                                             setExpenseMonto(0);
+                                            if (isAddingNewCategory) {
+                                                // Reset para permitir volver a seleccionar si se desea
+                                                setIsAddingNewCategory(false);
+                                                setNewCategoryName('');
+                                            }
                                         }
                                     }}
-                                    disabled={!expenseConcepto.trim() || expenseMonto <= 0}
+                                    disabled={!expenseConcepto.trim() || expenseMonto <= 0 || (isAddingNewCategory && !newCategoryName.trim())}
                                     style={{
                                         padding: '12px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold',
                                         cursor: (!expenseConcepto.trim() || expenseMonto <= 0) ? 'not-allowed' : 'pointer', opacity: (!expenseConcepto.trim() || expenseMonto <= 0) ? 0.6 : 1

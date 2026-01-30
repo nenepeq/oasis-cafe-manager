@@ -832,19 +832,19 @@ const FinanceModal = ({
                                         </div>
                                     </div>
 
-                                    <div style={{ flex: 1.5, minWidth: '300px', background: '#fff', border: '1px solid #eee', borderRadius: '25px', padding: '25px' }}>
-                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#666' }}>Análisis de Rentabilidad</h3>
+                                    <div style={{ flex: 1.5, minWidth: '300px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '25px', padding: '25px' }}>
+                                        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: 'var(--text-primary)' }}>Análisis de Rentabilidad</h3>
                                         <div style={{ marginBottom: '20px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                                                 <span>Costo Productos + Gastos</span>
                                                 <span>{percentageExpenses.toFixed(2)}%</span>
                                             </div>
-                                            <div style={{ width: '100%', height: '10px', background: '#fdeadd', borderRadius: '5px', overflow: 'hidden' }}>
+                                            <div style={{ width: '100%', height: '10px', background: 'var(--bg-highlight)', borderRadius: '5px', overflow: 'hidden' }}>
                                                 <div style={{ width: `${percentageExpenses}%`, height: '100%', background: '#e74c3c' }}></div>
                                             </div>
                                         </div>
                                         <div style={{ marginBottom: '10px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#444' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                                                 <span>Margen Neto (Bolsa)</span>
                                                 <span>{finData.margen.toFixed(2)}%</span>
                                             </div>
@@ -858,8 +858,8 @@ const FinanceModal = ({
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
                                     {/* 1.- GASTOS OPERATIVOS (IZQUIERDA) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
-                                        {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>Sin gastos operativos en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', borderBottom: '2px solid #ff9800', paddingBottom: '10px' }}>Gastos Operativos</h3>
+                                        {dailyExpensesList.length === 0 ? <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sin gastos operativos en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyExpensesList.map((exp) => (
@@ -884,35 +884,29 @@ const FinanceModal = ({
 
                                     {/* 2.- ENTRADAS DE STOCK (MEDIO) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
-                                        {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>No hay compras de stock en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>Entradas de Stock (Inversión)</h3>
+                                        {dailyStockList.length === 0 ? <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>No hay compras de stock en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailyStockList.map((purch) => (
                                                         <tr key={purch.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                                            <td style={{ padding: '8px 0', color: 'var(--text-primary)', wordBreak: 'break-word', verticalAlign: 'top' }}>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-                                                                        <span style={{ fontWeight: '600' }}>#{purch.purchase_number || purch.id.toString().slice(0, 4)}</span>
-                                                                        <span style={{ color: '#ffffff' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
+                                                            <td style={{ padding: '12px 0', color: 'var(--text-primary)', wordBreak: 'break-word', verticalAlign: 'top' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                        <span style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '13px' }}>{new Date(purch.created_at).toLocaleDateString()}</span>
+                                                                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Ticket #{purch.purchase_number || purch.id.toString().slice(0, 8)}</span>
                                                                         {purch.ticket_url && (
                                                                             <a href={purch.ticket_url} target="_blank" rel="noreferrer" style={{ color: '#3498db', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}>
-                                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ticket</span>
+                                                                                <ImageIcon size={12} /> <span style={{ fontSize: '10px' }}>Ver Comprobante</span>
                                                                             </a>
                                                                         )}
                                                                     </div>
-                                                                    <div style={{ fontSize: '10px', color: '#ffffff', fontStyle: 'italic', lineHeight: '1.4' }}>
-                                                                        {purch.purchase_items?.map((i, idx) => {
-                                                                            const totalLine = i.quantity * i.cost;
-                                                                            const unitCost = i.cost; // Ya está almacenado como unitario
-                                                                            return (
-                                                                                <div key={idx} style={{ borderBottom: '1px dashed var(--border-color)', paddingBottom: '2px', marginBottom: '2px' }}>
-                                                                                    • <span style={{ fontWeight: 'bold' }}>{i.products?.name}</span>: {i.quantity} pz.
-                                                                                    <span style={{ marginLeft: '5px', color: '#e74c3c' }}>Total: ${totalLine.toFixed(2)}</span>
-                                                                                    <span style={{ marginLeft: '5px', background: '#eafaf1', padding: '1px 4px', borderRadius: '4px', color: '#27ae60', fontWeight: 'bold' }}>(${unitCost.toFixed(2)} c/u)</span>
-                                                                                </div>
-                                                                            );
-                                                                        })}
+                                                                    <div style={{ fontSize: '11px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+                                                                        {purch.purchase_items?.map((i, idx) => (
+                                                                            <div key={idx} style={{ marginBottom: '2px' }}>
+                                                                                • <span style={{ fontWeight: '600' }}>{i.products?.name}</span>: {i.quantity} pz.
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -926,8 +920,8 @@ const FinanceModal = ({
 
                                     {/* 3.- VENTAS DETALLADAS (DERECHA) */}
                                     <div>
-                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
-                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: '#ffffff' }}>No hay ventas en este periodo.</p> : (
+                                        <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', borderBottom: '2px solid #27ae60', paddingBottom: '10px' }}>Ventas Detalladas</h3>
+                                        {dailySalesList.length === 0 ? <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>No hay ventas en este periodo.</p> : (
                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                                                 <tbody>
                                                     {dailySalesList.map((sale) => (
@@ -936,7 +930,7 @@ const FinanceModal = ({
                                                                 <div style={{ fontWeight: '600' }}>
                                                                     #{sale.ticket_number || sale.id.slice(0, 4).toUpperCase()} - {sale.customer_name || 'Sin nombre'}
                                                                 </div>
-                                                                <div style={{ fontSize: '10px', color: '#ffffff' }}>
+                                                                <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
                                                                     {new Date(sale.created_at).toLocaleDateString()} {new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </div>
                                                             </td>

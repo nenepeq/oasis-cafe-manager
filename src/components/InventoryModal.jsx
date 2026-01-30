@@ -254,7 +254,7 @@ const InventoryModal = ({
                 <div>
                     {/* SECCIÓN: EXISTENCIAS */}
                     {activeTab === 'existencias' && (
-                        <div>
+                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000000', margin: 0 }}>EXISTENCIAS ACTUALES</h3>
                                 {inventoryList.length > 0 && (
@@ -267,10 +267,7 @@ const InventoryModal = ({
                                     </button>
                                 )}
                             </div>
-                            <div className="table-container no-scrollbar" style={{
-                                maxHeight: '50vh',
-                                overflowY: 'auto'
-                            }}>
+                            <div className="table-container no-scrollbar">
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed' }}>
                                     <thead style={{ background: 'var(--bg-highlight)', borderBottom: '2px solid var(--color-secondary)' }}>
                                         <tr>
@@ -312,7 +309,7 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: ENTRADAS DE INVENTARIO (CARRITO) */}
                     {activeTab === 'entradas' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
+                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE ENTRADAS (STOCK)</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
@@ -438,7 +435,7 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: GASTOS DE OPERACIÓN (CARRITO) */}
                     {activeTab === 'gastos' && (
-                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6' }}>
+                        <div style={{ background: '#fdfbf9', padding: '20px', borderRadius: '15px', border: '1px solid #f1ece6', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#000', marginBottom: '15px' }}>REGISTRO DE GASTOS (POR TICKET)</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', padding: '15px', background: '#fff', borderRadius: '12px', border: '1px solid #eee' }}>
@@ -553,7 +550,7 @@ const InventoryModal = ({
 
                     {/* SECCIÓN: MERMAS */}
                     {activeTab === 'mermas' && (
-                        <div style={{ background: '#f8d7da', padding: '20px', borderRadius: '15px', border: '2px solid #dc3545' }}>
+                        <div style={{ background: '#f8d7da', padding: '20px', borderRadius: '15px', border: '2px solid #dc3545', height: '500px', overflowY: 'auto', boxSizing: 'border-box' }}>
                             <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#721c24', marginBottom: '15px' }}>REGISTRO DE MERMAS Y BAJAS</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <select

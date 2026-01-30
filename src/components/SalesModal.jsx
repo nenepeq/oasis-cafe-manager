@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Settings, Target, TrendingUp, Hourglass } from 'lucide-react';
+import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Trophy, Target, TrendingUp, Award } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -247,7 +247,7 @@ const SalesModal = ({
                             fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
                         }}
                     >
-                        <Hourglass size={14} /> POR COBRAR ({debts.length})
+                        <span style={{ fontSize: '14px' }}>⏳</span> POR COBRAR ({debts.length})
                     </button>
                     {pendingSales.length > 0 && (
                         <button
@@ -274,7 +274,7 @@ const SalesModal = ({
                                 fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
                             }}
                         >
-                            <Settings size={14} /> CONFIG
+                            <Trophy size={14} /> METAS
                         </button>
                     )}
                 </div>
@@ -342,9 +342,9 @@ const SalesModal = ({
                     <div style={{ padding: '20px', background: '#f9fbfd', borderRadius: '15px', border: '1px solid #e1e8ed' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                             <div style={{ padding: '10px', background: '#3498db', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Settings size={20} color="#fff" />
+                                <Trophy size={20} color="#fff" />
                             </div>
-                            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>Configuración de Metas</h3>
+                            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>METAS</h3>
                         </div>
 
                         <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>

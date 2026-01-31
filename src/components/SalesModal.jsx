@@ -22,6 +22,7 @@ const SalesModal = ({
     userRole,
     updateSaleStatus,
     markAsPaid,
+    cancelOfflineSale,
     pendingSales = [],
     hasMoreSales,
     loadMoreSales,
@@ -53,14 +54,12 @@ const SalesModal = ({
         }
     };
     const [debts, setDebts] = useState([]);
-    // ... (rest of initial implementation)
     const [loadingDebts, setLoadingDebts] = useState(false);
 
     // Fetch DEBTS siempre que se abra el reporte para mostrar el contador actualizado
     useEffect(() => {
         if (showReport) {
             const fetchDebts = async () => {
-                // Solo mostrar loader si estamos en la pestaña de cobro, para no molestar en las otras
                 if (activeTab === 'por_cobrar') setLoadingDebts(true);
 
                 try {
@@ -82,7 +81,18 @@ const SalesModal = ({
             };
             fetchDebts();
         }
-    }, [showReport, activeTab]); // Mantenemos activeTab para que si cambia a esa pestaña, refresque el loading state visualmente si es necesario, aunque los datos ya estarían cargando.
+    }, [showReport, activeTab]);
+
+    // Sincronizar cambios de estatus en la lista de deudas local
+    useEffect(() => {
+        if (selectedSale && activeTab === 'por_cobrar') {
+            setDebts(prev => prev.map(d => d.id === selectedSale.id ? {
+                ...d,
+                status: selectedSale.status,
+                payment_method: selectedSale.payment_method
+            } : d));
+        }
+    }, [selectedSale?.status, selectedSale?.payment_method]);
 
     // Auto-switch tab if offline is active but becomes empty
     useEffect(() => {
@@ -94,7 +104,6 @@ const SalesModal = ({
     const handleExportSalesExcel = async () => {
         setIsExporting(true);
         try {
-            // Obtener TODAS las ventas del periodo para el reporte (no solo las 50 cargadas)
             let query = supabase.from('sales')
                 .select(`*, sale_items (*, products (name, sale_price))`)
                 .order('created_at', { ascending: false });
@@ -118,9 +127,7 @@ const SalesModal = ({
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Reporte de Ventas');
 
-            // Estilos
             const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
-            const headerFont = { name: 'Arial Black', size: 10, color: { argb: 'FFFFFFFF' } };
 
             worksheet.mergeCells('A1:G1');
             const mainHeader = worksheet.getCell('A1');
@@ -168,13 +175,11 @@ const SalesModal = ({
                 rows: rows,
             });
 
-            // Formatear columna de Total como moneda
             rows.forEach((_, idx) => {
                 const cell = worksheet.getCell(idx + 5, 6);
                 cell.numFmt = '"$"#,##0.00';
             });
 
-            // Fila de Total
             const totalRow = worksheet.addRow([]);
             const totalCell = worksheet.getCell(totalRow.number, 6);
             totalCell.value = totalIngresosReporte;
@@ -203,31 +208,27 @@ const SalesModal = ({
 
     if (!showReport) return null;
 
-    // LÓGICA DE FILTRADO
     let filteredSales = [];
     if (activeTab === 'offline') {
         filteredSales = pendingSales;
     } else if (activeTab === 'por_cobrar') {
         filteredSales = debts;
     } else if (activeTab === 'config') {
-        filteredSales = []; // No sales in config tab
+        filteredSales = [];
     } else {
         filteredSales = sales.filter(s => s.payment_method !== 'A Cuenta');
     }
 
-    // SINGLE SOURCE OF TRUTH:
-    // En lugar de usar 'selectedSale' directamente (que puede tener datos viejos),
-    // buscamos la versión más reciente de esa venta en la lista 'sales' actualizada.
-    // Si no se encuentra (ej. filtrado excesivo), usamos selectedSale como fallback o null.
     const activeSale = selectedSale
         ? (activeTab === 'offline'
             ? pendingSales.find(s => s.id === selectedSale.id)
-            : sales.find(s => s.id === selectedSale.id)) || selectedSale
+            : (activeTab === 'por_cobrar'
+                ? debts.find(s => s.id === selectedSale.id)
+                : sales.find(s => s.id === selectedSale.id))
+        ) || selectedSale
         : null;
 
     const totalFiltered = filteredSales.reduce((acc, s) => acc + (s.status !== 'cancelado' ? s.total : 0), 0);
-
-
 
     return (
         <div
@@ -256,7 +257,6 @@ const SalesModal = ({
 
                 <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 25px 0', fontSize: '22px', paddingRight: '40px' }}>Reporte de Ventas</h2>
 
-                {/* TABS SELECTOR */}
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', padding: '5px', background: 'var(--bg-primary)', borderRadius: '15px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => { setActiveTab('pagadas'); setSelectedSale(null); }}
@@ -312,8 +312,6 @@ const SalesModal = ({
                     )}
                 </div>
 
-
-
                 {activeTab === 'config' && userRole === 'admin' ? (
                     <div style={{ padding: '20px', background: 'var(--bg-primary)', borderRadius: '15px', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
@@ -328,286 +326,230 @@ const SalesModal = ({
                                 <Target size={20} style={{ color: '#3498db' }} />
                                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Meta de Ventas Mensual</span>
                             </div>
-
                             <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '15px', lineHeight: '1.4' }}>
-                                Define el objetivo de ventas brutas para el mes actual. Este valor se utilizará en los indicadores de rendimiento del dashboard.
+                                Define el objetivo de ventas brutas para el mes actual.
                             </p>
-
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: window.innerWidth < 600 ? 'column' : 'row',
-                                alignItems: 'stretch',
-                                gap: '15px'
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', alignItems: 'stretch', gap: '15px' }}>
                                 <div style={{ position: 'relative', flex: 1 }}>
                                     <DollarSign size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-primary)' }} />
                                     <input
                                         type="number"
                                         value={localSalesGoal}
                                         onChange={(e) => setLocalSalesGoal(parseFloat(e.target.value) || 0)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 12px 12px 35px',
-                                            borderRadius: '10px',
-                                            border: '2px solid #3498db',
-                                            fontSize: '18px',
-                                            fontWeight: 'bold',
-                                            outline: 'none',
-                                            backgroundColor: 'var(--bg-primary)',
-                                            color: 'var(--text-primary)'
-                                        }}
+                                        style={{ width: '100%', padding: '12px 12px 12px 35px', borderRadius: '10px', border: '2px solid #3498db', fontSize: '18px', fontWeight: 'bold', outline: 'none', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                                     />
                                 </div>
                                 <button
                                     onClick={handleSaveGoal}
                                     disabled={isSavingGoal}
-                                    style={{
-                                        padding: '15px 25px',
-                                        background: '#3498db',
-                                        color: '#fff',
-                                        borderRadius: '10px',
-                                        border: 'none',
-                                        fontWeight: 'bold',
-                                        cursor: isSavingGoal ? 'not-allowed' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 4px 6px rgba(52, 152, 219, 0.2)',
-                                        fontSize: '14px'
-                                    }}
+                                    style={{ padding: '15px 25px', background: '#3498db', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold', cursor: isSavingGoal ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px' }}
                                 >
                                     {isSavingGoal ? <RefreshCw size={18} className="animate-spin" /> : <Check size={18} />}
                                     {isSavingGoal ? 'GUARDANDO...' : 'GUARDAR META'}
                                 </button>
                             </div>
                         </div>
-
-                        <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(255, 235, 59, 0.1)', borderRadius: '10px', border: '1px solid #ffe58f', display: 'flex', gap: '10px' }}>
-                            <span style={{ fontSize: '20px' }}>💡</span>
-                            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.4' }}>
-                                <strong>Consejo:</strong> Una meta realista motiva a tu equipo. Puedes ajustar este valor en cualquier momento y los cambios se verán reflejados inmediatamente en el dashboard de finanzas.
-                            </p>
-                        </div>
                     </div>
                 ) : (
                     <>
-                        {/* FILTRO DE FECHA (RANGO) */}
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>DESDE:</span>
-                                <input
-                                    type="date"
-                                    value={reportStartDate}
-                                    onChange={(e) => setReportStartDate(e.target.value)}
-                                    style={{
-                                        padding: '8px',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border-color)',
-                                        fontSize: '14px',
-                                        backgroundColor: 'var(--bg-primary)',
-                                        color: 'var(--text-primary)',
-                                        colorScheme: 'dark'
-                                    }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>HASTA:</span>
-                                <input
-                                    type="date"
-                                    value={reportEndDate}
-                                    onChange={(e) => setReportEndDate(e.target.value)}
-                                    style={{
-                                        padding: '8px',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border-color)',
-                                        fontSize: '14px',
-                                        backgroundColor: 'var(--bg-primary)',
-                                        color: 'var(--text-primary)',
-                                        colorScheme: 'dark'
-                                    }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', alignSelf: 'flex-end' }}>
-                                {activeTab === 'pagadas' && (
-                                    <button
-                                        onClick={handleExportSalesExcel}
-                                        disabled={isExporting || sales.length === 0}
-                                        className="btn-active-effect"
-                                        style={{
-                                            padding: '10px 15px', background: '#27ae60', color: '#fff',
-                                            border: 'none', borderRadius: '10px', fontWeight: 'bold',
-                                            cursor: (isExporting || sales.length === 0) ? 'not-allowed' : 'pointer',
-                                            display: 'flex', alignItems: 'center', gap: '5px',
-                                            boxShadow: isExporting ? 'none' : '0 4px 0 #1e7e46',
-                                            opacity: isExporting ? 0.7 : 1,
-                                            transform: isExporting ? 'translateY(2px)' : 'none'
-                                        }}
-                                    >
-                                        {isExporting ? <RefreshCw size={18} className="animate-spin" /> : <Download size={18} />}
-                                        {isExporting ? 'GENERANDO...' : 'EXCEL'}
-                                    </button>
-                                )}
-                                <div style={{
-                                    textAlign: 'right',
-                                    fontWeight: '900',
-                                    fontSize: '18px',
-                                    color: activeTab === 'pagadas' ? '#27ae60' : (activeTab === 'offline' ? '#f1c40f' : '#e67e22'),
-                                    lineHeight: '1.2',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center'
-                                }}>
-                                    <div style={{ fontSize: '10px', opacity: 0.8 }}>
-                                        {activeTab === 'pagadas' ? `${totalSalesCount} Ventas` : `${filteredSales.length} Movimientos`}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                            {activeTab === 'pagadas' && (
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>DESDE:</span>
+                                        <input type="date" value={reportStartDate} onChange={(e) => setReportStartDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '14px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', colorScheme: 'dark' }} />
                                     </div>
-                                    <div style={{ fontSize: '12px' }}>
-                                        {activeTab === 'pagadas' ? 'Total Ingresos:' : (activeTab === 'offline' ? 'Total Offline:' : 'Total Pendiente:')}
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-primary)' }}>HASTA:</span>
+                                        <input type="date" value={reportEndDate} onChange={(e) => setReportEndDate(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '14px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', colorScheme: 'dark' }} />
                                     </div>
-                                    <div>
-                                        ${(activeTab === 'pagadas' ? totalIngresosReporte : totalFiltered).toFixed(2)}
+                                    <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
+                                        <button onClick={handleExportSalesExcel} disabled={isExporting || sales.length === 0} style={{ padding: '10px 15px', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            {isExporting ? <RefreshCw size={18} className="animate-spin" /> : <Download size={18} />} EXCEL
+                                        </button>
                                     </div>
                                 </div>
+                            )}
+                            <div style={{ textAlign: 'right', fontWeight: '900', fontSize: '18px', color: activeTab === 'pagadas' ? '#27ae60' : (activeTab === 'offline' ? '#f1c40f' : '#e67e22'), marginLeft: 'auto' }}>
+                                <div style={{ fontSize: '10px', opacity: 0.8 }}>{activeTab === 'pagadas' ? `${totalSalesCount} Ventas` : `${filteredSales.length} Movimientos`}</div>
+                                <div style={{ fontSize: '12px' }}>{activeTab === 'pagadas' ? 'Total Ingresos:' : (activeTab === 'offline' ? 'Total Offline:' : 'Total Pendiente:')} Durante este período</div>
+                                <div>${(activeTab === 'pagadas' ? totalIngresosReporte : totalFiltered).toFixed(2)}</div>
                             </div>
                         </div>
 
-                        {reportStartDate > reportEndDate && (
-                            <div style={{
-                                background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '10px', borderRadius: '10px',
-                                marginBottom: '15px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #e74c3c'
-                            }}>
+                        {reportStartDate > reportEndDate && activeTab === 'pagadas' && (
+                            <div style={{ background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '10px', borderRadius: '10px', marginBottom: '15px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #e74c3c' }}>
                                 ⚠️ La fecha "Desde" no puede ser mayor a la fecha "Hasta".
                             </div>
                         )}
 
                         <div style={{ display: 'flex', flexDirection: window.innerWidth < 600 ? 'column' : 'row', gap: '20px' }}>
-                            <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '15px' }}>
-                                {loading ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)' }}>Cargando ventas...</div>
+                            <div style={{ flex: 1, maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '15px', position: 'relative' }}>
+                                {loading && filteredSales.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-primary)' }}>
+                                        <RefreshCw size={24} className="animate-spin" style={{ marginBottom: '10px' }} />
+                                        <div>Buscando ventas...</div>
+                                    </div>
                                 ) : filteredSales.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)' }}>No hay ventas en esta sección</div>
+                                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-primary)' }}>Sin registros</div>
                                 ) : (
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                        <thead>
-                                            <tr style={{ background: 'var(--bg-highlight)', borderBottom: '1.5px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 5 }}>
-                                                <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Fecha/Hora</th>
-                                                <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Cliente</th>
-                                                <th style={{ textAlign: 'right', padding: '12px', color: 'var(--text-primary)' }}>Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredSales.map(sale => (
-                                                <tr
-                                                    key={sale.id}
-                                                    onClick={() => setSelectedSale(sale)}
+                                    <>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                            <thead>
+                                                <tr style={{ background: 'var(--bg-highlight)', borderBottom: '1.5px solid var(--border-color)' }}>
+                                                    <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Fecha</th>
+                                                    <th style={{ textAlign: 'left', padding: '12px', color: 'var(--text-primary)' }}>Cliente</th>
+                                                    <th style={{ textAlign: 'center', padding: '12px', color: 'var(--text-primary)' }}>Estado</th>
+                                                    <th style={{ textAlign: 'right', padding: '12px', color: 'var(--text-primary)' }}>Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredSales.map(sale => (
+                                                    <tr key={sale.id} onClick={() => setSelectedSale(sale)} style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer', backgroundColor: activeSale?.id === sale.id ? 'var(--bg-highlight)' : 'transparent', opacity: sale.status === 'cancelado' ? 0.6 : 1 }}>
+                                                        <td style={{ padding: '12px' }}>{new Date(sale.created_at || sale.timestamp).toLocaleString()}</td>
+                                                        <td style={{ padding: '12px' }}>{sale.customer_name}</td>
+                                                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                                                {sale.status === 'cancelado' ? (
+                                                                    <span style={{ padding: '2px 8px', borderRadius: '12px', backgroundColor: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', fontSize: '9px', fontWeight: 'bold', border: '1px solid #e74c3c' }}>CANCELADA</span>
+                                                                ) : (
+                                                                    <>
+                                                                        <span style={{ color: sale.payment_method === 'A Cuenta' ? '#e67e22' : '#27ae60', fontSize: '10px', fontWeight: 'bold' }}>
+                                                                            {sale.payment_method === 'A Cuenta' ? 'A CUENTA' : 'PAGADA'}
+                                                                        </span>
+                                                                        <span style={{
+                                                                            padding: '2px 6px',
+                                                                            borderRadius: '8px',
+                                                                            backgroundColor: sale.status === 'entregado' ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)',
+                                                                            color: sale.status === 'entregado' ? '#27ae60' : '#e74c3c',
+                                                                            fontSize: '9px',
+                                                                            fontWeight: '900',
+                                                                            border: sale.status === 'entregado' ? '1px solid #27ae60' : '1px solid #e74c3c'
+                                                                        }}>
+                                                                            {sale.status === 'entregado' ? 'ENTREGADO' : 'NO ENTREGADO'}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>${parseFloat(sale.total).toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+
+                                        {/* Pagination Button for 'pagadas' tab */}
+                                        {activeTab === 'pagadas' && hasMoreSales && (
+                                            <div style={{ padding: '15px', textAlign: 'center', borderTop: '1px solid var(--border-color)' }}>
+                                                <button
+                                                    onClick={loadMoreSales}
+                                                    disabled={loading}
                                                     style={{
-                                                        borderBottom: '1px solid var(--border-color)',
-                                                        cursor: 'pointer',
-                                                        backgroundColor: activeSale?.id === sale.id ? 'var(--bg-highlight)' : 'transparent',
-                                                        transition: 'background 0.2s'
+                                                        padding: '8px 20px',
+                                                        background: '#3498db',
+                                                        color: '#fff',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px',
+                                                        margin: '0 auto'
                                                     }}
                                                 >
-                                                    <td style={{ padding: '12px' }}>
-                                                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{new Date(sale.created_at || sale.timestamp).toLocaleDateString()}</div>
-                                                        <div style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{new Date(sale.created_at || sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                                    </td>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{sale.customer_name}</div>
-                                                        {sale.payment_method && <div style={{ fontSize: '11px', color: 'var(--text-primary)' }}>{sale.payment_method}</div>}
-                                                    </td>
-                                                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                        <div style={{ fontWeight: '900', color: sale.status === 'cancelado' ? '#bdc3c7' : '#27ae60' }}>
-                                                            ${parseFloat(sale.total).toFixed(2)}
-                                                        </div>
-                                                        {sale.status === 'cancelado' && <div style={{ fontSize: '10px', color: '#e74c3c', fontWeight: 'bold' }}>CANCELADO</div>}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                                {hasMoreSales && !loading && filteredSales.length > 0 && activeTab === 'pagadas' && (
-                                    <button
-                                        onClick={loadMoreSales}
-                                        style={{
-                                            width: '100%', padding: '12px', background: 'var(--bg-primary)', color: '#3498db',
-                                            border: 'none', borderTop: '1px solid var(--border-color)', fontWeight: 'bold', cursor: 'pointer'
-                                        }}
-                                    >
-                                        ⬇️ Cargar más...
-                                    </button>
+                                                    {loading ? <RefreshCw size={14} className="animate-spin" /> : null}
+                                                    {loading ? 'CARGANDO...' : 'MOSTRAR MÁS VENTAS'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
 
                             {activeSale && (
-                                <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', padding: '20px', borderRadius: '15px', border: '1.5px solid var(--border-color)', animation: 'fadeIn 0.3s ease', boxShadow: 'var(--card-shadow)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                                        <div>
-                                            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '18px' }}>Ticket #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}</h3>
-                                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', marginTop: '4px' }}>
-                                                {new Date(activeSale.created_at || activeSale.timestamp).toLocaleString()}
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            padding: '4px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 'bold',
-                                            backgroundColor: activeSale.status === 'cancelado' ? '#fdeaea' : '#eafaf1',
-                                            color: activeSale.status === 'cancelado' ? '#e74c3c' : '#27ae60'
-                                        }}>
-                                            {activeSale.status?.toUpperCase() || 'ENTREGADO'}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ marginBottom: '20px' }}>
+                                <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', padding: '20px', borderRadius: '15px', border: '1.5px solid var(--border-color)' }}>
+                                    <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Detalle Ticket #{activeSale.ticket_number || String(activeSale.id).slice(0, 4)}</h3>
+                                    <div style={{ margin: '15px 0' }}>
                                         {(activeSale.items || activeSale.sale_items)?.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
                                                 <span style={{ color: 'var(--text-primary)' }}>{item.quantity}x {item.name || item.products?.name}</span>
-                                                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>${((item.sale_price || item.price) * item.quantity).toFixed(2)}</span>
+                                                <span style={{ color: 'var(--text-primary)' }}>${((item.sale_price || item.price) * item.quantity).toFixed(2)}</span>
                                             </div>
                                         ))}
                                     </div>
-
-                                    <div style={{ borderTop: '2px solid var(--border-color)', paddingTop: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>TOTAL</span>
-                                        <span style={{ fontWeight: '900', fontSize: '22px', color: '#27ae60' }}>${parseFloat(activeSale.total).toFixed(2)}</span>
+                                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                                        <span style={{ color: 'var(--text-primary)' }}>TOTAL</span>
+                                        <span style={{ color: '#27ae60', fontSize: '18px' }}>${parseFloat(activeSale.total).toFixed(2)}</span>
                                     </div>
-
-                                    <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {activeTab === 'offline' && (
-                                            <div style={{ padding: '10px', backgroundColor: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #f1c40f' }}>
-                                                ⚠️ Venta sin sincronizar
-                                            </div>
-                                        )}
-
-                                        {activeSale.status === 'recibido' && activeSale.payment_method !== 'A Cuenta' && (
+                                    <div style={{ marginTop: '5px', fontSize: '12px', color: 'var(--text-primary)', opacity: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div><strong>Método:</strong> {activeSale.payment_method}</div>
+                                        <div style={{
+                                            padding: '2px 8px',
+                                            borderRadius: '6px',
+                                            backgroundColor: activeSale.status === 'entregado' ? '#27ae60' : (activeSale.status === 'cancelado' ? '#e74c3c' : '#e74c3c'),
+                                            color: '#fff',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {activeSale.status === 'entregado' ? 'ENTREGADO' : (activeSale.status === 'cancelado' ? 'CANCELADO' : 'NO ENTREGADO')}
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {activeSale.status !== 'cancelado' && (
                                             <button
-                                                onClick={() => updateSaleStatus(activeSale.id, 'entregado')}
-                                                style={{ padding: '12px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+                                                onClick={() => activeSale.status !== 'entregado' && updateSaleStatus(activeSale.id, 'entregado')}
+                                                disabled={activeSale.status === 'entregado'}
+                                                style={{
+                                                    padding: '12px',
+                                                    background: activeSale.status === 'entregado' ? 'var(--bg-primary)' : '#3498db',
+                                                    color: activeSale.status === 'entregado' ? 'var(--text-primary)' : '#fff',
+                                                    border: activeSale.status === 'entregado' ? '1px solid var(--border-color)' : 'none',
+                                                    borderRadius: '10px',
+                                                    fontWeight: 'bold',
+                                                    cursor: activeSale.status === 'entregado' ? 'not-allowed' : 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '8px',
+                                                    opacity: activeSale.status === 'entregado' ? 0.7 : 1,
+                                                    boxShadow: activeSale.status === 'entregado' ? 'none' : '0 4px 10px rgba(52, 152, 219, 0.3)'
+                                                }}
                                             >
-                                                MARCAR ENTREGADO
+                                                <Check size={18} /> {activeSale.status === 'entregado' ? 'ENTREGAR PEDIDO' : 'ENTREGAR PEDIDO'}
                                             </button>
                                         )}
-
                                         {activeSale.payment_method === 'A Cuenta' && activeSale.status !== 'cancelado' && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#e67e22', textAlign: 'center' }}>¿COBRAR DEUDA?</div>
-                                                <div style={{ display: 'flex', gap: '10px' }}>
-                                                    <button onClick={() => markAsPaid(activeSale.id, 'Efectivo')} style={{ flex: 1, padding: '10px', backgroundColor: '#27ae60', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                                        <Banknote size={14} /> EFECTIVO
-                                                    </button>
-                                                    <button onClick={() => markAsPaid(activeSale.id, 'Tarjeta')} style={{ flex: 1, padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                                        <CreditCard size={14} /> TARJETA
-                                                    </button>
-                                                </div>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <button onClick={() => markAsPaid(activeSale.id, 'Efectivo')} style={{ flex: 1, padding: '10px', backgroundColor: '#27ae60', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>COBRAR EFECTIVO</button>
+                                                <button onClick={() => markAsPaid(activeSale.id, 'Tarjeta')} style={{ flex: 1, padding: '10px', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>COBRAR TARJETA</button>
                                             </div>
                                         )}
-
-                                        {activeSale.status !== 'cancelado' && userRole === 'admin' && (
+                                        {userRole === 'admin' && activeSale.status !== 'cancelado' && (
                                             <button
-                                                onClick={() => { if (window.confirm('¿Cancelar esta venta?')) updateSaleStatus(activeSale.id, 'cancelado'); }}
-                                                style={{ padding: '10px', backgroundColor: '#fff', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', marginTop: '5px' }}
+                                                onClick={() => {
+                                                    if (activeTab === 'offline') {
+                                                        cancelOfflineSale(activeSale.id);
+                                                    } else {
+                                                        if (window.confirm('¿Confirmas cancelar esta venta?')) {
+                                                            updateSaleStatus(activeSale.id, 'cancelado');
+                                                        }
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '10px',
+                                                    color: '#e74c3c',
+                                                    border: '1px solid #e74c3c',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    background: 'none',
+                                                    fontWeight: 'bold',
+                                                    marginTop: '10px'
+                                                }}
                                             >
-                                                CANCELAR VENTA
+                                                {activeTab === 'offline' ? 'ELIMINAR VENTA OFFLINE' : 'CANCELAR VENTA'}
                                             </button>
                                         )}
                                     </div>

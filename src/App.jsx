@@ -976,7 +976,7 @@ function App() {
 
   const fetchSales = async (offset = 0) => {
     setLoading(true);
-
+    if (offset === 0) setSales([]); // Limpiar historial previo para nueva búsqueda
     const from = offset;
     const to = offset + SALES_LIMIT - 1;
 
@@ -1084,6 +1084,11 @@ function App() {
         }
       }
       await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
+
+      // Actualizar el estado local para evitar el salto de scroll y pérdida de selección
+      setSales(prev => prev.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
+      setSelectedSale(prev => prev && prev.id === saleId ? { ...prev, status: newStatus } : prev);
+
       alert(`✅ Estatus: ${newStatus.toUpperCase()}`);
 
       // LOG DE ACTIVIDAD
@@ -1092,10 +1097,24 @@ function App() {
         new_status: newStatus
       });
 
-      fetchSales(); calculateFinances(); fetchInventory(); setSelectedSale(null);
+      calculateFinances(); fetchInventory(); fetchMonthlySalesTotal();
 
     } catch (err) { alert('Error: ' + err.message); }
     setLoading(false);
+  };
+
+  const cancelOfflineSale = async (localId) => {
+    if (userRole !== 'admin') return alert("Solo admin puede cancelar");
+    if (!window.confirm("¿Eliminar esta venta offline?")) return;
+
+    try {
+      await clearPendingItem('pending_sales', localId);
+      await checkPendingItems(); // Refresca pendingSales y hasPendingItems
+      setSelectedSale(null);
+      alert("✅ Venta offline eliminada correctamente");
+    } catch (err) {
+      alert("Error al eliminar venta offline: " + err.message);
+    }
   };
 
   const markAsPaid = async (saleId, method = 'Efectivo') => {
@@ -1103,16 +1122,19 @@ function App() {
     try {
       await supabase.from('sales').update({
         payment_method: method,
-        status: 'entregado' // Asumimos que al pagar ya se entregó o se entrega en el momento
+        status: 'entregado'
       }).eq('id', saleId);
+
+      // Actualización local inmediata
+      setSales(prev => prev.map(s => s.id === saleId ? { ...s, payment_method: method, status: 'entregado' } : s));
+      setSelectedSale(prev => prev && prev.id === saleId ? { ...prev, payment_method: method, status: 'entregado' } : prev);
 
       alert(`✅ Venta cobrada con éxito (registrada como ${method})`);
       await logActivity(user.id, 'COBRO_DEUDA', 'VENTAS', { sale_id: saleId, method });
 
-      fetchSales();
       calculateFinances();
       fetchMonthlySalesTotal();
-      setSelectedSale(null);
+      fetchInventory();
 
     } catch (err) { alert('Error al cobrar: ' + err.message); }
     setLoading(false);
@@ -1836,6 +1858,7 @@ function App() {
         showReport={showReport} setShowReport={setShowReport} setSelectedSale={setSelectedSale} reportStartDate={reportStartDate} setReportStartDate={setReportStartDate}
         reportEndDate={reportEndDate} setReportEndDate={setReportEndDate} fetchSales={() => fetchSales(0)} loading={loading} sales={sales}
         selectedSale={selectedSale} userRole={userRole} updateSaleStatus={updateSaleStatus} markAsPaid={markAsPaid}
+        cancelOfflineSale={cancelOfflineSale}
         pendingSales={pendingSales}
         loadMoreSales={() => fetchSales(salesOffset + 50)}
         hasMoreSales={hasMoreSales}

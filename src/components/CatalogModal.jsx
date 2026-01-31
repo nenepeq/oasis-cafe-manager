@@ -31,6 +31,7 @@ const CatalogModal = ({
     // Efecto para auto-scroll al producto editado
     useEffect(() => {
         if (activeTab === 'list' && lastEditedId) {
+            // Un poco más de tiempo para móviles (teclado cerrándose, transición de pestañas)
             const timer = setTimeout(() => {
                 const element = document.getElementById(`prod-card-${lastEditedId}`);
                 if (element) {
@@ -38,19 +39,21 @@ const CatalogModal = ({
 
                     // Pequeña animación de resaltado
                     element.style.borderColor = 'var(--green_btn_primary)';
-                    element.style.boxShadow = '0 0 15px rgba(39, 174, 96, 0.4)';
+                    element.style.boxShadow = '0 0 20px rgba(39, 174, 96, 0.5)';
                     element.style.transition = 'all 0.5s';
 
                     setTimeout(() => {
-                        element.style.borderColor = 'var(--border-color)';
-                        element.style.boxShadow = 'var(--card-shadow)';
+                        if (element) {
+                            element.style.borderColor = 'var(--border-color)';
+                            element.style.boxShadow = 'var(--card-shadow)';
+                        }
                         setLastEditedId(null);
-                    }, 2000);
+                    }, 2500);
                 }
-            }, 300); // Pequeño delay para asegurar que el DOM se ha renderizado
+            }, 400);
             return () => clearTimeout(timer);
         }
-    }, [activeTab, products, lastEditedId]);
+    }, [activeTab, lastEditedId]);
 
     if (!showCatalog || userRole !== 'admin') return null;
 
@@ -72,6 +75,8 @@ const CatalogModal = ({
 
     const handleEdit = (product) => {
         setEditingProduct(product);
+        setLastEditedId(product.id); // Guardamos el ID desde que iniciamos edición
+
         // Buscar el stock real en la lista de inventario que recibimos por props
         const currentStock = inventoryList.find(inv => inv.product_id === product.id)?.stock || 0;
 
@@ -103,7 +108,7 @@ const CatalogModal = ({
                 const { error: stockError } = await updateStock(currentId, formData.stock);
                 if (stockError) console.error("Error al ajustar stock:", stockError);
 
-                setLastEditedId(currentId);
+                // setLastEditedId(currentId); // Ya se pone en handleEdit
                 alert("✅ Producto y Stock actualizados con éxito");
             } else {
                 const { error } = await createProduct(formData);

@@ -1275,9 +1275,16 @@ function App() {
 
   const fetchStarProducts = async () => {
     setLoading(true);
+    // Ajuste de Zona Horaria: Fin del día local (23:59) es ~06:00 UTC del día siguiente
+    const endDateTime = new Date(starEndDate);
+    endDateTime.setDate(endDateTime.getDate() + 1);
+    const nextDayStr = endDateTime.toISOString().split('T')[0];
+
     // Incluimos cost_price de los productos en la consulta
     const { data } = await supabase.from('sale_items').select(`quantity, price, products ( name, cost_price ), sales!inner ( id, created_at, status )`)
-      .gte('sales.created_at', starStartDate + 'T00:00:00').lte('sales.created_at', starEndDate + 'T23:59:59').neq('sales.status', 'cancelado');
+      .gte('sales.created_at', starStartDate + 'T06:00:00')
+      .lt('sales.created_at', nextDayStr + 'T06:00:00')
+      .neq('sales.status', 'cancelado');
 
     const grouping = (data || []).reduce((acc, item) => {
       const name = item.products?.name || 'Desconocido';

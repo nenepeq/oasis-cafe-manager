@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save, Plus, Trash2, Edit2, ClipboardList, AlertCircle, RefreshCw, Package } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, updateStock } from '../api';
 
@@ -26,6 +26,31 @@ const CatalogModal = ({
         stock: 0,
         is_visible: true
     });
+    const [lastEditedId, setLastEditedId] = useState(null);
+
+    // Efecto para auto-scroll al producto editado
+    useEffect(() => {
+        if (activeTab === 'list' && lastEditedId) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`prod-card-${lastEditedId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Pequeña animación de resaltado
+                    element.style.borderColor = 'var(--green_btn_primary)';
+                    element.style.boxShadow = '0 0 15px rgba(39, 174, 96, 0.4)';
+                    element.style.transition = 'all 0.5s';
+
+                    setTimeout(() => {
+                        element.style.borderColor = 'var(--border-color)';
+                        element.style.boxShadow = 'var(--card-shadow)';
+                        setLastEditedId(null);
+                    }, 2000);
+                }
+            }, 300); // Pequeño delay para asegurar que el DOM se ha renderizado
+            return () => clearTimeout(timer);
+        }
+    }, [activeTab, products, lastEditedId]);
 
     if (!showCatalog || userRole !== 'admin') return null;
 
@@ -71,12 +96,14 @@ const CatalogModal = ({
         setLoading(true);
         try {
             if (editingProduct) {
-                const { error } = await updateProduct(editingProduct.id, formData);
+                const currentId = editingProduct.id;
+                const { error } = await updateProduct(currentId, formData);
                 if (error) throw error;
                 // Ajuste de stock si es necesario
-                const { error: stockError } = await updateStock(editingProduct.id, formData.stock);
+                const { error: stockError } = await updateStock(currentId, formData.stock);
                 if (stockError) console.error("Error al ajustar stock:", stockError);
 
+                setLastEditedId(currentId);
                 alert("✅ Producto y Stock actualizados con éxito");
             } else {
                 const { error } = await createProduct(formData);
@@ -246,8 +273,14 @@ const CatalogModal = ({
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="number"
-                                            value={formData.stock || 0}
-                                            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                                            min="0"
+                                            value={formData.stock || (formData.stock === 0 ? '0' : '')}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                const numericVal = val === '' ? '' : Math.max(0, parseInt(val) || 0);
+                                                setFormData({ ...formData, stock: numericVal });
+                                            }}
+                                            onFocus={(e) => e.target.select()}
                                             placeholder="0"
                                             style={{ width: '100%', padding: '12px', paddingLeft: '40px', borderRadius: '12px', border: '1px solid var(--green_btn_primary)', fontSize: '14px', backgroundColor: 'var(--bg-secondary)', fontWeight: 'bold', color: 'var(--text-primary)' }}
                                         />
@@ -321,11 +354,15 @@ const CatalogModal = ({
                                 {products.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>No hay productos registrados</div>
                                 ) : products.map(p => (
-                                    <div key={p.id} style={{
-                                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                        padding: '12px', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
-                                        boxShadow: 'var(--card-shadow)', position: 'relative'
-                                    }}>
+                                    <div
+                                        key={p.id}
+                                        id={`prod-card-${p.id}`}
+                                        style={{
+                                            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                            padding: '12px', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
+                                            boxShadow: 'var(--card-shadow)', position: 'relative'
+                                        }}
+                                    >
                                         <div style={{ marginBottom: '10px' }}>
                                             <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '4px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
                                                 {p.name}

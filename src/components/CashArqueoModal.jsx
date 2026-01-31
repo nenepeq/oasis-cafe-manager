@@ -279,10 +279,14 @@ const CashArqueoModal = ({
                                             </div>
                                         </div>
 
-                                        <div style={{ background: 'var(--bg-highlight)', padding: '20px', borderRadius: '15px', textAlign: 'center', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
-                                            <div style={{ fontSize: '12px', opacity: 0.8 }}>SALDO ESPERADO EN CAJA</div>
-                                            <div style={{ fontSize: '30px', fontWeight: '900' }}>${cashReportData.esperado.toFixed(2)}</div>
-                                            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '5px' }}>(Fondo Inicial: ${activeShift.initial_fund})</div>
+                                        <div style={{ background: 'var(--bg-highlight)', padding: '20px', borderRadius: '15px', textAlign: 'center', color: 'var(--text-primary)', border: '2px solid #e67e22' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#e67e22', marginBottom: '5px' }}>EFECTIVO ESPERADO EN CAJA TOTAL</div>
+                                            <div style={{ fontSize: '32px', fontWeight: '900', color: activeShift ? '#27ae60' : 'inherit' }}>
+                                                ${cashReportData.esperado.toFixed(2)}
+                                            </div>
+                                            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '8px', padding: '5px', background: 'var(--bg-primary)', borderRadius: '8px', display: 'inline-block' }}>
+                                                🏦 FONDO INICIAL APERTURA: <strong>${activeShift ? activeShift.initial_fund : cashInitialFund}</strong>
+                                            </div>
                                         </div>
                                     </>
                                 )}

@@ -60,8 +60,8 @@ const getMXTimestamp = () => {
     values[type] = value;
   });
 
-  // Construir string ISO en zona horaria de México (sin Z al final)
-  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}`;
+  // Construir string ISO en zona horaria de México con desfase -06:00
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}-06:00`;
 };
 
 function App() {
@@ -137,6 +137,7 @@ function App() {
   const [sales, setSales] = useState([]);
   const [selectedSale, setSelectedSale] = useState(null);
   const [totalIngresosReporte, setTotalIngresosReporte] = useState(0);
+  const [totalSalesCount, setTotalSalesCount] = useState(0);
   const [reportStartDate, setReportStartDate] = useState(getMXDate());
   const [reportEndDate, setReportEndDate] = useState(getMXDate());
   const [reportExpenses, setReportExpenses] = useState([]);
@@ -186,11 +187,11 @@ function App() {
       const [month, day, year] = mxDateStr.split(',')[0].split('/').map(n => parseInt(n));
 
       // Primer día del mes (en formato YYYY-MM-DD para Supabase)
-      const startStr = `${year}-${String(month).padStart(2, '0')}-01T00:00:00`;
+      const startStr = `${year}-${String(month).padStart(2, '0')}-01T00:00:00-06:00`;
 
       // Último día del mes
       const lastDay = new Date(year, month, 0);
-      const endStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}T23:59:59`;
+      const endStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}T23:59:59-06:00`;
 
       const { data, error } = await supabase
         .from('sales')
@@ -965,7 +966,7 @@ function App() {
   }, [showFinances, financeStartDate, financeEndDate, showReport]);
 
   // Previous useEffect for runCashArqueo stays here
-  useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo]);
+  useEffect(() => { if (showCashArqueo) runCashArqueo(); }, [cashInitialFund, cashPhysicalCount, showCashArqueo, activeShift]);
 
 
   // --- SALES PAGINATION STATE ---
@@ -985,15 +986,19 @@ function App() {
       .range(from, to);
 
     // Filtro de fecha con ajuste de Zona Horaria (UTC-6)
+    let startDateFilter = null;
+    let nextDayStrFilter = null;
+
     if (reportStartDate && reportEndDate) {
       // Fin del día local (23:59) es ~06:00 UTC del día siguiente
       const endDateObj = new Date(reportEndDate);
       endDateObj.setDate(endDateObj.getDate() + 1);
-      const nextDayStr = endDateObj.toISOString().split('T')[0];
+      nextDayStrFilter = endDateObj.toISOString().split('T')[0];
+      startDateFilter = reportStartDate + 'T06:00:00';
 
       query = query
-        .gte('created_at', reportStartDate + 'T06:00:00') // 00:00 MX ~ 06:00 UTC
-        .lt('created_at', nextDayStr + 'T06:00:00');      // 00:00 MX día sig ~ 06:00 UTC día sig
+        .gte('created_at', startDateFilter) // 00:00 MX ~ 06:00 UTC
+        .lt('created_at', nextDayStrFilter + 'T06:00:00');      // 00:00 MX día sig ~ 06:00 UTC día sig
     }
 
     const { data, error } = await query;
@@ -1001,14 +1006,31 @@ function App() {
     if (!error) {
       if (offset === 0) {
         setSales(data || []);
-        // Sumar TOTALES aproximados (visible)
-        // Para total exacto se requeriría otra query, pero por performance sumamos lo cargado
-        setTotalIngresosReporte((data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0));
+
+        // --- Obtener Resumen Real del Periodo (Más allá del límite de 50) ---
+        try {
+          let summaryQuery = supabase.from('sales')
+            .select('total')
+            .neq('status', 'cancelado')
+            .neq('payment_method', 'A Cuenta');
+
+          if (startDateFilter && nextDayStrFilter) {
+            summaryQuery = summaryQuery
+              .gte('created_at', startDateFilter)
+              .lt('created_at', nextDayStrFilter + 'T06:00:00');
+          }
+
+          const { data: summaryData } = await summaryQuery;
+          if (summaryData) {
+            const realSum = summaryData.reduce((acc, s) => acc + (s.total || 0), 0);
+            setTotalIngresosReporte(realSum);
+            setTotalSalesCount(summaryData.length);
+          }
+        } catch (sumErr) {
+          console.error("Error fetching sales summary:", sumErr);
+        }
       } else {
         setSales(prev => [...prev, ...data]);
-        // Actualizar sumatoria
-        const newSum = (data || []).reduce((acc, sale) => (sale.status !== 'cancelado' && sale.payment_method !== 'A Cuenta') ? acc + (sale.total || 0) : acc, 0);
-        setTotalIngresosReporte(prev => prev + newSum);
       }
 
       // Si recibimos menos registros que el límite, no hay más
@@ -1818,6 +1840,8 @@ function App() {
         loadMoreSales={() => fetchSales(salesOffset + 50)}
         hasMoreSales={hasMoreSales}
         salesGoal={salesGoal} setSalesGoal={updateSalesGoalInDB}
+        totalIngresosReporte={totalIngresosReporte}
+        totalSalesCount={totalSalesCount}
       />
       <CashArqueoModal
         showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} userRole={userRole} fetchArqueoHistory={fetchArqueoHistory}

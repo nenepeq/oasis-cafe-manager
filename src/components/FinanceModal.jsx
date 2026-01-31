@@ -524,127 +524,131 @@ const FinanceModal = ({
                             </div>
                         </div>
 
-                        {/* FILA 1: KPIs PRINCIPALES CON COMPARACIÓN */}
+                        {/* FILA 1: KPIs PRINCIPALES (Rediseño a 4 Tarjetas) */}
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                             gap: '15px',
                             marginBottom: '20px'
                         }}>
-                            {/* KPI: INGRESOS */}
+                            {/* Card 1: Ingresos Brutos */}
                             <div style={{
                                 background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
                                 border: '2px solid #bbf7d0',
                                 padding: '20px',
-                                borderRadius: '20px',
-                                position: 'relative',
-                                overflow: 'hidden'
+                                borderRadius: '25px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <TrendingUp size={20} style={{ color: '#166534' }} />
-                                    <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#166534' }}>INGRESOS BRUTOS</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <TrendingUp size={22} style={{ color: '#15803d' }} />
+                                    <span style={{ fontWeight: '900', fontSize: '13px', color: '#15803d' }}>Ingresos Brutos</span>
                                 </div>
-                                <div style={{ fontSize: '32px', fontWeight: '900', color: '#15803d', marginBottom: '8px' }}>
-                                    ${finData.ingresos.toFixed(2)}
+                                <div style={{ fontSize: '28px', fontWeight: '900', color: '#15803d' }}>
+                                    ${finData.ingresos.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
                                     {comparisonMetrics.ingresosVariation >= 0 ? (
-                                        <>
-                                            <ArrowUp size={16} style={{ color: '#16a34a' }} />
-                                            <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                +{comparisonMetrics.ingresosVariation.toFixed(1)}%
-                                            </span>
-                                        </>
+                                        <ArrowUp size={14} style={{ color: '#16a34a' }} />
                                     ) : (
-                                        <>
-                                            <ArrowDown size={16} style={{ color: '#dc2626' }} />
-                                            <span style={{ color: '#dc2626', fontWeight: 'bold' }}>
-                                                {comparisonMetrics.ingresosVariation.toFixed(1)}%
-                                            </span>
-                                        </>
+                                        <ArrowDown size={14} style={{ color: '#dc2626' }} />
                                     )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
-                                        <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
-                                        <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
-                                    </div>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        color: comparisonMetrics.ingresosVariation >= 0 ? '#16a34a' : '#dc2626'
+                                    }}>
+                                        {comparisonMetrics.ingresosVariation >= 0 ? '+' : ''}{comparisonMetrics.ingresosVariation.toFixed(1)}%
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* KPI: EGRESOS */}
+                            {/* Card 2: Costo Productos */}
                             <div style={{
-                                background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                                border: '2px solid #fecaca',
+                                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                                border: '2px solid #bfdbfe',
                                 padding: '20px',
-                                borderRadius: '20px',
-                                position: 'relative',
-                                overflow: 'hidden'
+                                borderRadius: '25px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <ArrowDown size={20} style={{ color: '#991b1b' }} />
-                                    <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#991b1b' }}>EGRESOS TOTALES</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <Layers size={22} style={{ color: '#1e40af' }} />
+                                    <span style={{ fontWeight: '900', fontSize: '13px', color: '#1e40af' }}>Costo Productos</span>
                                 </div>
-                                <div style={{ fontSize: '32px', fontWeight: '900', color: '#dc2626', marginBottom: '8px' }}>
-                                    ${finData.totalEgresos.toFixed(2)}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
-                                    {comparisonMetrics.egresosVariation >= 0 ? (
-                                        <>
-                                            <TrendingUp size={16} style={{ color: '#dc2626' }} />
-                                            <span style={{ color: '#dc2626', fontWeight: 'bold' }}>
-                                                +{comparisonMetrics.egresosVariation.toFixed(1)}%
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <TrendingDown size={16} style={{ color: '#16a34a' }} />
-                                            <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                {comparisonMetrics.egresosVariation.toFixed(1)}%
-                                            </span>
-                                        </>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
-                                        <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
-                                        <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
-                                    </div>
+                                <div style={{ fontSize: '28px', fontWeight: '900', color: '#1d4ed8' }}>
+                                    -${finData.costoProductos.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                             </div>
 
-                            {/* KPI: UTILIDAD NETA */}
+                            {/* Card 3: Gastos & Stock */}
+                            <div style={{
+                                background: 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)',
+                                border: '2px solid #fecdd3',
+                                padding: '20px',
+                                borderRadius: '25px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <ArrowDown size={22} style={{ color: '#be123c' }} />
+                                    <span style={{ fontWeight: '900', fontSize: '13px', color: '#be123c' }}>Gastos & Stock</span>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: '900', color: '#dc2626' }}>
+                                    -${(finData.gastosOps + finData.gastosStock).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                                    {comparisonMetrics.egresosVariation >= 0 ? (
+                                        <TrendingUp size={14} style={{ color: '#dc2626' }} />
+                                    ) : (
+                                        <TrendingDown size={14} style={{ color: '#16a34a' }} />
+                                    )}
+                                    <span style={{
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        color: comparisonMetrics.egresosVariation >= 0 ? '#dc2626' : '#16a34a'
+                                    }}>
+                                        {comparisonMetrics.egresosVariation >= 0 ? '+' : ''}{comparisonMetrics.egresosVariation.toFixed(1)}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card 4: Utilidad Neta */}
                             <div style={{
                                 background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
                                 border: '2px solid #e9d5ff',
                                 padding: '20px',
-                                borderRadius: '20px',
-                                position: 'relative',
-                                overflow: 'hidden'
+                                borderRadius: '25px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <DollarSign size={20} style={{ color: '#6b21a8' }} />
-                                    <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#6b21a8' }}>UTILIDAD NETA</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <DollarSign size={22} style={{ color: '#6b21a8' }} />
+                                    <span style={{ fontWeight: '900', fontSize: '13px', color: '#6b21a8' }}>Utilidad Neta</span>
                                 </div>
-                                <div style={{ fontSize: '32px', fontWeight: '900', color: '#7e22ce', marginBottom: '8px' }}>
-                                    ${finData.utilidadNeta.toFixed(2)}
+                                <div style={{ fontSize: '28px', fontWeight: '900', color: '#7e22ce' }}>
+                                    ${finData.utilidadNeta < 0 ? '-' : ''}${Math.abs(finData.utilidadNeta).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
                                     {comparisonMetrics.utilidadVariation >= 0 ? (
-                                        <>
-                                            <ArrowUp size={16} style={{ color: '#16a34a' }} />
-                                            <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                +{comparisonMetrics.utilidadVariation.toFixed(1)}%
-                                            </span>
-                                        </>
+                                        <ArrowUp size={14} style={{ color: '#16a34a' }} />
                                     ) : (
-                                        <>
-                                            <ArrowDown size={16} style={{ color: '#dc2626' }} />
-                                            <span style={{ color: '#dc2626', fontWeight: 'bold' }}>
-                                                {comparisonMetrics.utilidadVariation.toFixed(1)}%
-                                            </span>
-                                        </>
+                                        <ArrowDown size={14} style={{ color: '#dc2626' }} />
                                     )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', color: 'var(--text-primary)', marginTop: '5px' }}>
-                                        <span style={{ fontWeight: 'bold' }}>Comparado con periodo anterior:</span>
-                                        <span>({comparisonMetrics.prevStartDate} a {comparisonMetrics.prevEndDate})</span>
-                                    </div>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        color: comparisonMetrics.utilidadVariation >= 0 ? '#16a34a' : '#dc2626'
+                                    }}>
+                                        {comparisonMetrics.utilidadVariation >= 0 ? '+' : ''}{comparisonMetrics.utilidadVariation.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#6b21a8', marginTop: '8px', fontWeight: 'bold' }}>
+                                    Margen Real: {finData.margen.toFixed(2)}%
                                 </div>
                             </div>
                         </div>
@@ -779,33 +783,8 @@ const FinanceModal = ({
                             />
                         ) : (
                             <>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '30px' }}>
-                                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px', borderRadius: '20px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#166534', marginBottom: '5px' }}>
-                                            <TrendingUp size={20} /> <span style={{ fontWeight: 'bold' }}>Ingresos Brutos</span>
-                                        </div>
-                                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#15803d' }}>${finData.ingresos.toFixed(2)}</div>
-                                    </div>
-                                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '20px', borderRadius: '20px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1e40af', marginBottom: '5px' }}>
-                                            <Layers size={20} /> <span style={{ fontWeight: 'bold' }}>Costo Productos</span>
-                                        </div>
-                                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#2563eb' }}>-${finData.costoProductos.toFixed(2)}</div>
-                                    </div>
-                                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '20px', borderRadius: '20px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#991b1b', marginBottom: '5px' }}>
-                                            <ArrowDown size={20} /> <span style={{ fontWeight: 'bold' }}>Gastos & Stock</span>
-                                        </div>
-                                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#dc2626' }}>-${(finData.gastosOps + finData.gastosStock).toFixed(2)}</div>
-                                    </div>
-                                    <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', padding: '20px', borderRadius: '20px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#6b21a8', marginBottom: '5px' }}>
-                                            <DollarSign size={20} /> <span style={{ fontWeight: 'bold' }}>Utilidad Neta</span>
-                                        </div>
-                                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#7e22ce' }}>${finData.utilidadNeta.toFixed(2)}</div>
-                                        <div style={{ fontSize: '12px', color: '#6b21a8', marginTop: '5px' }}>Margen Real: {finData.margen.toFixed(2)}%</div>
-                                    </div>
-                                </div>
+                                {/* ELIMINADO: Grid de Tarjetas Duplicadas ya arriba */}
+
 
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '30px' }}>
                                     <div style={{ flex: 1, minWidth: '300px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '25px', padding: '25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

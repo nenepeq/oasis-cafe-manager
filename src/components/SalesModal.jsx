@@ -26,11 +26,14 @@ const SalesModal = ({
     hasMoreSales,
     loadMoreSales,
     salesGoal,
-    setSalesGoal
+    setSalesGoal,
+    totalIngresosReporte,
+    totalSalesCount
 }) => {
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar' | 'config'
     const [localSalesGoal, setLocalSalesGoal] = useState(salesGoal);
     const [isSavingGoal, setIsSavingGoal] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Sync local state when prop changes (e.g., initial load from Supabase)
     useEffect(() => {
@@ -88,87 +91,114 @@ const SalesModal = ({
         }
     }, [pendingSales.length, activeTab]);
 
-    const handleExportSalesCSV = async () => {
-        if (!sales || sales.length === 0) return;
+    const handleExportSalesExcel = async () => {
+        setIsExporting(true);
+        try {
+            // Obtener TODAS las ventas del periodo para el reporte (no solo las 50 cargadas)
+            let query = supabase.from('sales')
+                .select(`*, sale_items (*, products (name, sale_price))`)
+                .order('created_at', { ascending: false });
 
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Reporte de Ventas');
+            if (reportStartDate && reportEndDate) {
+                const endDateObj = new Date(reportEndDate);
+                endDateObj.setDate(endDateObj.getDate() + 1);
+                const nextDayStr = endDateObj.toISOString().split('T')[0];
+                query = query
+                    .gte('created_at', reportStartDate + 'T06:00:00')
+                    .lt('created_at', nextDayStr + 'T06:00:00');
+            }
 
-        // Estilos
-        const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
-        const headerFont = { name: 'Arial Black', size: 10, color: { argb: 'FFFFFFFF' } };
-        const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+            const { data: allSales, error } = await query;
+            if (error) throw error;
+            if (!allSales || allSales.length === 0) {
+                alert("No hay ventas para exportar en este rango.");
+                return;
+            }
 
-        worksheet.mergeCells('A1:G1');
-        const mainHeader = worksheet.getCell('A1');
-        mainHeader.value = 'OASIS CAFÉ - REPORTE DE VENTAS';
-        mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
-        mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
-        mainHeader.fill = headerFill;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Reporte de Ventas');
 
-        worksheet.getCell('A2').value = `Periodo: ${reportStartDate} al ${reportEndDate}`;
-        worksheet.getCell('G2').value = `Total Ingresos: $${totalIngresosReporte.toFixed(2)}`;
-        worksheet.getRow(2).font = { bold: true };
+            // Estilos
+            const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4A3728' } };
+            const headerFont = { name: 'Arial Black', size: 10, color: { argb: 'FFFFFFFF' } };
 
-        const rows = sales.map(s => {
-            let statusText = '';
-            if (s.status === 'entregado') statusText = '✅ ENTREGADO';
-            else if (s.status === 'cancelado') statusText = '❌ CANCELADO';
-            else statusText = '⏳ PENDIENTE DE ENTREGAR';
+            worksheet.mergeCells('A1:G1');
+            const mainHeader = worksheet.getCell('A1');
+            mainHeader.value = 'OASIS CAFÉ - REPORTE DE VENTAS';
+            mainHeader.font = { name: 'Arial Black', size: 14, color: { argb: 'FFFFFFFF' } };
+            mainHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+            mainHeader.fill = headerFill;
 
-            return [
-                s.ticket_number ? `#${s.ticket_number}` : (s.id ? `#${s.id.slice(0, 4).toUpperCase()}` : 'N/A'),
-                new Date(s.created_at).toLocaleString(),
-                s.customer_name,
-                s.sale_items?.map(item => `${item.quantity}x ${item.products?.name || 'Producto'}`).join(' | ') || '',
-                s.payment_method || '',
-                s.total,
-                statusText
-            ];
-        });
+            worksheet.getCell('A2').value = `Periodo: ${reportStartDate} al ${reportEndDate}`;
+            worksheet.getCell('G2').value = `Total Ingresos: $${totalIngresosReporte.toFixed(2)}`;
+            worksheet.getRow(2).font = { bold: true };
 
-        worksheet.addTable({
-            name: 'SalesTable',
-            ref: 'A4',
-            headerRow: true,
-            style: { theme: 'TableStyleMedium11', showRowStripes: true },
-            columns: [
-                { name: 'Ticket', filterButton: true },
-                { name: 'Fecha', filterButton: true },
-                { name: 'Cliente', filterButton: true },
-                { name: 'Productos', filterButton: false },
-                { name: 'Método', filterButton: true },
-                { name: 'Total', filterButton: false },
-                { name: 'Estado', filterButton: true }
-            ],
-            rows: rows,
-        });
+            const rows = allSales.map(s => {
+                let statusText = '';
+                if (s.status === 'entregado') statusText = '✅ ENTREGADO';
+                else if (s.status === 'cancelado') statusText = '❌ CANCELADO';
+                else if (s.status === 'recibido') statusText = '⏳ RECIBIDO';
+                else statusText = s.status?.toUpperCase() || 'PAGADO';
 
-        // Formatear columna de Total como moneda
-        rows.forEach((_, idx) => {
-            const cell = worksheet.getCell(idx + 5, 6);
-            cell.numFmt = '"$"#,##0.00';
-        });
+                return [
+                    s.ticket_number ? `#${s.ticket_number}` : (s.id ? `#${s.id.slice(0, 4).toUpperCase()}` : 'N/A'),
+                    new Date(s.created_at).toLocaleString('es-MX'),
+                    s.customer_name || 'Mostrador',
+                    (s.sale_items || s.items)?.map(item => `${item.quantity}x ${item.products?.name || item.name || 'Producto'}`).join(' | ') || '',
+                    s.payment_method || '',
+                    s.total,
+                    statusText
+                ];
+            });
 
-        // Fila de Total
-        const totalRow = worksheet.addRow([]);
-        const totalCell = worksheet.getCell(totalRow.number, 6);
-        totalCell.value = totalIngresosReporte;
-        totalCell.numFmt = '"$"#,##0.00';
-        totalCell.font = { bold: true, size: 12 };
-        worksheet.getCell(totalRow.number, 5).value = 'TOTAL INGRESOS:';
-        worksheet.getCell(totalRow.number, 5).font = { bold: true };
+            worksheet.addTable({
+                name: 'SalesTable',
+                ref: 'A4',
+                headerRow: true,
+                style: { theme: 'TableStyleMedium11', showRowStripes: true },
+                columns: [
+                    { name: 'Ticket', filterButton: true },
+                    { name: 'Fecha', filterButton: true },
+                    { name: 'Cliente', filterButton: true },
+                    { name: 'Productos', filterButton: false },
+                    { name: 'Método', filterButton: true },
+                    { name: 'Total', filterButton: false },
+                    { name: 'Estado', filterButton: true }
+                ],
+                rows: rows,
+            });
 
-        worksheet.getColumn(1).width = 10;
-        worksheet.getColumn(2).width = 20;
-        worksheet.getColumn(3).width = 25;
-        worksheet.getColumn(4).width = 40;
-        worksheet.getColumn(5).width = 15;
-        worksheet.getColumn(6).width = 15;
-        worksheet.getColumn(7).width = 12;
+            // Formatear columna de Total como moneda
+            rows.forEach((_, idx) => {
+                const cell = worksheet.getCell(idx + 5, 6);
+                cell.numFmt = '"$"#,##0.00';
+            });
 
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(new Blob([buffer]), `Reporte_Ventas_Oasis_${reportStartDate}.xlsx`);
+            // Fila de Total
+            const totalRow = worksheet.addRow([]);
+            const totalCell = worksheet.getCell(totalRow.number, 6);
+            totalCell.value = totalIngresosReporte;
+            totalCell.numFmt = '"$"#,##0.00';
+            totalCell.font = { bold: true, size: 12 };
+            worksheet.getCell(totalRow.number, 5).value = 'TOTAL INGRESOS:';
+            worksheet.getCell(totalRow.number, 5).font = { bold: true };
+
+            worksheet.getColumn(1).width = 12;
+            worksheet.getColumn(2).width = 25;
+            worksheet.getColumn(3).width = 25;
+            worksheet.getColumn(4).width = 45;
+            worksheet.getColumn(5).width = 15;
+            worksheet.getColumn(6).width = 15;
+            worksheet.getColumn(7).width = 20;
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Reporte_Ventas_Oasis_${reportStartDate}.xlsx`);
+        } catch (err) {
+            console.error("Error exportando excel:", err);
+            alert("❌ Error al generar reporte: " + err.message);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     if (!showReport) return null;
@@ -400,23 +430,44 @@ const SalesModal = ({
                                 />
                             </div>
                             <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', alignSelf: 'flex-end' }}>
-                                {sales.length > 0 && activeTab === 'pagadas' && (
+                                {activeTab === 'pagadas' && (
                                     <button
-                                        onClick={handleExportSalesCSV}
+                                        onClick={handleExportSalesExcel}
+                                        disabled={isExporting || sales.length === 0}
                                         className="btn-active-effect"
                                         style={{
                                             padding: '10px 15px', background: '#27ae60', color: '#fff',
                                             border: 'none', borderRadius: '10px', fontWeight: 'bold',
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
-                                            boxShadow: '0 4px 0 #1e7e46'
+                                            cursor: (isExporting || sales.length === 0) ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '5px',
+                                            boxShadow: isExporting ? 'none' : '0 4px 0 #1e7e46',
+                                            opacity: isExporting ? 0.7 : 1,
+                                            transform: isExporting ? 'translateY(2px)' : 'none'
                                         }}
                                     >
-                                        <Download size={18} /> EXCEL
+                                        {isExporting ? <RefreshCw size={18} className="animate-spin" /> : <Download size={18} />}
+                                        {isExporting ? 'GENERANDO...' : 'EXCEL'}
                                     </button>
                                 )}
-                                <div style={{ textAlign: 'right', fontWeight: '900', fontSize: '18px', color: activeTab === 'pagadas' ? '#27ae60' : (activeTab === 'offline' ? '#f1c40f' : '#e67e22') }}>
-                                    {activeTab === 'pagadas' ? 'Total Ingresos:' : (activeTab === 'offline' ? 'Total Offline:' : 'Total Pendiente:')}<br />
-                                    ${totalFiltered.toFixed(2)}
+                                <div style={{
+                                    textAlign: 'right',
+                                    fontWeight: '900',
+                                    fontSize: '18px',
+                                    color: activeTab === 'pagadas' ? '#27ae60' : (activeTab === 'offline' ? '#f1c40f' : '#e67e22'),
+                                    lineHeight: '1.2',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center'
+                                }}>
+                                    <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                        {activeTab === 'pagadas' ? `${totalSalesCount} Ventas` : `${filteredSales.length} Movimientos`}
+                                    </div>
+                                    <div style={{ fontSize: '12px' }}>
+                                        {activeTab === 'pagadas' ? 'Total Ingresos:' : (activeTab === 'offline' ? 'Total Offline:' : 'Total Pendiente:')}
+                                    </div>
+                                    <div>
+                                        ${(activeTab === 'pagadas' ? totalIngresosReporte : totalFiltered).toFixed(2)}
+                                    </div>
                                 </div>
                             </div>
                         </div>

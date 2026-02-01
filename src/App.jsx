@@ -1188,7 +1188,6 @@ function App() {
       // Gastos en efectivo desde que abrió el turno
       const { data: eData } = await supabase.from('expenses')
         .select('monto')
-        .eq('fecha', getMXDate())
         .gte('created_at', startTime);
 
       const vEfec = vData?.reduce((a, v) => a + v.total, 0) || 0;
@@ -1238,6 +1237,8 @@ function App() {
       actual_cash: cashPhysicalCount,
       expected_cash: cashReportData.esperado,
       difference: cashReportData.diferencia,
+      sales_cash: cashReportData.ventasEfectivo, // Persistir ventas en efectivo
+      expenses_cash: cashReportData.gastosEfectivo, // Persistir gastos en efectivo
       observations: cashObservations,
       closed_by: user.id,
       status: 'closed'

@@ -297,9 +297,18 @@ const InventoryModal = ({
                                                 }} title={inv.products?.name}>
                                                     {inv.products?.name}
                                                 </td>
-                                                <td style={{ padding: '12px 5px', textAlign: 'center', fontWeight: '900', color: 'var(--text-primary)' }}>{inv.stock}</td>
+                                                <td style={{
+                                                    padding: '12px 5px',
+                                                    textAlign: 'center',
+                                                    fontWeight: '900',
+                                                    color: inv.stock < 0 ? '#e74c3c' : 'var(--text-primary)',
+                                                    backgroundColor: inv.stock < 0 ? 'rgba(231, 76, 60, 0.1)' : 'transparent',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    {inv.stock}
+                                                </td>
                                                 <td style={{ padding: '12px 5px', textAlign: 'center' }}>
-                                                    {inv.stock === 0 ? (
+                                                    {inv.stock <= 0 ? (
                                                         <XCircle color="#e74c3c" size={16} />
                                                     ) : inv.stock <= 5 ? (
                                                         <AlertTriangle color="#e74c3c" size={16} />
@@ -652,10 +661,16 @@ const InventoryModal = ({
                                     </select>
                                 </div>
 
+                                {selectedShrinkageProd && shrinkageQty > (inventoryList.find(i => i.product_id === selectedShrinkageProd)?.stock || 0) && (
+                                    <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AlertTriangle size={14} /> La cantidad supera el stock actual.
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handleRegisterShrinkage}
-                                    disabled={loading || !selectedShrinkageProd || shrinkageQty <= 0}
-                                    className={(selectedShrinkageProd && shrinkageQty > 0) ? "btn-active-effect" : ""}
+                                    disabled={loading || !selectedShrinkageProd || shrinkageQty <= 0 || shrinkageQty > (inventoryList.find(i => i.product_id === selectedShrinkageProd)?.stock || 0)}
+                                    className={(selectedShrinkageProd && shrinkageQty > 0 && shrinkageQty <= (inventoryList.find(i => i.product_id === selectedShrinkageProd)?.stock || 0)) ? "btn-active-effect" : ""}
                                     style={{
                                         width: '100%',
                                         padding: '15px',

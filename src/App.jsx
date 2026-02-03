@@ -823,13 +823,17 @@ function App() {
 
   const handleSale = async () => {
     if (cart.length === 0 || loading) return;
+    // Verificación de stock previa (doble check)
     for (const item of cart) {
       const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
-      if (item.quantity > (currentInvItem?.stock || 0)) {
-        alert(`⚠️ FUERA DE STOCK: ${item.name}`);
+      const stockDisponible = currentInvItem?.stock || 0;
+      if (item.quantity > stockDisponible) {
+        alert(`⚠️ STOCK INSUFICIENTE: ${item.name} tiene ${stockDisponible} unidades, intentas vender ${item.quantity}.`);
+        setLoading(false);
         return;
       }
     }
+
     const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
 
     // Validación para A Cuenta
@@ -854,11 +858,12 @@ function App() {
           timestamp: getMXTimestamp() // Usar zona horaria de México
         });
 
-        // Actualizar stock localmente para feedback inmediato en UI
+        // Actualizar stock localmente para feedback inmediato en UI (Protegiendo contra negativos)
         setInventoryList(prev => prev.map(inv => {
           const itemInCart = cart.find(c => c.id === inv.product_id);
           if (itemInCart) {
-            return { ...inv, stock: inv.stock - itemInCart.quantity };
+            const newStock = Math.max(0, inv.stock - itemInCart.quantity);
+            return { ...inv, stock: newStock };
           }
           return inv;
         }));

@@ -435,13 +435,9 @@ function App() {
             })));
 
             if (!itemsError) {
-              // ACTUALIZACIÓN DE INVENTARIO (FIX)
-              for (const item of s.items) {
-                const { data: invData } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-                if (invData) {
-                  await supabase.from('inventory').update({ stock: invData.stock - item.quantity }).eq('product_id', item.id);
-                }
-              }
+              // ACTUALIZACIÓN DE INVENTARIO: SE ELIMINA LA ACTUALIZACIÓN MANUAL
+              // PORQUE LA BASE DE DATOS TIENE UN TRIGGER QUE LO MANEJA AUTOMÁTICAMENTE.
+              // ESTO EVITA LA DOBLE DEDUCCIÓN DE INVENTARIO.
 
               await clearPendingItem('pending_sales', s.id);
               await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
@@ -890,12 +886,10 @@ function App() {
         sale_id: sale.id, product_id: item.id, quantity: item.quantity, price: item.sale_price, sale_ticket_number: sale.ticket_number
       })));
 
-      for (const item of cart) {
-        const { data: currentInvItem } = await supabase.from('inventory').select('stock').eq('product_id', item.id).single();
-        if (currentInvItem) {
-          await supabase.from('inventory').update({ stock: currentInvItem.stock - item.quantity }).eq('product_id', item.id);
-        }
-      }
+      // ACTUALIZACIÓN DE INVENTARIO: SE ELIMINA LA ACTUALIZACIÓN MANUAL EN EL FRONTEND.
+      // SE CONFIRMÓ QUE EXISTE UN TRIGGER EN LA BASE DE DATOS QUE DESCUENTA EL STOCK
+      // CUANDO SE INSERTAN ÍTEMS EN 'sale_items' O SE CREA UNA VENTA.
+      // ESTO RESUELVE EL PROBLEMA DE QUE SE DESCUENTEN DOS PIEZAS POR VENTA.
 
       alert("✅ Venta registrada");
 

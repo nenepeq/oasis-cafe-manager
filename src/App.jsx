@@ -117,6 +117,7 @@ function App() {
   const [cashReportData, setCashReportData] = useState({
     ventasEfectivo: 0,
     gastosEfectivo: 0,
+    comprasEfectivo: 0,
     esperado: 0,
     diferencia: 0
   });
@@ -1189,14 +1190,21 @@ function App() {
         .select('monto')
         .gte('created_at', startTime);
 
+      // Compras en efectivo desde que abrió el turno
+      const { data: pData } = await supabase.from('purchases')
+        .select('total')
+        .gte('created_at', startTime);
+
       const vEfec = vData?.reduce((a, v) => a + v.total, 0) || 0;
       const eEfec = eData?.reduce((a, e) => a + e.monto, 0) || 0;
+      const pEfec = pData?.reduce((a, p) => a + p.total, 0) || 0;
       const initial = activeShift ? parseFloat(activeShift.initial_fund) : parseFloat(cashInitialFund);
-      const esp = initial + vEfec - eEfec;
+      const esp = initial + vEfec - eEfec - pEfec;
 
       setCashReportData({
         ventasEfectivo: vEfec,
         gastosEfectivo: eEfec,
+        comprasEfectivo: pEfec,
         esperado: esp,
         diferencia: (parseFloat(cashPhysicalCount) || 0) - esp
       });
@@ -1238,6 +1246,7 @@ function App() {
       difference: cashReportData.diferencia,
       sales_cash: cashReportData.ventasEfectivo, // Persistir ventas en efectivo
       expenses_cash: cashReportData.gastosEfectivo, // Persistir gastos en efectivo
+      purchases_cash: cashReportData.comprasEfectivo, // NUEVO: Persistir compras en efectivo
       observations: cashObservations,
       closed_by: user.id,
       status: 'closed'

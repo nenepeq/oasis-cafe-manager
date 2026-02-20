@@ -49,6 +49,7 @@ const CashArqueoModal = ({
             h.end_time ? new Date(h.end_time).toLocaleString() : 'En curso',
             h.initial_fund,
             h.sales_cash || 0,
+            h.purchases_cash || 0,
             h.expenses_cash || 0,
             h.expected_cash || 0,
             h.actual_cash || 0,
@@ -70,6 +71,7 @@ const CashArqueoModal = ({
                 { name: 'Fin', filterButton: true },
                 { name: 'Fondo Inicial', filterButton: false },
                 { name: 'Ventas Efectivo', filterButton: false },
+                { name: 'Compras Efectivo', filterButton: false },
                 { name: 'Gastos Efectivo', filterButton: false },
                 { name: 'Esperado', filterButton: false },
                 { name: 'Real', filterButton: false },
@@ -86,7 +88,7 @@ const CashArqueoModal = ({
             const row = worksheet.getRow(rowNum);
 
             // Formato moneda
-            [3, 4, 5, 6, 7, 8].forEach(col => {
+            [3, 4, 5, 6, 7, 8, 9].forEach(col => {
                 row.getCell(col).numFmt = '"$"#,##0.00';
             });
 
@@ -127,6 +129,7 @@ const CashArqueoModal = ({
         const data = [
             ['Fondo Inicial', h.initial_fund],
             ['(+) Ventas Efectivo', h.sales_cash || 0],
+            ['(-) Compras Efectivo', -(h.purchases_cash || 0)],
             ['(-) Gastos Efectivo', -(h.expenses_cash || 0)],
             ['SALDO ESPERADO', h.expected_cash || 0],
             ['EFECTIVO FÍSICO', h.actual_cash || 0],
@@ -268,14 +271,18 @@ const CashArqueoModal = ({
 
                                 {userRole === 'admin' && (
                                     <>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                            <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '10px', color: '#166534', fontWeight: 'bold' }}>VENTAS (+EFEC)</div>
-                                                <div style={{ fontSize: '18px', fontWeight: '900', color: '#15803d' }}>${cashReportData.ventasEfectivo.toFixed(2)}</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                            <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '15px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '9px', color: '#166534', fontWeight: 'bold' }}>VENTAS (+EFEC)</div>
+                                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#15803d' }}>${cashReportData.ventasEfectivo.toFixed(2)}</div>
                                             </div>
-                                            <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '10px', color: '#991b1b', fontWeight: 'bold' }}>GASTOS (-EFEC)</div>
-                                                <div style={{ fontSize: '18px', fontWeight: '900', color: '#dc2626' }}>-${cashReportData.gastosEfectivo.toFixed(2)}</div>
+                                            <div style={{ background: '#fcf8e3', padding: '10px', borderRadius: '15px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '9px', color: '#8a6d3b', fontWeight: 'bold' }}>COMPRAS (-EFEC)</div>
+                                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#8a6d3b' }}>-${cashReportData.comprasEfectivo.toFixed(2)}</div>
+                                            </div>
+                                            <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '15px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '9px', color: '#991b1b', fontWeight: 'bold' }}>GASTOS (-EFEC)</div>
+                                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#dc2626' }}>-${cashReportData.gastosEfectivo.toFixed(2)}</div>
                                             </div>
                                         </div>
 
@@ -383,6 +390,7 @@ const CashArqueoModal = ({
                                         <th style={{ padding: '12px', textAlign: 'left' }}>Inicio / Fin</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Fondo</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Ventas</th>
+                                        <th style={{ padding: '12px', textAlign: 'center' }}>Compras</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Gastos</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Esperado</th>
                                         <th style={{ padding: '12px', textAlign: 'center' }}>Real</th>
@@ -392,7 +400,7 @@ const CashArqueoModal = ({
                                 </thead>
                                 <tbody>
                                     {arqueoHistory.length === 0 ? (
-                                        <tr><td colSpan="8" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>No hay registros</td></tr>
+                                        <tr><td colSpan="9" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>No hay registros</td></tr>
                                     ) : (
                                         arqueoHistory.map((h, i) => (
                                             <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
@@ -402,6 +410,7 @@ const CashArqueoModal = ({
                                                 </td>
                                                 <td style={{ padding: '12px', textAlign: 'center' }}>${h.initial_fund}</td>
                                                 <td style={{ padding: '12px', textAlign: 'center' }}>${h.sales_cash || 0}</td>
+                                                <td style={{ padding: '12px', textAlign: 'center', color: '#8a6d3b' }}>${h.purchases_cash || 0}</td>
                                                 <td style={{ padding: '12px', textAlign: 'center' }}>${h.expenses_cash || 0}</td>
                                                 <td style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>${(h.expected_cash || h.expected_amount || 0)}</td>
                                                 <td style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>${(h.actual_cash || h.actual_amount || 0)}</td>

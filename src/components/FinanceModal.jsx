@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { useToast } from '../hooks/useToast';
+
 import {
     X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download, Image as ImageIcon, BarChart3, Table as TableIcon, Loader2,
     ArrowUp, Target, Award, TrendingDown, Minus
@@ -28,8 +30,9 @@ const FinanceModal = ({
     monthlySalesTotal
 }) => {
     const [activeTab, setActiveTab] = useState('data'); // 'data' o 'charts'
-
     const [isExporting, setIsExporting] = useState(false);
+    const { showToast } = useToast();
+
 
     // --- CÁLCULO DE MÉTRICAS COMPARATIVAS CON PERIODO ANTERIOR ---
     const comparisonMetrics = useMemo(() => {
@@ -295,8 +298,9 @@ const FinanceModal = ({
 
         } catch (error) {
             console.error('Error al generar Excel:', error);
-            alert('Error al generar el archivo Excel: ' + (error.message || 'Error desconocido'));
+            showToast('Error al generar el archivo Excel: ' + (error.message || 'Error desconocido'), 'error');
         } finally {
+
             setIsExporting(false);
         }
     };

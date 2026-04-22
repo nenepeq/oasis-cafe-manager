@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
+
 import { X, Save, Plus, Trash2, Edit2, ClipboardList, AlertCircle, RefreshCw, Package } from 'lucide-react';
 import { createProduct, updateProduct, deleteProduct, updateStock } from '../api';
 
@@ -27,6 +29,8 @@ const CatalogModal = ({
         is_visible: true
     });
     const [lastEditedId, setLastEditedId] = useState(null);
+    const { showToast } = useToast();
+
 
     // Efecto para auto-scroll al producto editado
     useEffect(() => {
@@ -94,9 +98,10 @@ const CatalogModal = ({
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name.trim() || formData.sale_price <= 0) {
-            alert("Por favor completa el nombre y un precio de venta válido.");
+            showToast("Por favor completa el nombre y un precio de venta válido.", "warning");
             return;
         }
+
 
         setLoading(true);
         try {
@@ -109,19 +114,22 @@ const CatalogModal = ({
                 if (stockError) console.error("Error al ajustar stock:", stockError);
 
                 // setLastEditedId(currentId); // Ya se pone en handleEdit
-                alert("✅ Producto y Stock actualizados con éxito");
+                showToast("✅ Producto y Stock actualizados con éxito", "success");
             } else {
+
                 const { error } = await createProduct(formData);
                 if (error) throw error;
-                alert("✅ Producto creado con éxito");
+                showToast("✅ Producto creado con éxito", "success");
             }
+
             await fetchProducts();
             if (fetchInventory) await fetchInventory();
             handleOpenCreate();
             setActiveTab('list');
         } catch (err) {
-            alert("Error: " + err.message);
+            showToast("Error: " + err.message, "error");
         } finally {
+
             setLoading(false);
         }
     };
@@ -133,12 +141,14 @@ const CatalogModal = ({
         try {
             const { error } = await deleteProduct(id);
             if (error) throw error;
-            alert("✅ Producto eliminado");
+            showToast("✅ Producto eliminado", "success");
             await fetchProducts();
+
             if (fetchInventory) await fetchInventory();
         } catch (err) {
-            alert("No se pudo eliminar: " + (err.message.includes("violates foreign key constraint") ? "El producto tiene registros asociados (ventas o inventario)." : err.message));
+            showToast("No se pudo eliminar: " + (err.message.includes("violates foreign key constraint") ? "El producto tiene registros asociados (ventas o inventario)." : err.message), "error");
         } finally {
+
             setLoading(false);
         }
     };

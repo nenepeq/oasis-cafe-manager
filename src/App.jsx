@@ -10,8 +10,16 @@ import {
   Sun, Moon // Iconos añadidos
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
-import { savePendingSale, savePendingExpense, savePendingPurchase, getAllPendingItems, clearPendingItem } from './utils/db';
+import { 
+  savePendingSale, 
+  savePendingExpense, 
+  savePendingPurchase, 
+  savePendingShrinkage,
+  getAllPendingItems, 
+  clearPendingItem 
+} from './utils/db';
 import { compressImage } from './utils/imageOptimizer';
+import { useToast } from './hooks/useToast.jsx';
 
 // Componentes
 import Login from './components/Login';
@@ -75,6 +83,7 @@ function App() {
   const [userRole, setUserRole] = useState('ventas');
   const [loading, setLoading] = useState(false);
   const [confirmPaymentStep, setConfirmPaymentStep] = useState(false); // Safety toggle
+  const { showToast } = useToast();
 
   // --- ESTADOS DE DATOS PRINCIPALES ---
   const [products, setProducts] = useState([]);
@@ -328,24 +337,12 @@ function App() {
     setFabPosition({ x: newX, y: newY });
   };
 
-  const handleDragEnd = () => {
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleDragMove);
-    document.removeEventListener('touchend', handleDragEnd);
-
-    // Snap to screen bounds logic could go here
-  };
-
   const handleFabClick = () => {
     if (!isDragging.current) {
       if (isSearchOpen) {
         setSearchQuery(''); // Clear query when closing manually
       }
       setIsSearchOpen(!isSearchOpen);
-      if (!isSearchOpen) {
-        // Focus logic if needed
-      }
     }
   };
 
@@ -360,39 +357,17 @@ function App() {
     const prodCats = products.map(p => p.category).filter(Boolean);
     const uniqueCats = new Set([...baseCategories, ...prodCats]);
     return ['Todos', ...Array.from(uniqueCats).sort()];
-  }, [products]);
+  }, [products, products.length]); // Added products.length for safety, though products should be enough if it's an array
 
-
-
-  // --- EFECTOS INICIALES Y CARGA DE DATOS ---
-  useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); syncOfflineData(); };
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Verificar si hay items pendientes al inicio
-    checkPendingItems();
-
-    // Intento inicial de sync si estamos online
-    if (navigator.onLine) syncOfflineData();
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  const checkPendingItems = async () => {
+  const checkPendingItems = React.useCallback(async () => {
     const { sales, expenses, purchases } = await getAllPendingItems();
     setHasPendingItems(sales.length > 0 || expenses.length > 0 || purchases.length > 0);
     setPendingSales(sales);
-  };
+  }, []);
 
-  const syncOfflineData = async () => {
-    console.log('🔄 Intento de sincronización. isSyncingRef:', isSyncingRef.current, 'online:', navigator.onLine);
-    if (isSyncingRef.current || !navigator.onLine) return;
+  const syncOfflineData = React.useCallback(async () => {
+    console.log('🔄 Intento de sincronización. isSyncingRef:', isSyncingRef.current, 'online:', isOnline);
+    if (isSyncingRef.current || !isOnline) return;
     isSyncingRef.current = true; // LOCK INMEDIATO para evitar condiciones de carrera
 
     const { sales, expenses, purchases } = await getAllPendingItems();
@@ -405,6 +380,7 @@ function App() {
     }
 
     setIsSyncing(true);
+    showToast('🔄 Sincronizando datos pendientes...', 'info', 2000);
     console.log('🚀 Iniciando sincronización...');
 
     try {
@@ -448,55 +424,50 @@ function App() {
               await clearPendingItem('pending_sales', s.id);
               await logActivity(s.created_by, 'SYNC_VENTA_OFFLINE', 'VENTAS', { sale_id: sale.id });
             } else {
-              console.error('Error insertando items offline:', itemsError);
+              console.error('Error sincronizando items:', itemsError);
             }
           } else {
-            console.error('Error insertando venta offline:', saleError);
+            console.error('Error sincronizando venta:', saleError);
           }
-        } catch (e) { console.error('Error sync venta:', e); }
+        } catch (e) {
+          console.error('Error crítico en sync venta:', e);
+        }
       }
 
       // Sync Gastos
-      for (const e of expenses) {
+      for (const g of expenses) {
         try {
           // Idempotencia para gastos offline
           const { data: existing } = await supabase.from('expenses')
             .select('id')
-            .eq('created_at', e.timestamp)
-            .eq('created_by', e.created_by)
+            .eq('created_at', g.timestamp)
+            .eq('created_by', g.created_by)
             .maybeSingle();
 
           if (existing) {
-            await clearPendingItem('pending_expenses', e.id);
+            await clearPendingItem('pending_expenses', g.id);
             continue;
           }
 
-          let ticketUrl = null;
-          if (e.file) {
-            try {
-              ticketUrl = await uploadTicketImage(e.file, 'gastos');
-            } catch (err) {
-              console.error("Error subiendo imagen offline de gasto:", err);
-            }
-          }
-
-          const { error } = await supabase.from('expenses').insert([{
-            concepto: e.concepto,
-            categoria: e.categoria,
-            monto: e.monto,
-            fecha: e.fecha,
-            created_by: e.created_by,
-            ticket_url: ticketUrl,
-            created_at: e.timestamp
+          const { error: expError } = await supabase.from('expenses').insert([{
+            monto: g.monto,
+            concepto: g.concepto,
+            categoria: g.categoria,
+            fecha: g.fecha, // Usar la fecha local guardada
+            created_by: g.created_by,
+            created_at: g.timestamp
           }]);
-          if (!error) {
-            await clearPendingItem('pending_expenses', e.id);
-            await logActivity(e.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { concepto: e.concepto });
+
+          if (!expError) {
+            await clearPendingItem('pending_expenses', g.id);
+            await logActivity(g.created_by, 'SYNC_GASTO_OFFLINE', 'FINANZAS', { amount: g.monto });
+          } else {
+            console.error('Error sincronizando gasto:', expError);
           }
-        } catch (err) { console.error('Error sync gasto:', err); }
+        } catch (e) { console.error('Error sync gasto:', e); }
       }
 
-      // Sync Compras (Inventario)
+      // Sync Compras (Stock)
       for (const p of purchases) {
         try {
           // Idempotencia para compras offline
@@ -511,65 +482,179 @@ function App() {
             continue;
           }
 
-          let ticketUrl = null;
-          if (p.file) {
-            try {
-              ticketUrl = await uploadTicketImage(p.file, 'compras');
-            } catch (err) {
-              console.error("Error subiendo imagen offline de compra:", err);
-            }
-          }
-
-          const { data: purchase, error: pError } = await supabase.from('purchases').insert([{
+          // 1. Insertar en la tabla principal 'purchases'
+          const { data: purchase, error: purError } = await supabase.from('purchases').insert([{
             total: p.total,
             created_by: p.created_by,
-            created_at: p.timestamp,
-            ticket_url: ticketUrl
+            created_at: p.timestamp
+            // ticket_url no se maneja en sync offline por ahora (requiere subir archivo)
           }]).select().single();
 
-          if (!pError && purchase) {
-            let allItemsSynced = true;
-            for (const item of p.items) {
-              const { error: piError } = await supabase.from('purchase_items').insert([{
-                purchase_id: purchase.id,
-                product_id: item.id,
-                product_name: item.name,
-                quantity: item.qty,
-                cost: item.cost,
-                purchase_number: purchase.purchase_number
-              }]);
+          if (!purError && purchase) {
+            // 2. Insertar items en 'purchase_items'
+            const itemsToInsert = p.items.map(item => ({
+              purchase_id: purchase.id,
+              product_id: item.id,
+              product_name: item.name,
+              quantity: item.qty,
+              cost: item.cost,
+              purchase_number: purchase.purchase_number
+            }));
 
-              if (piError) {
-                allItemsSynced = false;
-                console.error('Error sync purchase item:', piError);
-                continue;
-              }
+            const { error: itemsError } = await supabase.from('purchase_items').insert(itemsToInsert);
 
-              // La actualización de stock se maneja automáticamente en la DB vía triggers
-            }
-
-            if (allItemsSynced) {
+            if (!itemsError) {
               await clearPendingItem('pending_purchases', p.id);
-              await logActivity(p.created_by, 'SYNC_COMPRA_OFFLINE', 'INVENTARIO', { purchase_id: purchase.id, total: p.total });
+              await logActivity(p.created_by, 'SYNC_COMPRA_OFFLINE', 'INVENTARIO', { total: p.total });
+            } else {
+              console.error('Error sincronizando items de compra:', itemsError);
             }
+          } else {
+            console.error('Error sincronizando compra:', purError);
           }
-        } catch (err) { console.error('Error sync compra:', err); }
+        } catch (e) { console.error('Error sync compra:', e); }
+      }
+
+      // Sync Mermas (Shrinkage)
+      const { shrinkages } = await getAllPendingItems();
+      for (const s of (shrinkages || [])) {
+        try {
+          const { data: existing } = await supabase.from('expenses')
+            .select('id')
+            .eq('created_at', s.timestamp)
+            .eq('created_by', s.created_by)
+            .maybeSingle();
+
+          if (existing) {
+            await clearPendingItem('pending_shrinkage', s.id);
+            continue;
+          }
+
+          const { data: currentInv } = await supabase.from('inventory')
+            .select('stock')
+            .eq('product_id', s.product_id)
+            .single();
+
+          if (currentInv) {
+            await supabase.from('inventory')
+              .update({ stock: currentInv.stock - s.quantity })
+              .eq('product_id', s.product_id);
+          }
+
+          const { error: expError } = await supabase.from('expenses').insert([{
+            concepto: `Merma (Sync): ${s.quantity}x ${s.product_name} (${s.reason})`,
+            categoria: 'Merma',
+            monto: 0,
+            fecha: s.timestamp.split('T')[0],
+            created_by: s.created_by,
+            created_at: s.timestamp
+          }]);
+
+          if (!expError) {
+            await clearPendingItem('pending_shrinkage', s.id);
+            await logActivity(s.created_by, 'SYNC_MERMA_OFFLINE', 'INVENTARIO', { product: s.product_name });
+          }
+        } catch (e) { console.error('Error sync merma:', e); }
       }
 
       await checkPendingItems();
-      fetchInventory();
-      console.log('Sincronización finalizada satisfactoriamente');
-    } catch (globalErr) {
-      console.error('Error global en sincronización:', globalErr);
+      await fetchInventory(); // Refrescar stock real desde la nube
+      if (userRole === 'admin') await calculateFinances(); // Refrescar finanzas
+      console.log('🏁 Sincronización completada con éxito.');
+      showToast('✅ Datos sincronizados correctamente', 'success');
+
+    } catch (err) {
+      console.error('Error general en sincronización:', err);
+      showToast('⚠️ Error en la sincronización automática', 'error');
     } finally {
-      isSyncingRef.current = false;
       setIsSyncing(false);
+      isSyncingRef.current = false;
     }
-  };
+  }, [checkPendingItems, isOnline, userRole]);
+
+  // --- EFECTOS INICIALES Y CARGA DE DATOS ---
+  const isOnlineRef = useRef(isOnline);
+  useEffect(() => { 
+    isOnlineRef.current = isOnline;
+    if (isOnline) {
+      syncOfflineData();
+    }
+  }, [isOnline, syncOfflineData]);
+
+  useEffect(() => {
+    const handleOnline = () => { 
+      if (!isOnlineRef.current) {
+        setIsOnline(true); 
+        syncOfflineData(); 
+      }
+    };
+    const handleOffline = () => {
+      if (isOnlineRef.current) setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Heartbeat ultra-agresivo (5s) para detectar modo avión en Windows
+    const connectionInterval = setInterval(async () => {
+      const now = new Date().toLocaleTimeString();
+      const navStatus = navigator.onLine;
+      
+      try {
+        // 1. Verificación rápida con navigator.onLine
+        if (!navStatus) {
+          if (isOnlineRef.current) {
+            console.log(`[${now}] 📡 Red: navigator.onLine detectó OFFLINE.`);
+            setIsOnline(false);
+          }
+          return;
+        }
+
+        // 2. Verificación real con un ping HTTP (evitando el SDK para ser más directos)
+        // Usamos el endpoint de Supabase directamente con un timeout muy agresivo
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+        try {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, {
+            method: 'GET',
+            mode: 'no-cors',
+            cache: 'no-store',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+
+          // Si llegamos aquí, hay algún tipo de respuesta de red
+          if (!isOnlineRef.current) {
+            console.log(`[${now}] 📡 Red: Conexión RESTABLECIDA.`);
+            setIsOnline(true);
+            syncOfflineData();
+          }
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (isOnlineRef.current) {
+            console.log(`[${now}] 📡 Red: Ping falló (Probable Modo Avión/Sin Internet).`, fetchError);
+            setIsOnline(false);
+          }
+        }
+      } catch (err) {
+        console.error(`[${now}] 📡 Red: Error crítico en heartbeat:`, err);
+      }
+    }, 5000);
+
+    // Verificar items pendientes
+    checkPendingItems();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(connectionInterval);
+    };
+  }, [syncOfflineData, checkPendingItems]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-
       if (session) fetchProfile(session.user);
     });
   }, []);
@@ -772,7 +857,7 @@ function App() {
       return publicUrl;
     } catch (error) {
       console.error('Error subiendo imagen:', error.message);
-      alert('Error al subir la imagen del ticket: ' + error.message);
+      showToast('Error al subir la imagen del ticket: ' + error.message, 'error');
       return null;
     }
   };
@@ -785,7 +870,7 @@ function App() {
     const qtyInCart = itemInCart ? itemInCart.quantity : 0;
 
     if (qtyInCart + 1 > totalStock) {
-      alert(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock - qtyInCart} unidades de ${product.name}`);
+      showToast(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock - qtyInCart} unidades de ${product.name}`, 'warning');
       return;
     }
 
@@ -815,7 +900,7 @@ function App() {
       const inventoryItem = inventoryList.find(inv => inv.product_id === productId);
       const totalStock = inventoryItem ? inventoryItem.stock : 0;
       if (newQty > totalStock) {
-        alert(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock} unidades`);
+        showToast(`⚠️ FUERA DE STOCK: Solo quedan ${totalStock} unidades`, 'warning');
         return;
       }
     }
@@ -830,7 +915,7 @@ function App() {
       const currentInvItem = inventoryList.find(inv => inv.product_id === item.id);
       const stockDisponible = currentInvItem?.stock || 0;
       if (item.quantity > stockDisponible) {
-        alert(`⚠️ STOCK INSUFICIENTE: ${item.name} tiene ${stockDisponible} unidades, intentas vender ${item.quantity}.`);
+        showToast(`⚠️ STOCK INSUFICIENTE: ${item.name} tiene ${stockDisponible} unidades, intentas vender ${item.quantity}.`, 'error');
         setLoading(false);
         return;
       }
@@ -840,7 +925,7 @@ function App() {
 
     // Validación para A Cuenta
     if (paymentMethod === 'A Cuenta' && !customerName.trim()) {
-      alert("⚠️ Para ventas A CUENTA, debes ingresar el nombre del cliente obligatoriamente.");
+      showToast("⚠️ Para ventas A CUENTA, debes ingresar el nombre del cliente obligatoriamente.", "warning");
       return;
     }
 
@@ -849,7 +934,7 @@ function App() {
     setLoading(true);
     try {
       // SI ESTAMOS OFFLINE, GUARDAR LOCALMENTE
-      if (!navigator.onLine) {
+      if (!isOnline) {
         await savePendingSale({
           total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
           status: "recibido",
@@ -872,7 +957,7 @@ function App() {
 
         setHasPendingItems(true);
         await checkPendingItems(); // Refresh pending sales list
-        alert("💾 Sin internet. Venta guardada localmente.");
+        showToast("💾 Sin internet. Venta guardada localmente.", "info");
         setCart([]); setCustomerName(''); setCustomerPhone('');
         setLoading(false);
         return;
@@ -897,7 +982,7 @@ function App() {
       // CUANDO SE INSERTAN ÍTEMS EN 'sale_items' O SE CREA UNA VENTA.
       // ESTO RESUELVE EL PROBLEMA DE QUE SE DESCUENTEN DOS PIEZAS POR VENTA.
 
-      alert("✅ Venta registrada");
+      showToast("✅ Venta registrada", "success");
 
       // LOG DE ACTIVIDAD
       await logActivity(user.id, 'CREACION_VENTA', 'VENTAS', {
@@ -913,7 +998,7 @@ function App() {
 
       setCart([]); setCustomerName(''); setCustomerPhone(''); fetchInventory();
 
-    } catch (err) { alert("Error: " + err.message); }
+    } catch (err) { showToast("Error: " + err.message, "error"); }
     setLoading(false);
   };
 
@@ -1069,7 +1154,7 @@ function App() {
         setReportExpenses(data || []);
       } else {
         console.error("[DEBUG] Error fetching report expenses:", error);
-        alert(`Error al cargar gastos: ${error.message}. Verifica las políticas RLS en Supabase.`);
+        showToast(`Error al cargar gastos: ${error.message}. Verifica las políticas RLS en Supabase.`, 'error');
       }
     } catch (err) {
       console.error("[DEBUG] Catch error fetching report expenses:", err);
@@ -1078,7 +1163,7 @@ function App() {
   };
 
   const updateSaleStatus = async (saleId, newStatus) => {
-    if (newStatus === 'cancelado' && userRole !== 'admin') return alert("Solo admin puede cancelar");
+    if (newStatus === 'cancelado' && userRole !== 'admin') return showToast("Solo admin puede cancelar", "warning");
     setLoading(true);
     try {
       if (newStatus === 'cancelado') {
@@ -1094,7 +1179,7 @@ function App() {
       setSales(prev => prev.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
       setSelectedSale(prev => prev && prev.id === saleId ? { ...prev, status: newStatus } : prev);
 
-      alert(`✅ Estatus: ${newStatus.toUpperCase()}`);
+      showToast(`✅ Estatus: ${newStatus.toUpperCase()}`, "success");
 
       // LOG DE ACTIVIDAD
       await logActivity(user.id, `CAMBIO_ESTATUS_${newStatus.toUpperCase()}`, 'VENTAS', {
@@ -1104,21 +1189,21 @@ function App() {
 
       calculateFinances(); fetchInventory(); fetchMonthlySalesTotal();
 
-    } catch (err) { alert('Error: ' + err.message); }
+    } catch (err) { showToast('Error: ' + err.message, "error"); }
     setLoading(false);
   };
 
   const cancelOfflineSale = async (localId) => {
-    if (userRole !== 'admin') return alert("Solo admin puede cancelar");
+    if (userRole !== 'admin') return showToast("Solo admin puede cancelar", "warning");
     if (!window.confirm("¿Eliminar esta venta offline?")) return;
 
     try {
       await clearPendingItem('pending_sales', localId);
       await checkPendingItems(); // Refresca pendingSales y hasPendingItems
       setSelectedSale(null);
-      alert("✅ Venta offline eliminada correctamente");
+      showToast("✅ Venta offline eliminada correctamente", "success");
     } catch (err) {
-      alert("Error al eliminar venta offline: " + err.message);
+      showToast("Error al eliminar venta offline: " + err.message, "error");
     }
   };
 
@@ -1134,14 +1219,14 @@ function App() {
       setSales(prev => prev.map(s => s.id === saleId ? { ...s, payment_method: method, status: 'entregado' } : s));
       setSelectedSale(prev => prev && prev.id === saleId ? { ...prev, payment_method: method, status: 'entregado' } : prev);
 
-      alert(`✅ Venta cobrada con éxito (registrada como ${method})`);
+      showToast(`✅ Venta cobrada con éxito (registrada como ${method})`, "success");
       await logActivity(user.id, 'COBRO_DEUDA', 'VENTAS', { sale_id: saleId, method });
 
       calculateFinances();
       fetchMonthlySalesTotal();
       fetchInventory();
 
-    } catch (err) { alert('Error al cobrar: ' + err.message); }
+    } catch (err) { showToast('Error al cobrar: ' + err.message, "error"); }
     setLoading(false);
   };
 
@@ -1210,7 +1295,7 @@ function App() {
   };
 
   const handleOpenShift = async () => {
-    if (cashInitialFund < 0 || loading) return alert("Ingresa un fondo inicial válido");
+    if (cashInitialFund < 0 || loading) return showToast("Ingresa un fondo inicial válido", "warning");
     setLoading(true);
     const { data, error } = await supabase.from('cash_shifts').insert([{
       initial_fund: cashInitialFund,
@@ -1223,16 +1308,16 @@ function App() {
       setActiveShift(data);
       setShowCashArqueo(false);
       setCashInitialFund(0);
-      alert("✅ Turno Abierto");
+      showToast("✅ Turno Abierto", "success");
       await logActivity(user.id, 'APERTURA_TURNO', 'FINANZAS', { initial_fund: cashInitialFund });
     } else {
-      alert("Error al abrir turno: " + error.message);
+      showToast("Error al abrir turno: " + error.message, "error");
     }
     setLoading(false);
   };
 
   const handleCloseShift = async () => {
-    if (cashPhysicalCount <= 0 || loading) return alert("Ingresa el efectivo contado");
+    if (cashPhysicalCount <= 0 || loading) return showToast("Ingresa el efectivo contado", "warning");
     if (!window.confirm("¿Estás seguro de cerrar el turno?")) return;
 
     setLoading(true);
@@ -1250,7 +1335,7 @@ function App() {
     }).eq('id', activeShift.id);
 
     if (!error) {
-      alert("✅ Turno Cerrado y Arqueo Guardado");
+      showToast("✅ Turno Cerrado y Arqueo Guardado", "success");
       await logActivity(user.id, 'CIERRE_TURNO', 'FINANZAS', {
         expected: cashReportData.esperado,
         actual: cashPhysicalCount,
@@ -1262,7 +1347,7 @@ function App() {
       setCashObservations('');
       setCashInitialFund(0);
     } else {
-      alert("Error al cerrar turno: " + error.message);
+      showToast("Error al cerrar turno: " + error.message, "error");
     }
     setLoading(false);
   };
@@ -1342,12 +1427,12 @@ function App() {
     setLoading(true);
     try {
       let ticketUrl = null;
-      // Solo intentamos subir la imagen si tenemos internet
-      if (navigator.onLine && purchaseFile) {
+      // Solo intentamos subir la imagen si tenemos internet real
+      if (isOnline && purchaseFile) {
         ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
       }
 
-      if (!navigator.onLine) {
+      if (!isOnline) {
         // --- FLUJO OFFLINE ---
         await savePendingPurchase({
           total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
@@ -1368,7 +1453,7 @@ function App() {
         setInventoryList(newInventory); // Actualizamos estado visual inmediatamente
 
         setHasPendingItems(true);
-        alert("📦 Sin internet. Compra guardada y stock actualizado localmente. Se sincronizará al volver la conexión.");
+        showToast("📦 Sin internet. Compra guardada y stock actualizado localmente. Se sincronizará al volver la conexión.", "info");
       } else {
         // --- FLUJO ONLINE ---
         const { data: purchase } = await supabase.from('purchases').insert([{
@@ -1388,7 +1473,7 @@ function App() {
           }]);
           // La actualización de stock se maneja automáticamente en la DB vía triggers
         }
-        alert("📦 Stock Actualizado");
+        showToast("📦 Stock Actualizado", "success");
 
         // LOG DE ACTIVIDAD
         await logActivity(user.id, 'REGISTRO_COMPRA_INVENTARIO', 'INVENTARIO', {
@@ -1400,9 +1485,15 @@ function App() {
         fetchInventory(); // Refrescar stock de la nube
       }
 
-      setPurchaseCart([]); setPurchaseFile(null);
+      // Limpieza de estados y cierre de modal inmediato
+      setPurchaseCart([]); 
+      setPurchaseFile(null);
+      setShowInventory(false);
 
-    } catch (err) { alert("Error: " + err.message); }
+    } catch (err) { 
+      console.error("Error en registro de compra:", err);
+      showToast("Error: " + err.message, "error"); 
+    }
     setLoading(false);
   };
 
@@ -1418,38 +1509,68 @@ function App() {
         throw new Error("No hay suficiente stock para registrar esta merma.");
       }
 
-      // 1. Actualizar Inventario
-      const { error: invError } = await supabase.from('inventory')
-        .update({ stock: inv.stock - shrinkageQty })
-        .eq('product_id', selectedShrinkageProd);
-      if (invError) throw invError;
+      if (!isOnline) {
+        // --- FLUJO OFFLINE ---
+        await savePendingShrinkage({
+          product_id: selectedShrinkageProd,
+          product_name: prod.name,
+          quantity: shrinkageQty,
+          reason: shrinkageReason,
+          created_by: user.id,
+          timestamp: getMXTimestamp()
+        });
 
-      // 2. Registrar como "Gasto" de $0 para historial
-      const { error: expError } = await supabase.from('expenses').insert([{
-        concepto: `Merma: ${shrinkageQty}x ${prod.name} (${shrinkageReason})`,
-        categoria: 'Merma',
-        monto: 0,
-        fecha: getMXDate(),
-        created_by: user.id
-      }]);
-      if (expError) throw expError;
+        // Actualización Optimista Local
+        const newInventory = [...inventoryList];
+        const idx = newInventory.findIndex(i => i.product_id === selectedShrinkageProd);
+        if (idx >= 0) {
+          newInventory[idx] = { ...newInventory[idx], stock: newInventory[idx].stock - shrinkageQty };
+        }
+        setInventoryList(newInventory);
+        setHasPendingItems(true);
+        showToast(`✅ Merma registrada localmente: ${prod.name}`, "info");
+      } else {
+        // --- FLUJO ONLINE ---
+        // 1. Actualizar Inventario
+        const { error: invError } = await supabase.from('inventory')
+          .update({ stock: inv.stock - shrinkageQty })
+          .eq('product_id', selectedShrinkageProd);
+        if (invError) throw invError;
 
-      // 3. Log de Actividad
-      await logActivity(user.id, 'REGISTRO_MERMA', 'INVENTARIO', {
-        producto: prod.name,
-        cantidad: shrinkageQty,
-        motivo: shrinkageReason
-      });
+        // 2. Registrar como "Gasto" de $0 para historial
+        const { error: expError } = await supabase.from('expenses').insert([{
+          concepto: `Merma: ${shrinkageQty}x ${prod.name} (${shrinkageReason})`,
+          categoria: 'Merma',
+          monto: 0,
+          fecha: getMXDate(),
+          created_by: user.id
+        }]);
+        if (expError) throw expError;
 
-      alert(`✅ Merma registrada de ${prod.name}`);
+        // 3. Log de Actividad
+        await logActivity(user.id, 'REGISTRO_MERMA', 'INVENTARIO', {
+          producto: prod.name,
+          cantidad: shrinkageQty,
+          motivo: shrinkageReason
+        });
+
+        // alert(`✅ Merma registrada de ${prod.name}`); // Eliminado para UX fluida
+      }
+
+      // Limpieza y cierre inmediato
       setSelectedShrinkageProd('');
       setShrinkageQty(0);
       setShrinkageReason('Dañado');
-      fetchInventory();
-      calculateFinances();
+      setShowInventory(false);
+      showToast("✅ Merma registrada con éxito", "success");
+
+      if (isOnline) {
+        fetchInventory();
+        calculateFinances();
+      }
 
     } catch (err) {
-      alert("Error: " + err.message);
+      showToast("Error: " + err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -1462,7 +1583,7 @@ function App() {
     try {
       // 1. Subir Ticket una sola vez (si existe)
       let ticketUrl = null;
-      if (expenseFile) {
+      if (isOnline && expenseFile) {
         ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
       }
 
@@ -1471,7 +1592,7 @@ function App() {
       // 2. Preparar inserción masiva
       const timestamp = getMXTimestamp(); // Usar zona horaria de México
 
-      if (!navigator.onLine) {
+      if (!isOnline) {
         for (const item of expenseCart) {
           await savePendingExpense({
             concepto: item.concepto,
@@ -1505,18 +1626,23 @@ function App() {
         total: expenseCart.reduce((a, b) => a + b.monto, 0)
       });
 
-      alert(navigator.onLine ? "✅ Ticket registrado con éxito" : "💰 Sin internet. Gastos guardados localmente.");
+      // alert(isOnline ? "✅ Ticket registrado con éxito" : "💰 Sin internet. Gastos guardados localmente."); // Eliminado para UX fluida
 
-      // Limpiar todo al finalizar el ticket
+      // Limpiar todo al finalizar el ticket y cerrar modal
       setExpenseCart([]);
       setExpenseFile(null);
       setExpenseConcepto('');
       setExpenseMonto(0);
-      calculateFinances();
-      fetchInventory();
+      setShowInventory(false);
+      showToast(isOnline ? "✅ Ticket registrado con éxito" : "💰 Sin internet. Gastos guardados localmente.", "success");
+
+      if (isOnline) {
+        calculateFinances();
+        fetchInventory();
+      }
 
     } catch (err) {
-      alert("Error: " + err.message);
+      showToast("Error: " + err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -1589,16 +1715,37 @@ function App() {
       <div className="store-section">
         <div className="sticky-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.png" alt="Oasis" style={{ height: '35px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
+            <img 
+              src="/logo.png" 
+              alt="Oasis" 
+              className={!isOnline ? 'logo-offline' : ''}
+              style={{ height: '35px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))', transition: 'all 0.5s ease' }} 
+            />
+            {!isOnline && (
+              <span style={{ 
+                fontSize: '10px', 
+                fontWeight: 'bold', 
+                backgroundColor: 'var(--color-danger)', 
+                color: 'white', 
+                padding: '2px 6px', 
+                borderRadius: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>Modo Offline</span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
-            <div title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet'} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
-              borderRadius: '50%', background: isOnline ? 'rgba(39, 174, 96, 0.2)' : 'rgba(231, 76, 60, 0.2)',
-              color: isOnline ? '#2d6a4f' : '#c0392b',
-              border: isOnline ? '1px solid rgba(39, 174, 96, 0.3)' : '1px solid rgba(231, 76, 60, 0.3)',
-              position: 'relative'
-            }}>
+            <div 
+              className={!isOnline ? 'status-indicator-offline' : ''}
+              title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet (Modo Avión)'} 
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
+                borderRadius: '50%', background: isOnline ? 'rgba(39, 174, 96, 0.2)' : 'rgba(231, 76, 60, 0.2)',
+                color: isOnline ? '#2d6a4f' : '#c0392b',
+                border: isOnline ? '1px solid rgba(39, 174, 96, 0.3)' : '1px solid rgba(231, 76, 60, 0.3)',
+                position: 'relative',
+                transition: 'all 0.3s ease'
+              }}>
               {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" /> : <Wifi size={18} />) : <WifiOff size={18} />}
               {hasPendingItems && !isSyncing && (
                 <div style={{

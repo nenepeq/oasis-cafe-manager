@@ -1,0 +1,149 @@
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 400px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animaciones */
+.toast-item.enter {
+  animation: toast-in 0.4s ease-out forwards;
+}
+
+.toast-item.exit {
+  animation: toast-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Variantes de Color */
+.toast-item.success {
+  background: rgba(39, 174, 96, 0.9);
+  color: white;
+}
+
+.toast-item.error {
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+}
+
+.toast-item.info {
+  background: rgba(52, 152, 219, 0.9);
+  color: white;
+}
+
+.toast-item.warning {
+  background: rgba(241, 196, 15, 0.9);
+  color: #4a3728;
+}
+
+.toast-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-message {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  opacity: 0.7;
+  font-size: 1.2rem;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.toast-close-btn:hover {
+  opacity: 1;
+  border: none;
+}
+
+/* Barra de progreso */
+.toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  animation: progress-drain 3s linear forwards;
+}
+
+.warning .toast-progress-bar {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes progress-drain {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .toast-container {
+    top: auto;
+    bottom: 20px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .toast-item {
+    min-width: 0;
+    width: 100%;
+  }
+}

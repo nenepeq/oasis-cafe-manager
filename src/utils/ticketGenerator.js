@@ -20,7 +20,7 @@ export const generateTicketPDF = async (sale, items) => {
         const logoImg = '/logo.png';
         doc.addImage(logoImg, 'PNG', (pageWidth / 2) - 15, currentY, 30, 30);
         currentY += 32;
-    } catch (e) {
+    } catch (_e) {
         // Fallback si no hay logo
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');

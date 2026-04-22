@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
+
 import { supabase } from '../supabaseClient';
 import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Trophy, Target, TrendingUp, Award } from 'lucide-react';
 import ExcelJS from 'exceljs';
@@ -35,6 +37,8 @@ const SalesModal = ({
     const [localSalesGoal, setLocalSalesGoal] = useState(salesGoal);
     const [isSavingGoal, setIsSavingGoal] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const { showToast } = useToast();
+
 
     // Sync local state when prop changes (e.g., initial load from Supabase)
     useEffect(() => {
@@ -46,10 +50,11 @@ const SalesModal = ({
         try {
             const result = await setSalesGoal(localSalesGoal);
             if (result && !result.success) throw result.error;
-            alert('✅ Meta de ventas actualizada correctamente');
+            showToast('✅ Meta de ventas actualizada correctamente', 'success');
         } catch (err) {
-            alert('❌ Error al guardar la meta: ' + err.message);
+            showToast('❌ Error al guardar la meta: ' + err.message, 'error');
         } finally {
+
             setIsSavingGoal(false);
         }
     };
@@ -120,9 +125,10 @@ const SalesModal = ({
             const { data: allSales, error } = await query;
             if (error) throw error;
             if (!allSales || allSales.length === 0) {
-                alert("No hay ventas para exportar en este rango.");
+                showToast("No hay ventas para exportar en este rango.", "info");
                 return;
             }
+
 
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Reporte de Ventas');
@@ -200,8 +206,9 @@ const SalesModal = ({
             saveAs(new Blob([buffer]), `Reporte_Ventas_Oasis_${reportStartDate}.xlsx`);
         } catch (err) {
             console.error("Error exportando excel:", err);
-            alert("❌ Error al generar reporte: " + err.message);
+            showToast("❌ Error al generar reporte: " + err.message, "error");
         } finally {
+
             setIsExporting(false);
         }
     };

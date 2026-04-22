@@ -590,3 +590,25 @@ body {
     background: linear-gradient(135deg, #d35400, #e67e22) !important;
   }
 }
+
+/* --- OFFLINE STYLES --- */
+.status-indicator-offline {
+  animation: pulse-red 2s infinite;
+  box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+  }
+}
+
+.logo-offline {
+  filter: grayscale(100%) opacity(0.6) !important;
+}

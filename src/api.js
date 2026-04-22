@@ -13,7 +13,7 @@ export const getProducts = async () => {
  * Crea un nuevo producto y su entrada inicial en el inventario.
  */
 export const createProduct = async (productData) => {
-  const { stock, ...cleanProductData } = productData;
+  const { stock: _, ...cleanProductData } = productData;
   const { data, error } = await supabase
     .from('products')
     .insert([cleanProductData])
@@ -44,7 +44,7 @@ export const createProduct = async (productData) => {
  * Actualiza un producto existente.
  */
 export const updateProduct = async (id, productData) => {
-  const { stock, ...cleanProductData } = productData;
+  const { stock: _, ...cleanProductData } = productData;
   const result = await supabase
     .from('products')
     .update(cleanProductData)

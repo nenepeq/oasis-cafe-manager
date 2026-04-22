@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OasisOfflineDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const openDB = () => {
     return new Promise((resolve, reject) => {
@@ -20,6 +20,9 @@ export const openDB = () => {
             }
             if (!db.objectStoreNames.contains('pending_purchases')) {
                 db.createObjectStore('pending_purchases', { keyPath: 'id', autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains('pending_shrinkage')) {
+                db.createObjectStore('pending_shrinkage', { keyPath: 'id', autoIncrement: true });
             }
         };
 
@@ -61,6 +64,16 @@ export const savePendingPurchase = async (purchaseData) => {
     });
 };
 
+export const savePendingShrinkage = async (shrinkageData) => {
+    const db = await openDB();
+    const tx = db.transaction('pending_shrinkage', 'readwrite');
+    const store = tx.objectStore('pending_shrinkage');
+    store.add({ ...shrinkageData, timestamp: shrinkageData.timestamp || new Date().toISOString() });
+    return new Promise((resolve) => {
+        tx.oncomplete = () => resolve();
+    });
+};
+
 export const getAllPendingItems = async () => {
     const db = await openDB();
     const getStoreItems = (storeName) => {
@@ -75,8 +88,9 @@ export const getAllPendingItems = async () => {
     const sales = await getStoreItems('pending_sales');
     const expenses = await getStoreItems('pending_expenses');
     const purchases = await getStoreItems('pending_purchases');
+    const shrinkages = await getStoreItems('pending_shrinkage');
 
-    return { sales, expenses, purchases };
+    return { sales, expenses, purchases, shrinkages };
 };
 
 export const clearPendingItem = async (storeName, id) => {

@@ -60,6 +60,11 @@ const getMXTimestamp = () => {
     values[type] = value;
   });
 
+  // Validación de seguridad
+  if (!values.year || !values.month || !values.day) {
+    return new Date().toISOString(); 
+  }
+
   // Construir string ISO en zona horaria de México con desfase -06:00
   return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}-06:00`;
 };
@@ -1170,35 +1175,24 @@ function App() {
   };
 
   const runCashArqueo = async () => {
-    if (!activeShift && !showArqueoHistory) {
-      setCashReportData({ ventasEfectivo: 0, gastosEfectivo: 0, esperado: cashInitialFund, diferencia: cashPhysicalCount - cashInitialFund });
-      return;
-    }
+    if ((!activeShift && !showArqueoHistory) || loading) return;
+    
     setLoading(true);
     try {
       const startTime = activeShift ? activeShift.start_time : getMXTimestamp();
 
-      // Ventas en efectivo desde que abrió el turno
-      const { data: vData } = await supabase.from('sales')
-        .select('total')
-        .eq('payment_method', 'Efectivo')
-        .neq('status', 'cancelado')
-        .gte('created_at', startTime);
+      // Consultas paralelas para mejor rendimiento
+      const [vResult, eResult, pResult] = await Promise.all([
+        supabase.from('sales').select('total').eq('payment_method', 'Efectivo').neq('status', 'cancelado').gte('created_at', startTime),
+        supabase.from('expenses').select('monto').gte('created_at', startTime),
+        supabase.from('purchases').select('total').gte('created_at', startTime)
+      ]);
 
-      // Gastos en efectivo desde que abrió el turno
-      const { data: eData } = await supabase.from('expenses')
-        .select('monto')
-        .gte('created_at', startTime);
-
-      // Compras en efectivo desde que abrió el turno
-      const { data: pData } = await supabase.from('purchases')
-        .select('total')
-        .gte('created_at', startTime);
-
-      const vEfec = vData?.reduce((a, v) => a + v.total, 0) || 0;
-      const eEfec = eData?.reduce((a, e) => a + e.monto, 0) || 0;
-      const pEfec = pData?.reduce((a, p) => a + p.total, 0) || 0;
-      const initial = activeShift ? parseFloat(activeShift.initial_fund) : parseFloat(cashInitialFund);
+      const vEfec = vResult.data?.reduce((a, v) => a + (v.total || 0), 0) || 0;
+      const eEfec = eResult.data?.reduce((a, e) => a + (e.monto || 0), 0) || 0;
+      const pEfec = pResult.data?.reduce((a, p) => a + (p.total || 0), 0) || 0;
+      
+      const initial = activeShift ? parseFloat(activeShift.initial_fund || 0) : parseFloat(cashInitialFund || 0);
       const esp = initial + vEfec - eEfec - pEfec;
 
       setCashReportData({
@@ -1209,9 +1203,10 @@ function App() {
         diferencia: (parseFloat(cashPhysicalCount) || 0) - esp
       });
     } catch (err) {
-      console.error("Error en runCashArqueo:", err);
+      console.error("Error crítico en runCashArqueo:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOpenShift = async () => {
@@ -1226,6 +1221,8 @@ function App() {
 
     if (!error) {
       setActiveShift(data);
+      setShowCashArqueo(false);
+      setCashInitialFund(0);
       alert("✅ Turno Abierto");
       await logActivity(user.id, 'APERTURA_TURNO', 'FINANZAS', { initial_fund: cashInitialFund });
     } else {

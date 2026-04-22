@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download, Loader2, XCircle } from 'lucide-react';
+import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download, Loader2, XCircle, Edit2, Check } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -53,6 +53,38 @@ const InventoryModal = ({
     const [previewLoading, setPreviewLoading] = useState(false);
     const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [editingExpenseIndex, setEditingExpenseIndex] = useState(null);
+    const [editExpenseValue, setEditExpenseValue] = useState({ concepto: '', monto: 0 });
+    const [editingPurchaseIndex, setEditingPurchaseIndex] = useState(null);
+    const [editPurchaseValue, setEditPurchaseValue] = useState({ qty: 0, cost: 0 });
+
+    const handleStartEditExpense = (index, item) => {
+        setEditingExpenseIndex(index);
+        setEditExpenseValue({ concepto: item.concepto, monto: item.monto });
+    };
+
+    const handleUpdateExpense = (index) => {
+        if (editExpenseValue.concepto.trim() && editExpenseValue.monto > 0) {
+            const newCart = [...expenseCart];
+            newCart[index] = { ...newCart[index], ...editExpenseValue };
+            setExpenseCart(newCart);
+            setEditingExpenseIndex(null);
+        }
+    };
+
+    const handleStartEditPurchase = (index, item) => {
+        setEditingPurchaseIndex(index);
+        setEditPurchaseValue({ qty: item.qty, cost: item.cost });
+    };
+
+    const handleUpdatePurchase = (index) => {
+        if (editPurchaseValue.qty > 0 && editPurchaseValue.cost > 0) {
+            const newCart = [...purchaseCart];
+            newCart[index] = { ...newCart[index], ...editPurchaseValue };
+            setPurchaseCart(newCart);
+            setEditingPurchaseIndex(null);
+        }
+    };
 
     // Limpiar previsualizaciones cuando los archivos se resetean en App.jsx
     useEffect(() => {
@@ -390,15 +422,49 @@ const InventoryModal = ({
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {purchaseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.qty} unids x ${item.cost.toFixed(2)} unit.</div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <span style={{ fontWeight: '900', color: '#27ae60' }}>${(item.qty * item.cost).toFixed(2)}</span>
-                                                    <button onClick={() => setPurchaseCart(purchaseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                                </div>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingPurchaseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)' }}>
+                                                {editingPurchaseIndex === i ? (
+                                                    <div style={{ display: 'flex', flex: 1, gap: '10px', alignItems: 'center' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
+                                                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
+                                                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    value={editPurchaseValue.qty}
+                                                                    onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, qty: parseInt(e.target.value) || 0 })}
+                                                                    style={{ width: '60px', padding: '5px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                                                                />
+                                                                <span style={{ fontSize: '11px' }}>unids x $</span>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={editPurchaseValue.cost}
+                                                                    onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, cost: parseFloat(e.target.value) || 0 })}
+                                                                    style={{ width: '80px', padding: '5px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                                                                />
+                                                                <span style={{ fontSize: '11px' }}>unit.</span>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                                            <button onClick={() => handleUpdatePurchase(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><Check size={16} /></button>
+                                                            <button onClick={() => setEditingPurchaseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><X size={16} /></button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div>
+                                                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
+                                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.qty} unids x ${item.cost.toFixed(2)} unit.</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <span style={{ fontWeight: '900', color: '#27ae60' }}>${(item.qty * item.cost).toFixed(2)}</span>
+                                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                                <button onClick={() => handleStartEditPurchase(i, item)} style={{ border: 'none', background: 'none', color: '#3498db', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                                                                <button onClick={() => setPurchaseCart(purchaseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '10px', textAlign: 'right', fontSize: '16px', fontWeight: '900', color: '#27ae60' }}>
@@ -562,15 +628,44 @@ const InventoryModal = ({
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {expenseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.concepto}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.categoria}</div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <span style={{ fontWeight: '900', color: '#e74c3c' }}>${item.monto.toFixed(2)}</span>
-                                                    <button onClick={() => setExpenseCart(expenseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                                </div>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingExpenseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)' }}>
+                                                {editingExpenseIndex === i ? (
+                                                    <div style={{ display: 'flex', flex: 1, gap: '10px', alignItems: 'center' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
+                                                            <input
+                                                                type="text"
+                                                                value={editExpenseValue.concepto}
+                                                                onChange={(e) => setEditExpenseValue({ ...editExpenseValue, concepto: e.target.value })}
+                                                                style={{ padding: '8px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                                                            />
+                                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.categoria}</div>
+                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            value={editExpenseValue.monto}
+                                                            onChange={(e) => setEditExpenseValue({ ...editExpenseValue, monto: parseFloat(e.target.value) || 0 })}
+                                                            style={{ width: '80px', padding: '8px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)', textAlign: 'right' }}
+                                                        />
+                                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                                            <button onClick={() => handleUpdateExpense(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><Check size={16} /></button>
+                                                            <button onClick={() => setEditingExpenseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><X size={16} /></button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div>
+                                                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.concepto}</div>
+                                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.categoria}</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <span style={{ fontWeight: '900', color: '#e74c3c' }}>${item.monto.toFixed(2)}</span>
+                                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                                <button onClick={() => handleStartEditExpense(i, item)} style={{ border: 'none', background: 'none', color: '#3498db', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                                                                <button onClick={() => setExpenseCart(expenseCart.filter((_, idx) => idx !== i))} style={{ border: 'none', background: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                         <div style={{ marginTop: '10px', textAlign: 'right', fontSize: '16px', fontWeight: '900', color: '#27ae60' }}>

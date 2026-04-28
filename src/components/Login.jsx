@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
+import ReCAPTCHA from "react-google-recaptcha";
 
 /**
  * Componente de Pantalla de Login
@@ -11,10 +12,17 @@ function Login({ onLogin }) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
 
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        
+        if (!recaptchaToken) {
+            setError("Por favor, verifica que no eres un robot.");
+            return;
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) setError("Credenciales incorrectas: " + error.message);
         else onLogin(data.user);
@@ -59,6 +67,14 @@ function Login({ onLogin }) {
                             style={{ cursor: 'pointer' }}
                         />
                         <span>Mostrar contraseña</span>
+                    </div>
+
+                    <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+                        <ReCAPTCHA
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "CLAVE_DE_SITIO_DE_PRUEBA_O_TUYA"}
+                            onChange={(token) => setRecaptchaToken(token)}
+                            onExpired={() => setRecaptchaToken(null)}
+                        />
                     </div>
 
                     {error && <p className="login-error">{error}</p>}

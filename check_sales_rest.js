@@ -1,7 +1,7 @@
 import https from 'https';
 
 const SUPABASE_URL = 'https://uvclbuxgegmhnlflowjz.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2Y2xidXhnZWdtaG5sZmxvd2p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODkzMDcsImV4cCI6MjA4MjU2NTMwN30.6hh9Wqck4MrapvOzzV2SHkK_dwWJux_0EdU2mwQJhbI';
+const SUPABASE_KEY = 'sb_publishable_fFJjl5AuS_ivlStMVDlvng_lqeEe_uf';
 
 const options = {
     hostname: 'uvclbuxgegmhnlflowjz.supabase.co',

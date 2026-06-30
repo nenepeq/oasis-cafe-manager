@@ -71,21 +71,15 @@ body {
   width: 100%;
   height: 100%;
   overscroll-behavior: none;
+  overflow: hidden;
 }
 
 body {
   display: block;
   min-width: 320px;
+  position: fixed;
   width: 100%;
   height: 100%;
-}
-
-/* Solo fijar body en pantallas grandes (desktop) */
-@media (min-width: 601px) {
-  body {
-    position: fixed;
-    overflow: hidden;
-  }
 }
 
 h1 {
@@ -120,7 +114,7 @@ button:focus-visible {
    DISEÑO RESPONSIVO MÓVIL
    ========================================================= */
 
-/* Corrección general para móviles para quitar el centrado forzado de Vite */
+/* Corrección general para móviles */
 @media (max-width: 600px) {
   body {
     display: block !important;
@@ -128,25 +122,14 @@ button:focus-visible {
   }
 }
 
-/* CELULAR VERTICAL - Uno encima del otro con scroll de página */
+/* CELULAR VERTICAL - Pantalla dividida: 60% productos, 40% carrito */
 @media (max-width: 600px) {
-  .app-container {
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: visible !important;
-    overflow-x: hidden !important;
-  }
 
   .store-section {
-    flex: none !important;
     width: 100% !important;
-    height: auto !important;
     padding: 8px 10px !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
     box-sizing: border-box !important;
   }
 
@@ -158,13 +141,6 @@ button:focus-visible {
     width: 100% !important;
     padding: 0 !important;
     box-sizing: border-box !important;
-  }
-
-  /* Asegurar que el contenedor padre no limite el ancho */
-  .store-section>div:last-child {
-    display: block !important;
-    width: 100% !important;
-    overflow-y: visible !important;
   }
 
   .product-card {
@@ -182,16 +158,13 @@ button:focus-visible {
   }
 
   .cart-section {
-    flex: none !important;
     width: 100% !important;
     margin: 0 !important;
     border-radius: 0 !important;
     border-left: none !important;
-    border-top: 4px solid var(--text-primary) !important;
-    padding: 15px !important;
+    padding: 10px 15px !important;
     background-color: var(--bg-secondary) !important;
     color: var(--text-primary) !important;
-    min-height: 400px;
     box-sizing: border-box !important;
   }
 

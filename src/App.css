@@ -421,10 +421,8 @@ body {
   .app-container {
     flex-direction: column !important;
     width: 100% !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: visible !important;
-    overflow-x: hidden !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
     display: flex !important;
     background: var(--app-bg) !important;
   }
@@ -432,13 +430,12 @@ body {
   .store-section {
     flex: none !important;
     width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
+    height: 60% !important;
+    max-height: 60% !important;
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
 
-    /* Full width en móvil, sin bordes decorativos */
     margin: 0 !important;
     border-radius: 0 !important;
     padding: 8px 10px !important;
@@ -448,39 +445,30 @@ body {
   .cart-section {
     flex: none !important;
     width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
+    height: 40% !important;
+    max-height: 40% !important;
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
 
-    /* Full width en móvil */
     margin: 0 !important;
     border-radius: 0 !important;
     border-top: 3px solid var(--text-primary) !important;
     border-left: none !important;
-    padding: 15px !important;
+    padding: 10px 15px !important;
   }
 
-  /* Scrollbar visible y funcional */
-  .custom-scrollbar {
-    overflow-y: visible !important;
+  /* Scroll interno en cada sección */
+  .custom-scrollbar,
+  .product-scroll-area,
+  .cart-scroll-area {
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    flex: none !important;
+    flex: 1 !important;
     min-height: 0 !important;
     height: auto !important;
-  }
-
-  /* En mobile, las áreas de scroll no deben limitar altura */
-  .product-scroll-area,
-  .cart-scroll-area {
-    flex: none !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow-y: visible !important;
-    padding-bottom: 0 !important;
   }
 
   .custom-scrollbar::-webkit-scrollbar {

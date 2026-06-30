@@ -290,6 +290,15 @@ body {
 }
 
 /* --- SECCIONES PRINCIPALES (Paneles Flotantes) --- */
+.app-container {
+  display: flex;
+  flex-direction: row;
+  height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
 .store-section {
   flex: 2 !important;
   margin: 15px;
@@ -319,6 +328,8 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 
   /* Glass Panel Styles */
   background: var(--glass-bg);
@@ -386,43 +397,41 @@ body {
 
   .app-container {
     flex-direction: column !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
     width: 100% !important;
     display: flex !important;
     background: var(--app-bg) !important;
   }
 
   .store-section {
-    flex: 1 !important;
-    height: 60% !important;
-    /* Más espacio para tienda en móvil */
-    max-height: 60% !important;
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
 
-    /* Mobile Glass Reset */
-    margin: 10px !important;
-    border-radius: 20px !important;
-    padding: 15px !important;
+    /* Full width en móvil, sin bordes decorativos */
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 8px 10px !important;
     border-bottom: 1px solid var(--glass-border) !important;
   }
 
   .cart-section {
-    flex: 1 !important;
-    height: 40% !important;
-    /* Menos para carrito */
-    max-height: 40% !important;
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
 
-    /* Mobile Glass Reset */
-    margin: 0 10px 10px 10px !important;
-    border-radius: 20px !important;
-    border-top: none !important;
-    border-left: 1px solid var(--glass-border) !important;
+    /* Full width en móvil */
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-top: 3px solid var(--text-primary) !important;
+    border-left: none !important;
     padding: 15px !important;
   }
 

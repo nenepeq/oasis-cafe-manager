@@ -363,14 +363,9 @@ function App() {
 
   return (
     <div className="app-container" style={{
-      display: 'flex',
-      height: '100dvh', // Altura dinámica para móviles
-      width: '100%',
       backgroundColor: 'var(--bg-primary)',
       color: 'var(--text-primary)',
-      transition: 'background-color 0.3s ease, color 0.3s ease',
-      overflowX: 'hidden',
-      overflowY: 'hidden' // El scroll debe ser interno, no del contenedor principal
+      transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
 
       {/* SECCIÓN TIENDA */}
@@ -447,20 +442,20 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
-          <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', flex: 1 }}>
+          <div className="no-scrollbar" style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '8px', flex: 1 }}>
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className="btn-active-effect"
                 style={{
-                  padding: '8px 16px',
+                  padding: '6px 10px',
                   borderRadius: '15px',
                   border: '1px solid var(--border-color)',
                   backgroundColor: selectedCategory === cat ? 'var(--text-primary)' : 'var(--bg-secondary)',
                   color: selectedCategory === cat ? 'var(--bg-primary)' : 'var(--text-primary)',
                   fontWeight: 'bold',
-                  fontSize: '11px',
+                  fontSize: '10px',
                   whiteSpace: 'nowrap'
                 }}
               >
@@ -510,7 +505,7 @@ function App() {
       </div>
 
       {/* SECCIÓN CARRITO */}
-      <div className="cart-section" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+      <div className="cart-section">
         <div className="cart-header-compact" style={{ height: '25px', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
           <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <ShoppingCart size={18} /> Carrito

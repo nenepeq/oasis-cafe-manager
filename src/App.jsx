@@ -481,7 +481,7 @@ function App() {
           )}
         </div>
 
-        <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
+        <div className="custom-scrollbar product-scroll-area">
           <div className="product-grid">
             {filteredProducts.map(p => {
               const invItem = inventoryList.find(inv => inv.product_id === p.id);
@@ -542,7 +542,7 @@ function App() {
             style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box', fontSize: '13px' }}
           />
         </div>
-        <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '5px', WebkitOverflowScrolling: 'touch' }}>
+        <div className="custom-scrollbar cart-scroll-area">
           {cart.map((item, idx) => (
             <div key={idx} style={{
               display: 'flex',

@@ -299,6 +299,23 @@ body {
   overflow-y: hidden;
 }
 
+/* Áreas de scroll: en desktop hacen scroll interno, en mobile fluyen con la página */
+.product-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cart-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 5px;
+  -webkit-overflow-scrolling: touch;
+}
+
 .store-section {
   flex: 2 !important;
   margin: 15px;
@@ -448,6 +465,16 @@ body {
     flex: none !important;
     min-height: 0 !important;
     height: auto !important;
+  }
+
+  /* En mobile, las áreas de scroll no deben limitar altura */
+  .product-scroll-area,
+  .cart-scroll-area {
+    flex: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    padding-bottom: 0 !important;
   }
 
   .custom-scrollbar::-webkit-scrollbar {

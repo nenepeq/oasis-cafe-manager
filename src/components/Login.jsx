@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
 import ReCAPTCHA from "react-google-recaptcha";
+import { useData } from '../context/DataContext';
 
 /**
  * Componente de Pantalla de Login
- * @param {Object} props - Propiedades del componente
- * @param {Function} props.onLogin - Callback ejecutado tras un login exitoso
  */
-function Login({ onLogin }) {
+function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
-
+    const { login } = useData();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,9 +21,8 @@ function Login({ onLogin }) {
             return;
         }
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await login(email, password);
         if (error) setError("Credenciales incorrectas: " + error.message);
-        else onLogin(data.user);
     };
 
     return (

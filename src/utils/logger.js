@@ -10,10 +10,9 @@ import { supabase } from '../supabaseClient';
  */
 export const logActivity = async (userId, action, category, details = {}) => {
     try {
-        // Obtenemos el email del usuario para facilitar la lectura del log sin dependencias de joins.
-        // Nota: Esto asume que el usuario ya está autenticado y tenemos su sesión.
-        const { data: { user } } = await supabase.auth.getUser();
-        const userEmail = user?.email || 'desconocido';
+        // Usar getSession() en lugar de getUser() para leer los datos de sesión localmente sin peticiones de red HTTP redundantes
+        const { data: { session } } = await supabase.auth.getSession();
+        const userEmail = session?.user?.email || 'desconocido';
 
         const { error } = await supabase
             .from('activity_logs')
@@ -28,7 +27,7 @@ export const logActivity = async (userId, action, category, details = {}) => {
             ]);
 
         if (error) {
-            console.error('Error al registrar log de actividad:', error);
+            console.error('Error al registrar log de actividad en Supabase:', error);
         }
     } catch (err) {
         console.error('Error inesperado en logActivity:', err);

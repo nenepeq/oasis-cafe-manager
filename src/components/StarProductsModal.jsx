@@ -2,22 +2,25 @@ import React, { useState } from 'react';
 import { Award, X, Download, TrendingUp, Clock, Target, ArrowRight } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useData } from '../context/DataContext';
 
 /**
  * Modal de Productos Estrella (Ranking de Ventas)
  */
 const StarProductsModal = ({
     showStarProducts,
-    setShowStarProducts,
-    userRole,
-    starStartDate,
-    setStarStartDate,
-    starEndDate,
-    setStarEndDate,
-    fetchStarProducts,
-    starData,
-    kpiData
+    setShowStarProducts
 }) => {
+    const {
+        userRole,
+        starStartDate,
+        setStarStartDate,
+        starEndDate,
+        setStarEndDate,
+        fetchStarProducts,
+        starData,
+        kpiData
+    } = useData();
     const [activeTab, setActiveTab] = useState('ranking'); // 'ranking' | 'kpis'
 
     // Efecto para recargar automáticamente al cambiar fechas

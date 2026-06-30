@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useToast } from '../hooks/useToast';
+import { useData } from '../context/DataContext';
+import * as apiService from '../services/apiService';
 
-import { supabase } from '../supabaseClient';
 import { X, RefreshCw, Download, Banknote, CreditCard, Clock, Calendar, Search, Check, MapPin, DollarSign, Filter, Trophy, Target, TrendingUp, Award } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -12,32 +12,34 @@ import { saveAs } from 'file-saver';
 const SalesModal = ({
     showReport,
     setShowReport,
-    setSelectedSale,
-    reportStartDate,
-    setReportStartDate,
-    reportEndDate,
-    setReportEndDate,
-    fetchSales,
-    loading,
-    sales,
-    selectedSale,
-    userRole,
-    updateSaleStatus,
-    markAsPaid,
-    cancelOfflineSale,
-    pendingSales = [],
-    hasMoreSales,
-    loadMoreSales,
-    salesGoal,
-    setSalesGoal,
-    totalIngresosReporte,
-    totalSalesCount
+    loading
 }) => {
+    const {
+        setSelectedSale,
+        reportStartDate,
+        setReportStartDate,
+        reportEndDate,
+        setReportEndDate,
+        fetchSales,
+        sales,
+        selectedSale,
+        userRole,
+        updateSaleStatus,
+        markAsPaid,
+        cancelOfflineSale,
+        pendingSales,
+        hasMoreSales,
+        loadMoreSales,
+        salesGoal,
+        updateSalesGoalInDB,
+        totalIngresosReporte,
+        totalSalesCount,
+        showToast
+    } = useData();
     const [activeTab, setActiveTab] = useState('pagadas'); // 'pagadas' | 'por_cobrar' | 'config'
     const [localSalesGoal, setLocalSalesGoal] = useState(salesGoal);
     const [isSavingGoal, setIsSavingGoal] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const { showToast } = useToast();
 
 
     // Sync local state when prop changes (e.g., initial load from Supabase)
@@ -48,7 +50,7 @@ const SalesModal = ({
     const handleSaveGoal = async () => {
         setIsSavingGoal(true);
         try {
-            const result = await setSalesGoal(localSalesGoal);
+            const result = await updateSalesGoalInDB(localSalesGoal);
             if (result && !result.success) throw result.error;
             showToast('✅ Meta de ventas actualizada correctamente', 'success');
         } catch (err) {
@@ -68,13 +70,7 @@ const SalesModal = ({
                 if (activeTab === 'por_cobrar') setLoadingDebts(true);
 
                 try {
-                    const { data, error } = await supabase
-                        .from('sales')
-                        .select(`*, sale_items (*, products (name, sale_price))`)
-                        .eq('payment_method', 'A Cuenta')
-                        .neq('status', 'cancelado')
-                        .order('created_at', { ascending: false });
-
+                    const { data, error } = await apiService.getDebtsWithDetails();
                     if (!error) {
                         setDebts(data || []);
                     }
@@ -106,23 +102,29 @@ const SalesModal = ({
         }
     }, [pendingSales.length, activeTab]);
 
+    // Recargar ventas cuando cambian las fechas o se abre el reporte
+    useEffect(() => {
+        if (showReport && reportStartDate && reportEndDate) {
+            if (reportStartDate <= reportEndDate) {
+                fetchSales();
+            }
+        }
+    }, [showReport, reportStartDate, reportEndDate]);
+
     const handleExportSalesExcel = async () => {
         setIsExporting(true);
         try {
-            let query = supabase.from('sales')
-                .select(`*, sale_items (*, products (name, sale_price))`)
-                .order('created_at', { ascending: false });
+            let startDateFilter = null;
+            let nextDayStrFilter = null;
 
             if (reportStartDate && reportEndDate) {
                 const endDateObj = new Date(reportEndDate);
                 endDateObj.setDate(endDateObj.getDate() + 1);
-                const nextDayStr = endDateObj.toISOString().split('T')[0];
-                query = query
-                    .gte('created_at', reportStartDate + 'T06:00:00')
-                    .lt('created_at', nextDayStr + 'T06:00:00');
+                nextDayStrFilter = endDateObj.toISOString().split('T')[0] + 'T06:00:00';
+                startDateFilter = reportStartDate + 'T06:00:00';
             }
 
-            const { data: allSales, error } = await query;
+            const { data: allSales, error } = await apiService.getSalesExportData(startDateFilter, nextDayStrFilter);
             if (error) throw error;
             if (!allSales || allSales.length === 0) {
                 showToast("No hay ventas para exportar en este rango.", "info");

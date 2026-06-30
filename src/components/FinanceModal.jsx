@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useToast } from '../hooks/useToast';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useData } from '../context/DataContext';
 
 import {
     X, PieChart, TrendingUp, Layers, ArrowDown, DollarSign, Download, Image as ImageIcon, BarChart3, Table as TableIcon, Loader2,
@@ -15,23 +15,34 @@ import { saveAs } from 'file-saver';
 const FinanceModal = ({
     showFinances,
     setShowFinances,
-    userRole,
-    financeStartDate,
-    setFinanceStartDate,
-    financeEndDate,
-    setFinanceEndDate,
-    calculateFinances,
-    loading,
-    finData,
-    dailyExpensesList,
-    dailyStockList,
-    dailySalesList,
-    salesGoal,
-    monthlySalesTotal
+    loading
 }) => {
+    const {
+        userRole,
+        financeStartDate,
+        setFinanceStartDate,
+        financeEndDate,
+        setFinanceEndDate,
+        calculateFinances,
+        finData,
+        dailyExpensesList,
+        dailyStockList,
+        dailySalesList,
+        salesGoal,
+        monthlySalesTotal,
+        showToast
+    } = useData();
     const [activeTab, setActiveTab] = useState('data'); // 'data' o 'charts'
     const [isExporting, setIsExporting] = useState(false);
-    const { showToast } = useToast();
+
+    // Cargar finanzas cuando cambia el rango de fechas o se abre el modal
+    useEffect(() => {
+        if (showFinances && userRole === 'admin') {
+            if (financeStartDate <= financeEndDate) {
+                calculateFinances();
+            }
+        }
+    }, [showFinances, financeStartDate, financeEndDate, userRole]);
 
 
     // --- CÁLCULO DE MÉTRICAS COMPARATIVAS CON PERIODO ANTERIOR ---

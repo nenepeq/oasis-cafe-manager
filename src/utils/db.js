@@ -33,44 +33,53 @@ export const openDB = () => {
 
 export const savePendingSale = async (saleData) => {
     const db = await openDB();
-    const tx = db.transaction('pending_sales', 'readwrite');
-    const store = tx.objectStore('pending_sales');
-    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
-    store.add({ ...saleData, timestamp: saleData.timestamp || new Date().toISOString() });
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending_sales', 'readwrite');
+        const store = tx.objectStore('pending_sales');
+        const request = store.add({ ...saleData, timestamp: saleData.timestamp || new Date().toISOString() });
+        
+        request.onerror = (e) => reject(request.error || e);
         tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(tx.error || e);
     });
 };
 
 export const savePendingExpense = async (expenseData) => {
     const db = await openDB();
-    const tx = db.transaction('pending_expenses', 'readwrite');
-    const store = tx.objectStore('pending_expenses');
-    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
-    store.add({ ...expenseData, timestamp: expenseData.timestamp || new Date().toISOString() });
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending_expenses', 'readwrite');
+        const store = tx.objectStore('pending_expenses');
+        const request = store.add({ ...expenseData, timestamp: expenseData.timestamp || new Date().toISOString() });
+        
+        request.onerror = (e) => reject(request.error || e);
         tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(tx.error || e);
     });
 };
 
 export const savePendingPurchase = async (purchaseData) => {
     const db = await openDB();
-    const tx = db.transaction('pending_purchases', 'readwrite');
-    const store = tx.objectStore('pending_purchases');
-    // Usar timestamp pasado desde App.jsx con zona horaria correcta, o fallback a UTC
-    store.add({ ...purchaseData, timestamp: purchaseData.timestamp || new Date().toISOString() });
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending_purchases', 'readwrite');
+        const store = tx.objectStore('pending_purchases');
+        const request = store.add({ ...purchaseData, timestamp: purchaseData.timestamp || new Date().toISOString() });
+        
+        request.onerror = (e) => reject(request.error || e);
         tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(tx.error || e);
     });
 };
 
 export const savePendingShrinkage = async (shrinkageData) => {
     const db = await openDB();
-    const tx = db.transaction('pending_shrinkage', 'readwrite');
-    const store = tx.objectStore('pending_shrinkage');
-    store.add({ ...shrinkageData, timestamp: shrinkageData.timestamp || new Date().toISOString() });
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('pending_shrinkage', 'readwrite');
+        const store = tx.objectStore('pending_shrinkage');
+        const request = store.add({ ...shrinkageData, timestamp: shrinkageData.timestamp || new Date().toISOString() });
+        
+        request.onerror = (e) => reject(request.error || e);
         tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(tx.error || e);
     });
 };
 

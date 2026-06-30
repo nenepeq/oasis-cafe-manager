@@ -152,8 +152,8 @@ body {
   /* Glass feel */
   backdrop-filter: blur(4px);
   text-align: center;
-  height: 125px;
-  /* Un poco más alto */
+  height: 140px;
+  /* Un poco más alto para soportar imágenes y textos de 2 líneas */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
   /* Sombra más suave */
   display: flex !important;
@@ -225,18 +225,20 @@ body {
 .product-name {
   font-weight: 800;
   font-size: 12px;
+  line-height: 1.3;
   color: var(--text-main);
-  margin: 6px 0;
+  margin: 4px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 28px;
+  min-height: 32px;
   width: 100%;
   text-align: center;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
 }
 
 /* --- SECCIONES PRINCIPALES (Paneles Flotantes) --- */

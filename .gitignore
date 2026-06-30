@@ -30,3 +30,6 @@ dist-ssr
 !package-lock.json
 !vercel.json
 !eslint.config.js
+
+.vercel
+.env*

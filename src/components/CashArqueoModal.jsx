@@ -2,6 +2,7 @@ import React from 'react';
 import { Banknote, List, X, Download } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useData } from '../context/DataContext';
 
 /**
  * Modal de Arqueo de Caja y Historial de Turnos
@@ -9,23 +10,67 @@ import { saveAs } from 'file-saver';
 const CashArqueoModal = ({
     showCashArqueo,
     setShowCashArqueo,
-    userRole,
-    fetchArqueoHistory,
-    cashInitialFund,
-    setCashInitialFund,
-    cashReportData,
-    cashPhysicalCount,
-    setCashPhysicalCount,
-    cashObservations,
-    setCashObservations,
-    handleOpenShift,
-    handleCloseShift,
-    activeShift,
-    loading,
-    showArqueoHistory,
-    setShowArqueoHistory,
-    arqueoHistory
+    loading
 }) => {
+    const {
+        userRole,
+        fetchArqueoHistory,
+        cashInitialFund,
+        setCashInitialFund,
+        cashReportData,
+        cashPhysicalCount,
+        setCashPhysicalCount,
+        cashObservations,
+        setCashObservations,
+        handleOpenShift,
+        handleCloseShift,
+        activeShift,
+        showArqueoHistory,
+        setShowArqueoHistory,
+        arqueoHistory,
+        runCashArqueo
+    } = useData();
+
+    React.useEffect(() => {
+        if (showCashArqueo) {
+            runCashArqueo();
+        }
+    }, [showCashArqueo, activeShift]);
+
+    const [showCalculator, setShowCalculator] = React.useState(false);
+    const [quantities, setQuantities] = React.useState({});
+
+    const handleQuantityChange = (denom, value) => {
+        const valInt = parseInt(value) || 0;
+        const newQuantities = { ...quantities, [denom]: valInt >= 0 ? valInt : 0 };
+        setQuantities(newQuantities);
+
+        // Calcular el total
+        const total = Object.keys(newQuantities).reduce((acc, k) => {
+            return acc + (parseFloat(k) * (newQuantities[k] || 0));
+        }, 0);
+        
+        setCashPhysicalCount(total);
+    };
+
+    const handleConfirmCloseShift = () => {
+        // Formatear el desglose de denominaciones mexicanas ordenadas de mayor a menor
+        const denomsOrder = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.5];
+        const activeDenoms = denomsOrder
+            .filter(val => quantities[val] > 0)
+            .map(val => `${quantities[val]}x$${val === 0.5 ? '0.50' : val}`);
+
+        if (activeDenoms.length > 0) {
+            const desgloseText = `Desglose de Efectivo: ${activeDenoms.join(', ')}`;
+            const finalObservations = cashObservations
+                ? `${cashObservations}\n\n[Auditoría]\n${desgloseText}`
+                : desgloseText;
+            
+            handleCloseShift(finalObservations);
+        } else {
+            handleCloseShift();
+        }
+    };
 
     const handleExportHistoryCSV = async () => {
         if (!arqueoHistory || arqueoHistory.length === 0) return;
@@ -160,6 +205,8 @@ const CashArqueoModal = ({
     };
 
     if (!showCashArqueo || userRole !== 'admin') return null;
+
+    const diferencia = (parseFloat(cashPhysicalCount) || 0) - (cashReportData?.esperado || 0);
 
     return (
         <>
@@ -313,14 +360,106 @@ const CashArqueoModal = ({
                                     />
                                 </div>
 
-                                {userRole === 'admin' && (
-                                    <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: cashReportData.diferencia === 0 ? '#f8f9fa' : (cashReportData.diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
-                                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
-                                        <div style={{ fontSize: '24px', fontWeight: '900', color: cashReportData.diferencia === 0 ? '#27ae60' : (cashReportData.diferencia > 0 ? '#3498db' : '#e74c3c') }}>
-                                            {cashReportData.diferencia >= 0 ? '+' : ''}${cashReportData.diferencia.toFixed(2)}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCalculator(!showCalculator)}
+                                    style={{
+                                        background: 'none',
+                                        border: '1px dashed var(--border-color)',
+                                        borderRadius: '12px',
+                                        padding: '10px',
+                                        color: '#3498db',
+                                        fontSize: '13px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        width: '100%',
+                                        marginTop: '5px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <span>{showCalculator ? '▲ Ocultar' : '▼ Desglosar'} Billetes y Monedas (Calculadora)</span>
+                                </button>
+
+                                {showCalculator && (
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '15px',
+                                        background: 'var(--bg-primary)',
+                                        padding: '15px',
+                                        borderRadius: '15px',
+                                        border: '1px solid var(--border-color)'
+                                    }}>
+                                        {/* Billetes */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: '900', color: '#e67e22', borderBottom: '1px solid var(--border-color)', paddingBottom: '3px', marginBottom: '3px' }}>💵 BILLETES</div>
+                                            {[1000, 500, 200, 100, 50, 20].map(val => (
+                                                <div key={val} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>${val}</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={quantities[val] || ''}
+                                                        onChange={(e) => handleQuantityChange(val, e.target.value)}
+                                                        placeholder="0"
+                                                        style={{
+                                                            width: '60px',
+                                                            padding: '6px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid var(--border-color)',
+                                                            fontSize: '12px',
+                                                            textAlign: 'center',
+                                                            backgroundColor: 'var(--bg-secondary)',
+                                                            color: 'var(--text-primary)',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* Monedas */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: '900', color: '#7f8c8d', borderBottom: '1px solid var(--border-color)', paddingBottom: '3px', marginBottom: '3px' }}>🪙 MONEDAS</div>
+                                            {[20, 10, 5, 2, 1, 0.5].map(val => (
+                                                <div key={val} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>${val === 0.5 ? '0.50' : val}</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={quantities[val] || ''}
+                                                        onChange={(e) => handleQuantityChange(val, e.target.value)}
+                                                        placeholder="0"
+                                                        style={{
+                                                            width: '60px',
+                                                            padding: '6px',
+                                                            borderRadius: '8px',
+                                                            border: '1px solid var(--border-color)',
+                                                            fontSize: '12px',
+                                                            textAlign: 'center',
+                                                            backgroundColor: 'var(--bg-secondary)',
+                                                            color: 'var(--text-primary)',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
+
+                                {userRole === 'admin' && (
+                                     <div style={{ padding: '15px', borderRadius: '15px', textAlign: 'center', backgroundColor: diferencia === 0 ? '#f8f9fa' : (diferencia > 0 ? '#e3f2fd' : '#fff5f5'), border: '1px dashed #ccc' }}>
+                                         <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>DIFERENCIA</div>
+                                         <div style={{ fontSize: '24px', fontWeight: '900', color: diferencia === 0 ? '#27ae60' : (diferencia > 0 ? '#3498db' : '#e74c3c') }}>
+                                             {diferencia >= 0 ? '+' : ''}${diferencia.toFixed(2)}
+                                         </div>
+                                     </div>
+                                 )}
 
                                 <textarea
                                     placeholder="Observaciones del turno..."
@@ -330,7 +469,7 @@ const CashArqueoModal = ({
                                 />
 
                                 <button
-                                    onClick={handleCloseShift}
+                                    onClick={handleConfirmCloseShift}
                                     disabled={loading || cashPhysicalCount <= 0}
                                     style={{
                                         width: '100%',

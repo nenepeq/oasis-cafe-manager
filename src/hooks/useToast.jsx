@@ -26,6 +26,16 @@ export const ToastProvider = ({ children }) => {
     }, duration);
   }, []);
 
+  // Asignar showToast al objeto global window para permitir accesos desde modales hijos y utilidades de forma robusta
+  React.useEffect(() => {
+    window.showToast = showToast;
+    return () => {
+      if (window.showToast === showToast) {
+        window.showToast = undefined;
+      }
+    };
+  }, [showToast]);
+
   const removeToast = useCallback((id) => {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
   }, []);

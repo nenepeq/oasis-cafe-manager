@@ -4,6 +4,10 @@
 -- Ejecutar en Supabase SQL Editor para aplicar seguridad server-side.
 -- Esto previene que usuarios manipulen el frontend para acceder a
 -- funciones de admin (cancelar ventas, ver finanzas, etc.)
+--
+-- IMPORTANTE: Si ya tienes políticas existentes, primero elimínalas:
+--   DROP POLICY IF EXISTS "nombre_policy" ON tabla;
+-- O usa el Dashboard de Supabase para revisarlas antes de aplicar.
 -- =============================================================
 
 -- 1. Habilitar RLS en todas las tablas principales
@@ -32,16 +36,22 @@ $$ LANGUAGE sql SECURITY DEFINER;
 -- =============================================================
 -- VENTAS (sales)
 -- =============================================================
--- Todos pueden ver y crear ventas
+-- Flujo: Todos crean ventas, todos pueden ver, todos pueden cambiar
+-- status (recibido→entregado, cobrar deudas). Solo admin cancela.
+-- La restricción de cancelación está en el backend logic pero
+-- la RLS permite UPDATE genérico para cobros (markAsPaid).
+
 CREATE POLICY "Todos pueden ver ventas" ON sales
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Usuarios autenticados pueden crear ventas" ON sales
-  FOR INSERT WITH CHECK (auth.uid() = created_by);
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
--- Solo admin puede cancelar (UPDATE status)
-CREATE POLICY "Solo admin puede modificar ventas" ON sales
-  FOR UPDATE USING (is_admin() OR auth.uid() = created_by);
+-- Cualquier usuario autenticado puede actualizar ventas
+-- (necesario para marcar como pagadas/entregadas desde cualquier sesión)
+-- La lógica de "solo admin cancela" se refuerza con un trigger.
+CREATE POLICY "Usuarios autenticados pueden actualizar ventas" ON sales
+  FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 -- Nadie puede borrar ventas directamente
 CREATE POLICY "Nadie puede borrar ventas" ON sales
@@ -51,7 +61,7 @@ CREATE POLICY "Nadie puede borrar ventas" ON sales
 -- ITEMS DE VENTA (sale_items)
 -- =============================================================
 CREATE POLICY "Todos pueden ver items de venta" ON sale_items
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Usuarios autenticados pueden crear items" ON sale_items
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
@@ -59,8 +69,9 @@ CREATE POLICY "Usuarios autenticados pueden crear items" ON sale_items
 -- =============================================================
 -- GASTOS (expenses)
 -- =============================================================
-CREATE POLICY "Todos pueden ver gastos" ON expenses
-  FOR SELECT USING (true);
+-- Tanto admin como ventas pueden registrar gastos (sync offline y mermas)
+CREATE POLICY "Usuarios autenticados pueden ver gastos" ON expenses
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Usuarios autenticados pueden crear gastos" ON expenses
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
@@ -74,8 +85,11 @@ CREATE POLICY "Solo admin puede borrar gastos" ON expenses
 -- =============================================================
 -- COMPRAS (purchases)
 -- =============================================================
-CREATE POLICY "Todos pueden ver compras" ON purchases
-  FOR SELECT USING (true);
+-- Las compras las registra admin desde InventoryModal, pero la sync
+-- offline las sube cualquier usuario que las haya guardado localmente.
+-- En la práctica solo admin accede al UI de compras.
+CREATE POLICY "Usuarios autenticados pueden ver compras" ON purchases
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Usuarios autenticados pueden crear compras" ON purchases
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
@@ -84,12 +98,24 @@ CREATE POLICY "Solo admin puede modificar compras" ON purchases
   FOR UPDATE USING (is_admin());
 
 -- =============================================================
+-- ITEMS DE COMPRA (purchase_items)
+-- =============================================================
+CREATE POLICY "Usuarios autenticados pueden ver items de compra" ON purchase_items
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Usuarios autenticados pueden crear items de compra" ON purchase_items
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- =============================================================
 -- INVENTARIO (inventory)
 -- =============================================================
-CREATE POLICY "Todos pueden ver inventario" ON inventory
-  FOR SELECT USING (true);
+-- UPDATE: cualquier usuario necesita actualizar stock (al vender, sync mermas)
+-- INSERT: solo al crear productos (admin)
+-- DELETE: solo al eliminar productos (admin)
+CREATE POLICY "Usuarios autenticados pueden ver inventario" ON inventory
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Usuarios autenticados pueden modificar inventario" ON inventory
+CREATE POLICY "Usuarios autenticados pueden modificar stock" ON inventory
   FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Solo admin puede insertar inventario" ON inventory
@@ -102,7 +128,7 @@ CREATE POLICY "Solo admin puede borrar inventario" ON inventory
 -- PRODUCTOS (products)
 -- =============================================================
 CREATE POLICY "Todos pueden ver productos" ON products
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Solo admin puede crear productos" ON products
   FOR INSERT WITH CHECK (is_admin());
@@ -116,10 +142,11 @@ CREATE POLICY "Solo admin puede borrar productos" ON products
 -- =============================================================
 -- TURNOS DE CAJA (cash_shifts)
 -- =============================================================
-CREATE POLICY "Todos pueden ver turnos" ON cash_shifts
-  FOR SELECT USING (true);
+-- Solo admin gestiona turnos (abrir/cerrar)
+CREATE POLICY "Usuarios autenticados pueden ver turnos" ON cash_shifts
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Solo admin puede gestionar turnos" ON cash_shifts
+CREATE POLICY "Solo admin puede abrir turnos" ON cash_shifts
   FOR INSERT WITH CHECK (is_admin());
 
 CREATE POLICY "Solo admin puede cerrar turnos" ON cash_shifts
@@ -128,10 +155,10 @@ CREATE POLICY "Solo admin puede cerrar turnos" ON cash_shifts
 -- =============================================================
 -- CONFIGURACIÓN (settings)
 -- =============================================================
-CREATE POLICY "Todos pueden ver settings" ON settings
-  FOR SELECT USING (true);
+CREATE POLICY "Usuarios autenticados pueden ver settings" ON settings
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Solo admin puede modificar settings" ON settings
+CREATE POLICY "Solo admin puede crear settings" ON settings
   FOR INSERT WITH CHECK (is_admin());
 
 CREATE POLICY "Solo admin puede actualizar settings" ON settings
@@ -140,8 +167,13 @@ CREATE POLICY "Solo admin puede actualizar settings" ON settings
 -- =============================================================
 -- PERFILES (profiles)
 -- =============================================================
+-- Cada usuario necesita leer su propio perfil para obtener su rol
 CREATE POLICY "Usuarios pueden ver su propio perfil" ON profiles
-  FOR SELECT USING (auth.uid() = id OR is_admin());
+  FOR SELECT USING (auth.uid() = id);
+
+-- Admin puede ver todos los perfiles
+CREATE POLICY "Admin puede ver todos los perfiles" ON profiles
+  FOR SELECT USING (is_admin());
 
 CREATE POLICY "Solo admin puede modificar perfiles" ON profiles
   FOR UPDATE USING (is_admin());
@@ -152,5 +184,31 @@ CREATE POLICY "Solo admin puede modificar perfiles" ON profiles
 CREATE POLICY "Solo admin puede ver logs" ON activity_logs
   FOR SELECT USING (is_admin());
 
-CREATE POLICY "Todos pueden crear logs" ON activity_logs
+CREATE POLICY "Usuarios autenticados pueden crear logs" ON activity_logs
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- =============================================================
+-- TRIGGER OPCIONAL: Prevenir cancelación por no-admin a nivel DB
+-- =============================================================
+-- Este trigger es la barrera real contra cancelaciones no autorizadas.
+-- Incluso si alguien bypasea el frontend, el DB lo rechaza.
+CREATE OR REPLACE FUNCTION prevent_non_admin_cancellation()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Si se intenta cambiar status a 'cancelado'
+  IF NEW.status = 'cancelado' AND OLD.status != 'cancelado' THEN
+    -- Verificar si el usuario es admin
+    IF NOT is_admin() THEN
+      RAISE EXCEPTION 'Solo administradores pueden cancelar ventas';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Crear el trigger (DROP IF EXISTS para evitar duplicados)
+DROP TRIGGER IF EXISTS check_cancellation_permission ON sales;
+CREATE TRIGGER check_cancellation_permission
+  BEFORE UPDATE ON sales
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_non_admin_cancellation();

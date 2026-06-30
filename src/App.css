@@ -398,6 +398,10 @@ body {
   .app-container {
     flex-direction: column !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     display: flex !important;
     background: var(--app-bg) !important;
   }
@@ -407,7 +411,7 @@ body {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
 
@@ -423,7 +427,7 @@ body {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
 
@@ -437,12 +441,13 @@ body {
 
   /* Scrollbar visible y funcional */
   .custom-scrollbar {
-    overflow-y: auto !important;
+    overflow-y: visible !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
-    flex: 1 !important;
+    flex: none !important;
     min-height: 0 !important;
+    height: auto !important;
   }
 
   .custom-scrollbar::-webkit-scrollbar {

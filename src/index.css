@@ -133,7 +133,6 @@ button:focus-visible {
     min-height: 100vh !important;
     overflow-y: auto !important;
     position: relative !important;
-    /* Permite scroll natural */
   }
 
   html,
@@ -141,6 +140,11 @@ button:focus-visible {
     overflow-y: auto !important;
     height: auto !important;
     position: relative !important;
+    overscroll-behavior: none !important;
+  }
+
+  body {
+    position: static !important;
   }
 
   .store-section {

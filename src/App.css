@@ -430,8 +430,8 @@ body {
   .store-section {
     flex: none !important;
     width: 100% !important;
-    height: 60% !important;
-    max-height: 60% !important;
+    height: 50% !important;
+    max-height: 50% !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
@@ -445,8 +445,8 @@ body {
   .cart-section {
     flex: none !important;
     width: 100% !important;
-    height: 40% !important;
-    max-height: 40% !important;
+    height: 50% !important;
+    max-height: 50% !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;

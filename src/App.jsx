@@ -14,6 +14,7 @@ import {
 import { logActivity } from './utils/logger';
 import { savePendingSale } from './utils/db';
 import { sanitizeName } from './utils/sanitize';
+import { formatUserError } from './utils/errorHandler';
 import { useToast } from './hooks/useToast.jsx';
 
 // Componentes (carga directa para Login, lazy para modales pesados)
@@ -294,7 +295,7 @@ function App() {
 
     } catch (err) { 
       console.error('❌ Excepción capturada en handleSale:', err);
-      showToast("Error: " + err.message, "error"); 
+      showToast("Error: " + formatUserError(err), "error"); 
     }
     setLoading(false);
   };

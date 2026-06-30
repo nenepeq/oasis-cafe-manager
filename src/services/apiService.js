@@ -171,14 +171,43 @@ export const getSalesTotalSummary = async (startDateFilter, endDateFilter) => {
 
 /**
  * Cancela una venta y devuelve las cantidades vendidas al stock de inventario.
+ * Usa una función RPC atómica en Supabase para garantizar consistencia.
+ * Si la RPC no está deployada, usa el fallback con loop de updates.
  */
 export const cancelSaleAndRestock = async (saleId, newStatus) => {
+  // Intentar usar la función atómica del servidor
+  try {
+    const { data, error } = await supabase.rpc('cancel_sale_and_restock', {
+      p_sale_id: saleId,
+      p_new_status: newStatus
+    });
+
+    if (!error && data?.success) {
+      return { error: null };
+    }
+
+    // Si la RPC devolvió un error de negocio
+    if (!error && data && !data.success) {
+      return { error: { message: data.error || 'Error al cancelar venta' } };
+    }
+
+    // Si la RPC no existe (404/error), usar fallback
+    if (error) {
+      console.warn('RPC cancel_sale_and_restock no disponible, usando fallback:', error.message);
+    }
+  } catch (rpcErr) {
+    console.warn('Error al llamar RPC, usando fallback:', rpcErr.message);
+  }
+
+  // --- FALLBACK: Loop de updates (menos seguro pero funcional) ---
   const { data: items, error: itemsError } = await supabase
     .from('sale_items')
     .select('product_id, quantity')
     .eq('sale_id', saleId);
 
   if (itemsError) return { error: itemsError };
+
+  const restockErrors = [];
 
   if (items) {
     for (const item of items) {
@@ -188,13 +217,27 @@ export const cancelSaleAndRestock = async (saleId, newStatus) => {
         .eq('product_id', item.product_id)
         .single();
 
-      if (!invError && inv) {
-        await supabase
+      if (invError) {
+        restockErrors.push({ product_id: item.product_id, error: invError });
+        continue;
+      }
+
+      if (inv) {
+        const { error: updateError } = await supabase
           .from('inventory')
           .update({ stock: inv.stock + item.quantity })
           .eq('product_id', item.product_id);
+
+        if (updateError) {
+          restockErrors.push({ product_id: item.product_id, error: updateError });
+        }
       }
     }
+  }
+
+  if (restockErrors.length > 0) {
+    console.error('Errores parciales al devolver stock:', restockErrors);
+    // Continuamos con la cancelación — el stock puede corregirse manualmente
   }
 
   return await supabase

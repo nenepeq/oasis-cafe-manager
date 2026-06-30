@@ -4,6 +4,7 @@ import * as apiService from '../services/apiService';
 import { logActivity } from '../utils/logger';
 import { getMXDate, getMXTimestamp } from '../utils/dates';
 import { sanitizeText } from '../utils/sanitize';
+import { formatUserError } from '../utils/errorHandler';
 import { useToast } from '../hooks/useToast.jsx';
 import { 
   getAllPendingItems, 
@@ -308,7 +309,7 @@ export const DataProvider = ({ children }) => {
       return publicUrl;
     } catch (error) {
       console.error('Error subiendo imagen:', error.message);
-      showToast('Error al subir la imagen del ticket: ' + error.message, 'error');
+      showToast('Error al subir la imagen: ' + formatUserError(error), 'error');
       return null;
     }
   };
@@ -425,7 +426,7 @@ export const DataProvider = ({ children }) => {
       if (!error) {
         setReportExpenses(data || []);
       } else {
-        showToast(`Error al cargar gastos: ${error.message}`, 'error');
+        showToast(`Error al cargar gastos: ${formatUserError(error)}`, 'error');
       }
     } catch (err) {
       console.error("Error fetching report expenses:", err);
@@ -453,7 +454,7 @@ export const DataProvider = ({ children }) => {
       }).catch(err => console.error('Error log cambio estatus:', err));
 
       calculateFinances(); fetchInventory(); fetchMonthlySalesTotal();
-    } catch (err) { showToast('Error: ' + err.message, "error"); }
+    } catch (err) { showToast('Error: ' + formatUserError(err), "error"); }
     setLoading(false);
   };
 
@@ -467,7 +468,7 @@ export const DataProvider = ({ children }) => {
       setSelectedSale(null);
       showToast("✅ Venta offline eliminada correctamente", "success");
     } catch (err) {
-      showToast("Error al eliminar venta offline: " + err.message, "error");
+      showToast("Error al eliminar venta offline: " + formatUserError(err), "error");
     }
   };
 
@@ -482,7 +483,7 @@ export const DataProvider = ({ children }) => {
       logActivity(user?.id || user.id, 'COBRO_DEUDA', 'VENTAS', { sale_id: saleId, method }).catch(err => console.error('Error log cobro deuda:', err));
 
       calculateFinances(); fetchMonthlySalesTotal(); fetchInventory();
-    } catch (err) { showToast('Error al cobrar: ' + err.message, "error"); }
+    } catch (err) { showToast('Error al cobrar: ' + formatUserError(err), "error"); }
     setLoading(false);
   };
 
@@ -554,7 +555,7 @@ export const DataProvider = ({ children }) => {
       showToast("✅ Turno Abierto", "success");
       logActivity(user?.id || user.id, 'APERTURA_TURNO', 'FINANZAS', { initial_fund: cashInitialFund }).catch(err => console.error('Error log apertura turno:', err));
     } else {
-      showToast("Error al abrir turno: " + error.message, "error");
+      showToast("Error al abrir turno: " + formatUserError(error), "error");
     }
     setLoading(false);
   };
@@ -592,7 +593,7 @@ export const DataProvider = ({ children }) => {
       setCashObservations('');
       setCashInitialFund(0);
     } else {
-      showToast("Error al cerrar turno: " + error.message, "error");
+      showToast("Error al cerrar turno: " + formatUserError(error), "error");
     }
     setLoading(false);
   };

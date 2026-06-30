@@ -600,8 +600,8 @@ function App() {
           ))}
         </div>
 
-        {/* CONTENEDOR DE PAGO FIJO ABAJO */}
-        <div style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
+        {/* CONTENEDOR DE PAGO */}
+        <div className="payment-container" style={{ flexShrink: 0, borderTop: '1px solid #eee', paddingTop: '10px', marginTop: 'auto' }}>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
             <button onClick={() => setPaymentMethod('Efectivo')} className="btn-active-effect" style={{ flex: 1, padding: '10px', borderRadius: '10px', backgroundColor: paymentMethod === 'Efectivo' ? '#27ae60' : '#999', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               <Banknote size={16} /> EFECTIVO

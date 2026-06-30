@@ -447,7 +447,9 @@ body {
     width: 100% !important;
     height: 50% !important;
     max-height: 50% !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
     display: flex !important;
     flex-direction: column !important;
 
@@ -460,8 +462,7 @@ body {
 
   /* Scroll interno en cada sección */
   .custom-scrollbar,
-  .product-scroll-area,
-  .cart-scroll-area {
+  .product-scroll-area {
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
@@ -469,6 +470,19 @@ body {
     flex: 1 !important;
     min-height: 0 !important;
     height: auto !important;
+  }
+
+  /* En mobile el carrito entero scrollea, no necesita scroll-area interno */
+  .cart-scroll-area {
+    overflow-y: visible !important;
+    flex: none !important;
+    height: auto !important;
+  }
+
+  /* En mobile, el contenedor de pago no se fija abajo - fluye con el scroll */
+  .payment-container {
+    flex-shrink: 1 !important;
+    margin-top: 10px !important;
   }
 
   .custom-scrollbar::-webkit-scrollbar {

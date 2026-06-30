@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import * as apiService from '../services/apiService';
 import { logActivity } from '../utils/logger';
 import { getMXDate, getMXTimestamp } from '../utils/dates';
+import { sanitizeText } from '../utils/sanitize';
 import { useToast } from '../hooks/useToast.jsx';
 import { 
   getAllPendingItems, 
@@ -129,7 +130,7 @@ export const DataProvider = ({ children }) => {
             total: s.total,
             status: s.status,
             created_by: s.created_by,
-            customer_name: s.customer_name,
+            customer_name: sanitizeText(s.customer_name, 100) || 'Cliente Mostrador',
             payment_method: s.payment_method,
             created_at: s.timestamp
           };
@@ -154,7 +155,7 @@ export const DataProvider = ({ children }) => {
 
           const { error: expError } = await apiService.insertExpense({
             monto: g.monto,
-            concepto: g.concepto,
+            concepto: sanitizeText(g.concepto, 300),
             categoria: g.categoria,
             fecha: g.fecha,
             created_by: g.created_by,

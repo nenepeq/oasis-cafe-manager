@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { logActivity } from './utils/logger';
 import { savePendingSale } from './utils/db';
+import { sanitizeName } from './utils/sanitize';
 import { useToast } from './hooks/useToast.jsx';
 
 // Componentes (carga directa para Login, lazy para modales pesados)
@@ -222,7 +223,7 @@ function App() {
     const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
 
     // Validación para A Cuenta
-    if (paymentMethod === 'A Cuenta' && !customerName.trim()) {
+    if (paymentMethod === 'A Cuenta' && !sanitizeName(customerName)) {
       showToast("⚠️ Para ventas A CUENTA, debes ingresar el nombre del cliente obligatoriamente.", "warning");
       return;
     }
@@ -236,7 +237,7 @@ function App() {
           total: cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0),
           status: "recibido",
           created_by: user.id,
-          customer_name: customerName.trim() || 'Cliente Mostrador',
+          customer_name: sanitizeName(customerName) || 'Cliente Mostrador',
           payment_method: paymentMethod,
           items: cart,
           timestamp: getMXTimestamp() // Usar zona horaria de México
@@ -266,7 +267,7 @@ function App() {
         total: total,
         status: "recibido",
         created_by: user.id,
-        customer_name: customerName.trim() || 'Cliente Mostrador',
+        customer_name: sanitizeName(customerName) || 'Cliente Mostrador',
         payment_method: paymentMethod
       };
 

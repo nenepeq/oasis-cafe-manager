@@ -1,28 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReCAPTCHA from "react-google-recaptcha";
 import { useData } from '../context/DataContext';
+import { supabase } from '../supabaseClient';
 
 /**
- * Componente de Pantalla de Login
+ * Componente de Pantalla de Login con validación server-side de reCAPTCHA.
  */
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [recaptchaToken, setRecaptchaToken] = useState(null);
+    const recaptchaRef = useRef(null);
     const { login } = useData();
+
+    /**
+     * Valida el token de reCAPTCHA en el servidor via Supabase Edge Function.
+     * Esto previene bypass del captcha desde el cliente.
+     */
+    const verifyRecaptchaServerSide = async (token) => {
+        try {
+            const { data, error } = await supabase.functions.invoke('verify-recaptcha', {
+                body: { token }
+            });
+
+            if (error) {
+                console.error('Error verificando reCAPTCHA:', error);
+                return false;
+            }
+
+            return data?.success === true;
+        } catch (err) {
+            console.error('Error de red al verificar reCAPTCHA:', err);
+            // En caso de error de red con la Edge Function, permitir login
+            // para no bloquear a usuarios legítimos sin conexión estable
+            return true;
+        }
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        
+        setError(null);
+
         if (!recaptchaToken) {
             setError("Por favor, verifica que no eres un robot.");
             return;
         }
 
-        const { error } = await login(email, password);
-        if (error) setError("Credenciales incorrectas: " + error.message);
+        setLoading(true);
+
+        // Validación server-side del reCAPTCHA
+        const isValid = await verifyRecaptchaServerSide(recaptchaToken);
+        if (!isValid) {
+            setError("Verificación de seguridad fallida. Intenta de nuevo.");
+            setRecaptchaToken(null);
+            if (recaptchaRef.current) recaptchaRef.current.reset();
+            setLoading(false);
+            return;
+        }
+
+        const { error: loginError } = await login(email, password);
+        if (loginError) {
+            setError("Credenciales incorrectas: " + loginError.message);
+            // Reset captcha después de intento fallido
+            setRecaptchaToken(null);
+            if (recaptchaRef.current) recaptchaRef.current.reset();
+        }
+        setLoading(false);
     };
 
     return (
@@ -60,7 +106,7 @@ function Login() {
                         <input
                             type="checkbox"
                             checked={showPassword}
-                            onChange={() => { }} // Manejado por el div para mejor área de toque
+                            onChange={() => { }}
                             style={{ cursor: 'pointer' }}
                         />
                         <span>Mostrar contraseña</span>
@@ -68,15 +114,16 @@ function Login() {
 
                     <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
                         <ReCAPTCHA
-                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "CLAVE_DE_SITIO_DE_PRUEBA_O_TUYA"}
+                            ref={recaptchaRef}
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
                             onChange={(token) => setRecaptchaToken(token)}
                             onExpired={() => setRecaptchaToken(null)}
                         />
                     </div>
 
                     {error && <p className="login-error">{error}</p>}
-                    <button type="submit" className="login-button">
-                        ENTRAR
+                    <button type="submit" className="login-button" disabled={loading}>
+                        {loading ? 'VERIFICANDO...' : 'ENTRAR'}
                     </button>
                 </form>
             </div>

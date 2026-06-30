@@ -4,6 +4,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { useData } from '../context/DataContext';
 import { getMXDate, getMXTimestamp } from '../utils/dates';
+import { sanitizeConcepto } from '../utils/sanitize';
 
 /**
  * Modal de Gestión de Inventario, Compras y Gastos
@@ -825,7 +826,7 @@ const InventoryModal = ({
                                     onClick={() => {
                                         if (expenseConcepto.trim() && expenseMonto > 0) {
                                             setExpenseCart([...expenseCart, {
-                                                concepto: expenseConcepto.trim(),
+                                                concepto: sanitizeConcepto(expenseConcepto),
                                                 categoria: expenseCategoria || 'Otros',
                                                 monto: expenseMonto
                                             }]);

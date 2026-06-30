@@ -122,11 +122,19 @@ button:focus-visible {
   body {
     display: block !important;
     place-items: unset !important;
+    position: static !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+
+  html {
+    overflow-y: auto !important;
+    height: auto !important;
   }
 }
 
 /* CASO 1: CELULAR VERTICAL (PARADO) - Uno encima del otro */
-@media (max-width: 600px) and (orientation: portrait) {
+@media (max-width: 600px) {
   .app-container {
     flex-direction: column !important;
     height: auto !important;
@@ -139,7 +147,7 @@ button:focus-visible {
   body {
     overflow-y: auto !important;
     height: auto !important;
-    position: relative !important;
+    position: static !important;
     overscroll-behavior: none !important;
   }
 

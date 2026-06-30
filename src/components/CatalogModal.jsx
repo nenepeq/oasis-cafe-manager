@@ -1,35 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from '../hooks/useToast';
+import React, { useState, useEffect, useRef } from 'react';
+import { useData } from '../context/DataContext';
 
 import { X, Save, Plus, Trash2, Edit2, ClipboardList, AlertCircle, RefreshCw, Package } from 'lucide-react';
-import { createProduct, updateProduct, deleteProduct, updateStock } from '../api';
+import { createProduct, updateProduct, deleteProduct, updateStock } from '../services/apiService';
 
 /**
  * Modal para la Gestión del Catálogo de Productos
  */
 const CatalogModal = ({
     showCatalog,
-    setShowCatalog,
-    userRole,
-    products,
-    inventoryList,
-    fetchProducts,
-    fetchInventory,
-    categories
+    setShowCatalog
 }) => {
+    const {
+        userRole,
+        products,
+        inventoryList,
+        fetchProducts,
+        fetchInventory,
+        categories,
+        uploadTicketImage: uploadImage,
+        showToast
+    } = useData();
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('form'); // 'form' como pestaña por defecto
     const [editingProduct, setEditingProduct] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+    const fileInputRef = useRef(null);
+
     const [formData, setFormData] = useState({
         name: '',
         category: categories[1] || '',
         sale_price: 0,
         cost_price: 0,
         stock: 0,
-        is_visible: true
+        is_visible: true,
+        image_url: ''
     });
     const [lastEditedId, setLastEditedId] = useState(null);
-    const { showToast } = useToast();
 
 
     // Efecto para auto-scroll al producto editado
@@ -66,13 +74,17 @@ const CatalogModal = ({
 
     const handleOpenCreate = () => {
         setEditingProduct(null);
+        setSelectedFile(null);
+        setImagePreview('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
         setFormData({
             name: '',
             category: formCategories[0] || '',
             sale_price: 0,
             cost_price: 0,
             stock: 0,
-            is_visible: true
+            is_visible: true,
+            image_url: ''
         });
         setActiveTab('form');
     };
@@ -80,6 +92,9 @@ const CatalogModal = ({
     const handleEdit = (product) => {
         setEditingProduct(product);
         setLastEditedId(product.id); // Guardamos el ID desde que iniciamos edición
+        setSelectedFile(null);
+        setImagePreview(product.image_url || '');
+        if (fileInputRef.current) fileInputRef.current.value = '';
 
         // Buscar el stock real en la lista de inventario que recibimos por props
         const currentStock = inventoryList.find(inv => inv.product_id === product.id)?.stock || 0;
@@ -90,7 +105,8 @@ const CatalogModal = ({
             sale_price: product.sale_price,
             cost_price: product.cost_price || 0,
             stock: currentStock,
-            is_visible: product.is_visible !== false
+            is_visible: product.is_visible !== false,
+            image_url: product.image_url || ''
         });
         setActiveTab('form');
     };
@@ -102,22 +118,36 @@ const CatalogModal = ({
             return;
         }
 
-
         setLoading(true);
         try {
+            let finalImageUrl = formData.image_url;
+
+            // Si hay un archivo seleccionado, lo subimos
+            if (selectedFile) {
+                const uploadedUrl = await uploadImage(selectedFile, 'products');
+                if (uploadedUrl) {
+                    finalImageUrl = uploadedUrl;
+                } else {
+                    throw new Error("No se pudo subir la imagen del producto.");
+                }
+            }
+
+            const productPayload = {
+                ...formData,
+                image_url: finalImageUrl
+            };
+
             if (editingProduct) {
                 const currentId = editingProduct.id;
-                const { error } = await updateProduct(currentId, formData);
+                const { error } = await updateProduct(currentId, productPayload);
                 if (error) throw error;
                 // Ajuste de stock si es necesario
                 const { error: stockError } = await updateStock(currentId, formData.stock);
                 if (stockError) console.error("Error al ajustar stock:", stockError);
 
-                // setLastEditedId(currentId); // Ya se pone en handleEdit
                 showToast("✅ Producto y Stock actualizados con éxito", "success");
             } else {
-
-                const { error } = await createProduct(formData);
+                const { error } = await createProduct(productPayload);
                 if (error) throw error;
                 showToast("✅ Producto creado con éxito", "success");
             }
@@ -129,7 +159,6 @@ const CatalogModal = ({
         } catch (err) {
             showToast("Error: " + err.message, "error");
         } finally {
-
             setLoading(false);
         }
     };
@@ -259,6 +288,90 @@ const CatalogModal = ({
                                         <option value="__NEW__" style={{ fontWeight: 'bold', color: 'var(--green_btn_primary)' }}>+ Nueva Categoría...</option>
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>FOTO DEL PRODUCTO</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'var(--bg-secondary)', padding: '15px', borderRadius: '15px', border: '1px solid var(--border-color)' }}>
+                                        <div style={{ 
+                                            width: '80px', 
+                                            height: '80px', 
+                                            borderRadius: '12px', 
+                                            border: '2px dashed var(--border-color)', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            overflow: 'hidden',
+                                            backgroundColor: 'var(--bg-primary)',
+                                            position: 'relative'
+                                        }}>
+                                            {imagePreview ? (
+                                                <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Package size={30} style={{ opacity: 0.3 }} />
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                ref={fileInputRef} 
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        setSelectedFile(file);
+                                                        setImagePreview(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                                style={{ display: 'none' }} 
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: '8px',
+                                                    border: 'none',
+                                                    backgroundColor: 'var(--bg-highlight)',
+                                                    color: 'var(--text-primary)',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '12px',
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '5px',
+                                                    width: 'max-content'
+                                                }}
+                                            >
+                                                Subir / Tomar Foto
+                                            </button>
+                                            {imagePreview && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedFile(null);
+                                                        setImagePreview('');
+                                                        setFormData({ ...formData, image_url: '' });
+                                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                                    }}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #ff4d4f',
+                                                        backgroundColor: 'transparent',
+                                                        color: '#ff4d4f',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '11px',
+                                                        cursor: 'pointer',
+                                                        width: 'max-content'
+                                                    }}
+                                                >
+                                                    Eliminar Foto
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '5px' }}>$ COSTO</label>
@@ -378,14 +491,30 @@ const CatalogModal = ({
                                             boxShadow: 'var(--card-shadow)', position: 'relative'
                                         }}
                                     >
-                                        <div style={{ marginBottom: '10px' }}>
-                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '4px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
-                                                {p.name}
-                                            </div>
-                                            <div style={{ fontSize: '10px', color: '#e67e22', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                <div>{p.category}</div>
-                                                <div style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '12px' }}>${parseFloat(p.sale_price).toFixed(2)}</div>
-                                                {p.is_visible === false && <span style={{ color: '#e74c3c', fontSize: '9px', fontWeight: 'bold' }}>• OCULTO</span>}
+                                        <div style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+                                            {p.image_url && (
+                                                <img 
+                                                    src={p.image_url} 
+                                                    alt={p.name} 
+                                                    style={{ 
+                                                        width: '45px', 
+                                                        height: '45px', 
+                                                        borderRadius: '8px', 
+                                                        objectFit: 'cover', 
+                                                        border: '1px solid var(--border-color)',
+                                                        alignSelf: 'center'
+                                                    }} 
+                                                />
+                                            )}
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.2', marginBottom: '4px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
+                                                    {p.name}
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#e67e22', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <div>{p.category}</div>
+                                                    <div style={{ color: '#27ae60', fontWeight: 'bold', fontSize: '12px' }}>${parseFloat(p.sale_price).toFixed(2)}</div>
+                                                    {p.is_visible === false && <span style={{ color: '#e74c3c', fontSize: '9px', fontWeight: 'bold' }}>• OCULTO</span>}
+                                                </div>
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '5px', width: '100%', marginTop: 'auto' }}>

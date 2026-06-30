@@ -2,6 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Package, RefreshCw, X, AlertTriangle, CheckCircle, Trash2, Download, Loader2, XCircle, Edit2, Check } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useData } from '../context/DataContext';
+import { getMXDate, getMXTimestamp } from '../utils/dates';
+
+/**
+ * Modal de Gestión de Inventario, Compras y Gastos
+ */
+import { logActivity } from '../utils/logger';
+import { 
+  savePendingPurchase, 
+  savePendingExpense, 
+  savePendingShrinkage, 
+  getAllPendingItems, 
+  clearPendingItem 
+} from '../utils/db';
+import * as apiService from '../services/apiService';
 
 /**
  * Modal de Gestión de Inventario, Compras y Gastos
@@ -9,44 +24,48 @@ import { saveAs } from 'file-saver';
 const InventoryModal = ({
     showInventory,
     setShowInventory,
-    userRole,
-    fetchInventory,
-    loading,
-    inventoryList,
-    products,
-    selectedPurchaseProd,
-    setSelectedPurchaseProd,
-    purchaseQty,
-    setPurchaseQty,
-    purchaseCost,
-    setPurchaseCost,
-    purchaseCart,
-    setPurchaseCart,
-    handleRegisterPurchase,
-    expenseCategoria,
-    setExpenseCategoria,
-    expenseMonto,
-    setExpenseMonto,
-    expenseConcepto,
-    setExpenseConcepto,
-    expenseFile,
-    setExpenseFile,
-    purchaseFile,
-    setPurchaseFile,
-    expenseCategories,
-    expenseSuggestions,
-    expenseCart,
-    setExpenseCart,
-    handleRegisterExpense,
-    // Props de Mermas
-    selectedShrinkageProd,
-    setSelectedShrinkageProd,
-    shrinkageQty,
-    setShrinkageQty,
-    shrinkageReason,
-    setShrinkageReason,
-    handleRegisterShrinkage
+    loading: parentLoading
 }) => {
+    const { 
+        userRole, 
+        fetchInventory, 
+        inventoryList, 
+        products,
+        user,
+        isOnline,
+        setInventoryList,
+        checkPendingItems,
+        uploadTicketImage,
+        calculateFinances,
+        showToast
+    } = useData();
+
+    // --- ESTADOS LOCALES DE COMPRAS Y GASTOS (MIGRADOS DESDE APP.JSX) ---
+    const [purchaseCart, setPurchaseCart] = useState([]);
+    const [selectedPurchaseProd, setSelectedPurchaseProd] = useState('');
+    const [purchaseQty, setPurchaseQty] = useState(0);
+    const [purchaseCost, setPurchaseCost] = useState(0);
+    const [purchaseFile, setPurchaseFile] = useState(null);
+
+    // Mermas (Shrinkage)
+    const [selectedShrinkageProd, setSelectedShrinkageProd] = useState('');
+    const [shrinkageQty, setShrinkageQty] = useState(0);
+    const [shrinkageReason, setShrinkageReason] = useState('Dañado');
+
+    // Gastos
+    const [expenseConcepto, setExpenseConcepto] = useState('');
+    const [expenseCategoria, setExpenseCategoria] = useState('Insumos');
+    const [expenseMonto, setExpenseMonto] = useState(0);
+    const [expenseCart, setExpenseCart] = useState([]);
+    const [expenseFile, setExpenseFile] = useState(null);
+
+    const expenseCategories = [
+        'Insumos y Alimentos', 'Empaques y Desechables', 'Operación del Local', 'Personal', 'Finanzas y Control', 'Otros'
+    ];
+    const expenseSuggestions = [];
+
+    const [modalLoading, setModalLoading] = useState(false);
+    const loading = parentLoading || modalLoading;
     const [activeTab, setActiveTab] = useState('existencias'); // 'existencias' | 'entradas' | 'gastos' | 'mermas'
     const [expensePreview, setExpensePreview] = useState(null);
     const [purchasePreview, setPurchasePreview] = useState(null);
@@ -109,6 +128,214 @@ const InventoryModal = ({
                 setPreviewLoading(false);
             };
             reader.readAsDataURL(file);
+        }
+    };
+    const handleRegisterPurchase = async () => {
+        if (purchaseCart.length === 0 || loading) return;
+        setModalLoading(true);
+        try {
+            let ticketUrl = null;
+            if (isOnline && purchaseFile) {
+                ticketUrl = await uploadTicketImage(purchaseFile, 'compras');
+            }
+
+            if (!isOnline) {
+                await savePendingPurchase({
+                    total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
+                    items: purchaseCart,
+                    created_by: user.id,
+                    file: purchaseFile,
+                    timestamp: getMXTimestamp()
+                });
+
+                const newInventory = [...inventoryList];
+                purchaseCart.forEach(item => {
+                    const idx = newInventory.findIndex(inv => inv.product_id === item.id);
+                    if (idx >= 0) {
+                        newInventory[idx] = { ...newInventory[idx], stock: newInventory[idx].stock + item.qty };
+                    }
+                });
+                setInventoryList(newInventory);
+                await checkPendingItems();
+                showToast("📦 Sin internet. Compra guardada y stock actualizado localmente. Se sincronizará al volver la conexión.", "info");
+            } else {
+                const purchaseData = {
+                    total: purchaseCart.reduce((a, i) => a + (i.cost * i.qty), 0),
+                    created_by: user.id,
+                    ticket_url: ticketUrl
+                };
+
+                const { data: purchase, error: purError } = await apiService.insertPurchaseWithItems(purchaseData, purchaseCart);
+                if (purError) throw purError;
+
+                showToast("📦 Stock Actualizado", "success");
+
+                // Disparar log de actividad en segundo plano sin bloquear el flujo principal
+                logActivity(user?.id || user.id, 'REGISTRO_COMPRA_INVENTARIO', 'INVENTARIO', {
+                    purchase_id: purchase.id,
+                    total: purchase.total,
+                    items_count: purchaseCart.length
+                }).catch(err => console.error('Error al registrar log de actividad de compra:', err));
+
+                fetchInventory();
+            }
+
+            setPurchaseCart([]); 
+            setPurchaseFile(null);
+            setShowInventory(false);
+
+        } catch (err) { 
+            console.error("Error en registro de compra:", err);
+            showToast("Error: " + err.message, "error"); 
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    const handleRegisterShrinkage = async () => {
+        console.log('📉 Iniciando registro de merma. Producto ID:', selectedShrinkageProd, 'Cantidad:', shrinkageQty, 'Online:', isOnline);
+        if (!selectedShrinkageProd || shrinkageQty <= 0) {
+            console.warn('⚠️ Cancelando merma: Producto no seleccionado o cantidad inválida.');
+            return;
+        }
+        setModalLoading(true);
+
+        try {
+            const prod = products.find(p => p.id === selectedShrinkageProd);
+            const inv = inventoryList.find(i => i.product_id === selectedShrinkageProd);
+
+            if (!inv || inv.stock < shrinkageQty) {
+                throw new Error("No hay suficiente stock para registrar esta merma.");
+            }
+
+            if (!isOnline) {
+                console.log('💾 Guardando merma offline en IndexedDB...');
+                await savePendingShrinkage({
+                    product_id: selectedShrinkageProd,
+                    product_name: prod.name,
+                    quantity: shrinkageQty,
+                    reason: shrinkageReason,
+                    created_by: user?.id || user.id,
+                    timestamp: getMXTimestamp()
+                });
+                console.log('✅ Merma offline guardada en IndexedDB.');
+
+                const newInventory = [...inventoryList];
+                const idx = newInventory.findIndex(i => i.product_id === selectedShrinkageProd);
+                if (idx >= 0) {
+                    newInventory[idx] = { ...newInventory[idx], stock: newInventory[idx].stock - shrinkageQty };
+                }
+                setInventoryList(newInventory);
+                await checkPendingItems();
+            } else {
+                console.log('📡 Registrando merma online en Supabase...');
+                const expenseData = {
+                    concepto: `Merma: ${shrinkageQty}x ${prod.name} (${shrinkageReason})`,
+                    categoria: 'Merma',
+                    monto: 0,
+                    fecha: getMXDate(),
+                    created_by: user?.id || user.id
+                };
+
+                const { error: shrinkError } = await apiService.registerShrinkageOnline(selectedShrinkageProd, inv.stock - shrinkageQty, expenseData);
+                if (shrinkError) {
+                    console.error('❌ Error de Supabase al registrar merma:', shrinkError);
+                    throw shrinkError;
+                }
+
+                // Disparar log de actividad en segundo plano sin bloquear el hilo principal de renderizado
+                logActivity(user?.id || user.id, 'REGISTRO_MERMA', 'INVENTARIO', {
+                    producto: prod.name,
+                    cantidad: shrinkageQty,
+                    motivo: shrinkageReason
+                }).catch(err => console.error('Error al registrar log de actividad de merma:', err));
+                console.log('✅ Merma online registrada con éxito.');
+            }
+
+            // Emitir notificación toast antes de cerrar el modal y desmontarlo
+            showToast(isOnline ? "✅ Merma registrada con éxito" : `💾 Sin internet. Merma registrada localmente: ${prod.name}`, isOnline ? "success" : "info");
+
+            setSelectedShrinkageProd('');
+            setShrinkageQty(0);
+            setShrinkageReason('Dañado');
+            setShowInventory(false);
+
+            if (isOnline) {
+                fetchInventory();
+                calculateFinances();
+            }
+
+        } catch (err) {
+            console.error('❌ Excepción capturada en handleRegisterShrinkage:', err);
+            showToast("Error: " + err.message, "error");
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    const handleRegisterExpense = async () => {
+        if (expenseCart.length === 0 || loading) return;
+        setModalLoading(true);
+
+        try {
+            let ticketUrl = null;
+            if (isOnline && expenseFile) {
+                ticketUrl = await uploadTicketImage(expenseFile, 'gastos');
+            }
+
+            const today = getMXDate();
+            const timestamp = getMXTimestamp();
+
+            if (!isOnline) {
+                for (const item of expenseCart) {
+                    await savePendingExpense({
+                        concepto: item.concepto,
+                        categoria: item.categoria,
+                        monto: item.monto,
+                        fecha: today,
+                        created_by: user.id,
+                        file: expenseFile,
+                        timestamp
+                    });
+                }
+                await checkPendingItems();
+            } else {
+                const expensesToInsert = expenseCart.map(item => ({
+                    concepto: item.concepto,
+                    categoria: item.categoria,
+                    monto: item.monto,
+                    fecha: today,
+                    created_by: user.id,
+                    ticket_url: ticketUrl
+                }));
+
+                const { error } = await apiService.insertExpenses(expensesToInsert);
+                if (error) throw error;
+            }
+
+            // Disparar log de actividad en segundo plano sin bloquear la interfaz
+            logActivity(user?.id || user.id, 'REGISTRO_TICKET_GASTOS', 'FINANZAS', {
+                items_count: expenseCart.length,
+                total: expenseCart.reduce((a, b) => a + b.monto, 0)
+            }).catch(err => console.error('Error al registrar log de actividad de gastos:', err));
+
+            showToast(isOnline ? "✅ Ticket registrado con éxito" : "💰 Sin internet. Gastos guardados localmente.", "success");
+
+            setExpenseCart([]);
+            setExpenseFile(null);
+            setExpenseConcepto('');
+            setExpenseMonto(0);
+            setShowInventory(false);
+
+            if (isOnline) {
+                calculateFinances();
+                fetchInventory();
+            }
+
+        } catch (err) {
+            showToast("Error: " + err.message, "error");
+        } finally {
+            setModalLoading(false);
         }
     };
 
@@ -422,32 +649,35 @@ const InventoryModal = ({
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {purchaseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingPurchaseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingPurchaseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)', overflow: 'hidden', minWidth: 0 }}>
                                                 {editingPurchaseIndex === i ? (
-                                                    <div style={{ display: 'flex', flex: 1, gap: '10px', alignItems: 'center' }}>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
-                                                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</div>
-                                                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                                                                <input
-                                                                    type="number"
-                                                                    value={editPurchaseValue.qty}
-                                                                    onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, qty: parseInt(e.target.value) || 0 })}
-                                                                    style={{ width: '60px', padding: '5px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                                                                />
-                                                                <span style={{ fontSize: '11px' }}>unids x $</span>
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    value={editPurchaseValue.cost}
-                                                                    onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, cost: parseFloat(e.target.value) || 0 })}
-                                                                    style={{ width: '80px', padding: '5px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                                                                />
-                                                                <span style={{ fontSize: '11px' }}>unit.</span>
+                                                    /* Layout en 2 filas para mobile:
+                                                       Fila 1: nombre del producto (solo lectura)
+                                                       Fila 2: inputs qty/costo + botones alineados */
+                                                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '8px', minWidth: 0 }}>
+                                                        {/* Fila 1: nombre del producto */}
+                                                        <div style={{ fontWeight: 'bold', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                                                        {/* Fila 2: inputs de cantidad y costo + botones — todos centrados verticalmente */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                                            <input
+                                                                type="number"
+                                                                value={editPurchaseValue.qty}
+                                                                onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, qty: parseInt(e.target.value) || 0 })}
+                                                                style={{ width: '55px', flexShrink: 0, padding: '8px 5px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)', textAlign: 'center', boxSizing: 'border-box' }}
+                                                            />
+                                                            <span style={{ fontSize: '11px', flexShrink: 0, color: 'var(--text-secondary)' }}>unids x $</span>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={editPurchaseValue.cost}
+                                                                onChange={(e) => setEditPurchaseValue({ ...editPurchaseValue, cost: parseFloat(e.target.value) || 0 })}
+                                                                style={{ flex: 1, minWidth: 0, padding: '8px 5px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)', textAlign: 'right', boxSizing: 'border-box' }}
+                                                            />
+                                                            {/* Botones confirmar / cancelar con flexShrink 0 */}
+                                                            <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
+                                                                <button onClick={() => handleUpdatePurchase(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={16} /></button>
+                                                                <button onClick={() => setEditingPurchaseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
                                                             </div>
-                                                        </div>
-                                                        <div style={{ display: 'flex', gap: '5px' }}>
-                                                            <button onClick={() => handleUpdatePurchase(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><Check size={16} /></button>
-                                                            <button onClick={() => setEditingPurchaseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><X size={16} /></button>
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -628,27 +858,37 @@ const InventoryModal = ({
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {expenseCart.map((item, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingExpenseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-secondary)', borderRadius: '10px', border: editingExpenseIndex === i ? '2px solid #3498db' : '1px solid var(--border-color)', overflow: 'hidden', minWidth: 0 }}>
                                                 {editingExpenseIndex === i ? (
-                                                    <div style={{ display: 'flex', flex: 1, gap: '10px', alignItems: 'center' }}>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
-                                                            <input
-                                                                type="text"
-                                                                value={editExpenseValue.concepto}
-                                                                onChange={(e) => setEditExpenseValue({ ...editExpenseValue, concepto: e.target.value })}
-                                                                style={{ padding: '8px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                                                            />
-                                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.categoria}</div>
-                                                        </div>
+                                                    /* Layout en 2 filas para mobile:
+                                                       Fila 1: input descripción (ancho completo)
+                                                       Fila 2: etiqueta categoría | input monto | botones alineados */
+                                                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '8px', minWidth: 0 }}>
+                                                        {/* Fila 1: input descripción ocupa todo el ancho */}
                                                         <input
-                                                            type="number"
-                                                            value={editExpenseValue.monto}
-                                                            onChange={(e) => setEditExpenseValue({ ...editExpenseValue, monto: parseFloat(e.target.value) || 0 })}
-                                                            style={{ width: '80px', padding: '8px', borderRadius: '5px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)', textAlign: 'right' }}
+                                                            type="text"
+                                                            value={editExpenseValue.concepto}
+                                                            onChange={(e) => setEditExpenseValue({ ...editExpenseValue, concepto: e.target.value })}
+                                                            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '14px', background: 'var(--bg-primary)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
                                                         />
-                                                        <div style={{ display: 'flex', gap: '5px' }}>
-                                                            <button onClick={() => handleUpdateExpense(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><Check size={16} /></button>
-                                                            <button onClick={() => setEditingExpenseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px', borderRadius: '5px', cursor: 'pointer' }}><X size={16} /></button>
+                                                        {/* Fila 2: categoría a la izquierda, monto + botones a la derecha — todos centrados verticalmente */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                            {/* Categoría con ellipsis para no empujar los demás elementos */}
+                                                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {item.categoria}
+                                                            </span>
+                                                            {/* Input monto con ancho fijo */}
+                                                            <input
+                                                                type="number"
+                                                                value={editExpenseValue.monto}
+                                                                onChange={(e) => setEditExpenseValue({ ...editExpenseValue, monto: parseFloat(e.target.value) || 0 })}
+                                                                style={{ width: '80px', flexShrink: 0, padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', background: 'var(--bg-primary)', color: 'var(--text-primary)', textAlign: 'right', boxSizing: 'border-box' }}
+                                                            />
+                                                            {/* Botones confirmar / cancelar */}
+                                                            <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
+                                                                <button onClick={() => handleUpdateExpense(i)} style={{ border: 'none', background: '#27ae60', color: '#fff', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={16} /></button>
+                                                                <button onClick={() => setEditingExpenseIndex(null)} style={{ border: 'none', background: '#e74c3c', color: '#fff', padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ) : (

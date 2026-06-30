@@ -392,8 +392,8 @@ const FinanceModal = ({
                 </button>
 
                 <div style={{ marginBottom: '25px', marginTop: '5px' }}>
-                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '45px', lineHeight: '1.3' }}>
-                        <PieChart size={24} /> Reporte<br/>Financiero
+                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '45px' }}>
+                        <PieChart size={24} /> Reporte Financiero
                     </h2>
 
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>

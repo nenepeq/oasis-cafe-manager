@@ -129,13 +129,13 @@ const StarProductsModal = ({
             >
                 <button
                     onClick={() => setShowStarProducts(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}
+                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '5px', zIndex: 10 }}
                 >
-                    <X size={30} />
+                    <X size={24} />
                 </button>
 
-                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 10px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
-                    <Award size={30} color="#f1c40f" /> Inteligencia de Negocio
+                <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 10px 0', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '45px', lineHeight: '1.3' }}>
+                    <Award size={24} color="#f1c40f" /> Inteligencia<br/>de Negocio
                 </h2>
 
                 {/* SELECTOR DE TABS */}

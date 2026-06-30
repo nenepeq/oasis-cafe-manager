@@ -296,7 +296,13 @@ body {
   height: 100dvh;
   width: 100%;
   overflow-x: hidden;
-  overflow-y: hidden;
+}
+
+/* Solo ocultar overflow en desktop */
+@media (min-width: 601px) {
+  .app-container {
+    overflow-y: hidden;
+  }
 }
 
 /* Áreas de scroll: en desktop hacen scroll interno, en mobile fluyen con la página */
@@ -417,7 +423,7 @@ body {
     width: 100% !important;
     height: auto !important;
     min-height: 100vh !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
     overflow-x: hidden !important;
     display: flex !important;
     background: var(--app-bg) !important;

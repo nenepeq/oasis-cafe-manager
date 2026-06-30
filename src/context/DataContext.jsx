@@ -700,8 +700,11 @@ export const DataProvider = ({ children }) => {
         setIsOnline(false);
         return;
       }
+      // Solo hacer ping activo si creemos estar offline — evita peticiones innecesarias
+      // cuando ya estamos online (los eventos 'online'/'offline' del browser son suficientes)
+      if (isOnline) return;
+      
       try {
-        // Ping rápido a un recurso local con cache-busting para validar conectividad real sin problemas de CORS
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         
@@ -717,7 +720,7 @@ export const DataProvider = ({ children }) => {
         console.warn('⚠️ Falló ping de red local, interpretando como offline:', err.message);
         setIsOnline(false);
       }
-    }, 10000); // Incrementar a 10 segundos para no saturar peticiones
+    }, 15000); // 15 segundos — solo actúa cuando estamos offline
 
     return () => {
       window.removeEventListener('online', handleOnline);

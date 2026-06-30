@@ -142,14 +142,49 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
+/* Grid de productos */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Estilos del componente ProductCard memoizado */
+.product-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.product-card__image {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.product-card__icon-wrapper {
+  transform: scale(0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Tarjetas de productos (Ahora Glass) */
 .product-card {
   padding: 10px;
   border-radius: 16px;
-  /* Más redondeado */
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.55);
-  /* Glass feel */
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(4px);
   text-align: center;
   height: 140px;

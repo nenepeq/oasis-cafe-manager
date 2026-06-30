@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import './App.css';
 import { useCart } from './hooks/useCart';
 import * as apiService from './services/apiService';
@@ -15,15 +15,43 @@ import { logActivity } from './utils/logger';
 import { savePendingSale } from './utils/db';
 import { useToast } from './hooks/useToast.jsx';
 
-// Componentes
+// Componentes (carga directa para Login, lazy para modales pesados)
 import Login from './components/Login';
-import InventoryModal from './components/InventoryModal';
-import FinanceModal from './components/FinanceModal';
-import SalesModal from './components/SalesModal';
-import CashArqueoModal from './components/CashArqueoModal';
-import StarProductsModal from './components/StarProductsModal';
-import CatalogModal from './components/CatalogModal';
+const InventoryModal = lazy(() => import('./components/InventoryModal'));
+const FinanceModal = lazy(() => import('./components/FinanceModal'));
+const SalesModal = lazy(() => import('./components/SalesModal'));
+const CashArqueoModal = lazy(() => import('./components/CashArqueoModal'));
+const StarProductsModal = lazy(() => import('./components/StarProductsModal'));
+const CatalogModal = lazy(() => import('./components/CatalogModal'));
 
+
+/**
+ * Componente de tarjeta de producto memoizado.
+ * Solo se re-renderiza si cambian sus props (producto, stock, qty en carrito).
+ */
+const ProductCard = React.memo(({ product, isOutOfStock, onAdd, categoryIcon }) => (
+  <button
+    onClick={() => onAdd(product)}
+    className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+    disabled={isOutOfStock}
+  >
+    <div className="product-card__icon">
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="product-card__image"
+        />
+      ) : (
+        <div className="product-card__icon-wrapper">
+          {categoryIcon}
+        </div>
+      )}
+    </div>
+    <div className="product-name">{product.name}</div>
+    <div className="product-price">${parseFloat(product.sale_price).toFixed(2)}</div>
+  </button>
+));
 
 function App() {
   const {
@@ -321,12 +349,12 @@ function App() {
     return <Coffee size={35} color="#8b5a2b" />;
   };
 
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = useMemo(() => products.filter(p => {
     const matchesCategory = selectedCategory === 'Todos' ? true : (p.category || '').trim() === selectedCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const isVisible = p.is_visible !== false;
     return matchesCategory && matchesSearch && isVisible;
-  });
+  }), [products, selectedCategory, searchQuery]);
 
   if (!user) return <Login />;
 
@@ -453,14 +481,7 @@ function App() {
         </div>
 
         <div className="custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
-          <div className="product-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-            gap: '10px',
-            padding: '5px',
-            width: '100%',
-            boxSizing: 'border-box'
-          }}>
+          <div className="product-grid">
             {filteredProducts.map(p => {
               const invItem = inventoryList.find(inv => inv.product_id === p.id);
               const cartItem = cart.find(i => i.id === p.id);
@@ -469,40 +490,13 @@ function App() {
               const isOutOfStock = totalStock - qtyInCart <= 0;
 
               return (
-                <button
+                <ProductCard
                   key={p.id}
-                  onClick={() => addToCart(p)}
-                  className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
-                  disabled={isOutOfStock}
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-color)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40px', width: '100%', marginBottom: '5px' }}>
-                    {p.image_url ? (
-                      <img
-                        src={p.image_url}
-                        alt={p.name}
-                        style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '2px solid var(--border-color)',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                    ) : (
-                      <div style={{ transform: 'scale(0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {getCategoryIcon(p)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="product-name" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
-                  <div className="product-price" style={{ color: 'var(--green_btn_primary)' }}>${parseFloat(p.sale_price).toFixed(2)}</div>
-                </button>
+                  product={p}
+                  isOutOfStock={isOutOfStock}
+                  onAdd={addToCart}
+                  categoryIcon={getCategoryIcon(p)}
+                />
               );
             })}
           </div>
@@ -642,25 +636,39 @@ function App() {
         </div>
       </div>
 
-      {/* MODALES MODULARIZADOS */}
-      <InventoryModal
-        showInventory={showInventory} setShowInventory={setShowInventory} loading={loading}
-      />
-      <FinanceModal
-        showFinances={showFinances} setShowFinances={setShowFinances} loading={loading}
-      />
-      <SalesModal
-        showReport={showReport} setShowReport={setShowReport} loading={loading}
-      />
-      <CashArqueoModal
-        showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} loading={loading}
-      />
-      <StarProductsModal
-        showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts}
-      />
-      <CatalogModal
-        showCatalog={showCatalog} setShowCatalog={setShowCatalog}
-      />
+      {/* MODALES MODULARIZADOS (lazy loaded) */}
+      <Suspense fallback={null}>
+        {showInventory && (
+          <InventoryModal
+            showInventory={showInventory} setShowInventory={setShowInventory} loading={loading}
+          />
+        )}
+        {showFinances && (
+          <FinanceModal
+            showFinances={showFinances} setShowFinances={setShowFinances} loading={loading}
+          />
+        )}
+        {showReport && (
+          <SalesModal
+            showReport={showReport} setShowReport={setShowReport} loading={loading}
+          />
+        )}
+        {showCashArqueo && (
+          <CashArqueoModal
+            showCashArqueo={showCashArqueo} setShowCashArqueo={setShowCashArqueo} loading={loading}
+          />
+        )}
+        {showStarProducts && (
+          <StarProductsModal
+            showStarProducts={showStarProducts} setShowStarProducts={setShowStarProducts}
+          />
+        )}
+        {showCatalog && (
+          <CatalogModal
+            showCatalog={showCatalog} setShowCatalog={setShowCatalog}
+          />
+        )}
+      </Suspense>
 
       {/* SPOTLIGHT SEARCH FAB & INPUT - Only visible if no modals are open */}
       {!showReport && !showInventory && !showFinances && !showCashArqueo && !showStarProducts && !showCatalog && (

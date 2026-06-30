@@ -48,5 +48,19 @@ export default defineConfig({
   ],
   server: {
     port: 5180
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks: separar dependencias grandes para mejor caching
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-charts': ['recharts'],
+          'vendor-excel': ['exceljs', 'file-saver'],
+          'vendor-pdf': ['jspdf', 'jspdf-autotable', 'html-to-image']
+        }
+      }
+    }
   }
 })

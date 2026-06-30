@@ -36,6 +36,7 @@ const ProductCard = React.memo(({ product, isOutOfStock, onAdd, categoryIcon }) 
     onClick={() => onAdd(product)}
     className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
     disabled={isOutOfStock}
+    aria-label={`${product.name} - $${parseFloat(product.sale_price).toFixed(2)}${isOutOfStock ? ' (Agotado)' : ''}`}
   >
     <div className="product-card__icon">
       {product.image_url ? (
@@ -398,6 +399,8 @@ function App() {
           <div style={{ display: 'flex', gap: '5px' }}>
             <div 
               className={!isOnline ? 'status-indicator-offline' : ''}
+              role="status"
+              aria-label={isOnline ? (isSyncing ? 'Sincronizando datos' : 'Conectado a internet') : 'Sin conexión a internet'}
               title={isOnline ? (isSyncing ? 'Sincronizando...' : 'Conectado') : 'Sin Internet (Modo Avión)'} 
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px',
@@ -407,17 +410,18 @@ function App() {
                 position: 'relative',
                 transition: 'all 0.3s ease'
               }}>
-              {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" /> : <Wifi size={18} />) : <WifiOff size={18} />}
+              {isOnline ? (isSyncing ? <CloudSync size={18} className="spin" aria-hidden="true" /> : <Wifi size={18} aria-hidden="true" />) : <WifiOff size={18} aria-hidden="true" />}
               {hasPendingItems && !isSyncing && (
                 <div style={{
                   position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px',
                   borderRadius: '50%', backgroundColor: '#f1c40f', border: '2px solid #fff', boxShadow: '0 0 5px rgba(0,0,0,0.2)'
-                }} title="Datos pendientes de sincronizar" />
+                }} aria-label="Datos pendientes de sincronizar" role="status" />
               )}
             </div>
             {isOnline && hasPendingItems && !isSyncing && (
               <button
                 onClick={syncOfflineData}
+                aria-label="Sincronizar datos pendientes"
                 title="Sincronizar datos pendientes"
                 className="btn-active-effect"
                 style={{
@@ -425,20 +429,20 @@ function App() {
                   borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={16} aria-hidden="true" />
               </button>
             )}
             {userRole === 'admin' && (
               <>
-                <button onClick={() => setShowCatalog(true)} title="Gestión de Catálogo" className="btn-active-effect" style={{ background: '#4a3728', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><ClipboardList size={16} /></button>
-                <button onClick={() => setShowInventory(true)} className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} /></button>
-                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} /></button>
-                <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} /></button>
+                <button onClick={() => setShowCatalog(true)} aria-label="Gestión de Catálogo" title="Gestión de Catálogo" className="btn-active-effect" style={{ background: '#4a3728', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><ClipboardList size={16} aria-hidden="true" /></button>
+                <button onClick={() => setShowInventory(true)} aria-label="Inventario" title="Inventario" className="btn-active-effect" style={{ background: '#3498db', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Package size={16} aria-hidden="true" /></button>
+                <button onClick={() => { setShowStarProducts(true); fetchStarProducts(); }} aria-label="Productos Estrella" title="Productos Estrella" className="btn-active-effect" style={{ background: '#f1c40f', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Award size={16} aria-hidden="true" /></button>
+                <button onClick={() => { setShowCashArqueo(true); setCashObservations(''); setCashPhysicalCount(0); }} aria-label="Arqueo de Caja" title="Arqueo de Caja" className="btn-active-effect" style={{ background: '#e67e22', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><Banknote size={16} aria-hidden="true" /></button>
               </>
             )}
-            <button onClick={() => setShowReport(true)} className="btn-active-effect" style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></button>
-            {userRole === 'admin' && <button onClick={() => setShowFinances(true)} className="btn-active-effect" style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><PieChart size={16} /></button>}
-            <button onClick={handleLogout} className="btn-active-effect" style={{ background: '#fff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px' }}><LogOut size={16} /></button>
+            <button onClick={() => setShowReport(true)} aria-label="Reporte de Ventas" title="Reporte de Ventas" className="btn-active-effect" style={{ background: '#27ae60', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><FileText size={16} aria-hidden="true" /></button>
+            {userRole === 'admin' && <button onClick={() => setShowFinances(true)} aria-label="Finanzas" title="Finanzas" className="btn-active-effect" style={{ background: '#9b59b6', color: '#fff', border: 'none', padding: '8px', borderRadius: '10px' }}><PieChart size={16} aria-hidden="true" /></button>}
+            <button onClick={handleLogout} aria-label="Cerrar sesión" title="Cerrar sesión" className="btn-active-effect" style={{ background: '#fff', color: '#e74c3c', border: '1px solid #e74c3c', padding: '8px', borderRadius: '10px' }}><LogOut size={16} aria-hidden="true" /></button>
           </div>
         </div>
 
@@ -513,6 +517,7 @@ function App() {
             <button
               onClick={toggleTheme}
               className="btn-active-effect"
+              aria-label={theme === 'dark' ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
               style={{
                 background: 'none',
                 border: 'none',
@@ -531,11 +536,14 @@ function App() {
           </h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '8px' }}>
+          <label htmlFor="customer-name" className="sr-only">Nombre del cliente</label>
           <input
+            id="customer-name"
             type="text"
             placeholder="Pedido a nombre de..."
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
+            aria-label="Nombre del cliente para el pedido"
             style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: 'none', backgroundColor: '#3498db', color: '#fff', fontWeight: 'bold', boxSizing: 'border-box', fontSize: '13px' }}
           />
         </div>
@@ -559,10 +567,11 @@ function App() {
                 <button
                   onClick={() => removeFromCart(item.id)}
                   className="btn-active-effect"
+                  aria-label={`Eliminar ${item.name} del carrito`}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' }}
                   title="Eliminar"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={16} aria-hidden="true" />
                 </button>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div style={{ color: 'var(--text-primary)', fontWeight: '800' }}>{item.name}</div>
@@ -571,18 +580,20 @@ function App() {
                       <button
                         onClick={() => updateCartQty(item.id, -1)}
                         className="btn-active-effect"
+                        aria-label={`Reducir cantidad de ${item.name}`}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '2px' }}
                       >
-                        <Minus size={12} />
+                        <Minus size={12} aria-hidden="true" />
                       </button>
-                      <span style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: 'var(--text-primary)' }}>{item.quantity}</span>
+                      <span aria-label={`Cantidad: ${item.quantity}`} style={{ margin: '0 8px', fontWeight: 'bold', minWidth: '15px', textAlign: 'center', color: 'var(--text-primary)' }}>{item.quantity}</span>
                       <button
                         onClick={() => updateCartQty(item.id, 1)}
                         className={`btn-active-effect ${((inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity) ? 'opacity-50 pointer-events-none' : ''}`}
+                        aria-label={`Aumentar cantidad de ${item.name}`}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '2px' }}
                         disabled={(inventoryList.find(inv => inv.product_id === item.id)?.stock || 0) <= item.quantity}
                       >
-                        <Plus size={12} />
+                        <Plus size={12} aria-hidden="true" />
                       </button>
                     </div>
                     <span style={{ fontSize: '11px', color: '#888' }}>x ${item.sale_price.toFixed(2)}</span>

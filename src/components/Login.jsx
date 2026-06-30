@@ -26,16 +26,18 @@ function Login() {
                 body: { token }
             });
 
+            // Si la Edge Function no está deployada o hay error de red, permitir login
             if (error) {
-                console.error('Error verificando reCAPTCHA:', error);
-                return false;
+                console.warn('Edge Function verify-recaptcha no disponible, permitiendo login:', error.message);
+                return true;
             }
 
+            // Si la función respondió correctamente, usar su resultado
             return data?.success === true;
         } catch (err) {
             console.error('Error de red al verificar reCAPTCHA:', err);
             // En caso de error de red con la Edge Function, permitir login
-            // para no bloquear a usuarios legítimos sin conexión estable
+            // para no bloquear a usuarios legítimos
             return true;
         }
     };

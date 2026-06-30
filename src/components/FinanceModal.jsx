@@ -386,14 +386,14 @@ const FinanceModal = ({
             >
                 <button
                     onClick={() => setShowFinances(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', zIndex: 10 }}
+                    style={{ position: 'absolute', top: '15px', right: '15px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)', zIndex: 10, padding: '5px' }}
                 >
-                    <X size={30} />
+                    <X size={24} />
                 </button>
 
-                <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '40px' }}>
-                        <PieChart size={28} /> Reporte Financiero
+                <div style={{ marginBottom: '25px', marginTop: '5px' }}>
+                    <h2 style={{ color: 'var(--text-primary)', fontWeight: '900', margin: '0 0 15px 0', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '45px' }}>
+                        <PieChart size={24} /> Reporte Financiero
                     </h2>
 
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>

@@ -5,6 +5,29 @@ import { saveAs } from 'file-saver';
 import { useData } from '../context/DataContext';
 
 /**
+ * Denominaciones de efectivo para la calculadora de arqueo
+ */
+const BILL_DENOMINATIONS = [
+    { key: 'b_1000', value: 1000, label: '$1000' },
+    { key: 'b_500', value: 500, label: '$500' },
+    { key: 'b_200', value: 200, label: '$200' },
+    { key: 'b_100', value: 100, label: '$100' },
+    { key: 'b_50', value: 50, label: '$50' },
+    { key: 'b_20', value: 20, label: '$20' }
+];
+
+const COIN_DENOMINATIONS = [
+    { key: 'm_20', value: 20, label: '$20' },
+    { key: 'm_10', value: 10, label: '$10' },
+    { key: 'm_5', value: 5, label: '$5' },
+    { key: 'm_2', value: 2, label: '$2' },
+    { key: 'm_1', value: 1, label: '$1' },
+    { key: 'm_0.5', value: 0.5, label: '$0.50' }
+];
+
+const ALL_DENOMINATIONS = [...BILL_DENOMINATIONS, ...COIN_DENOMINATIONS];
+
+/**
  * Modal de Arqueo de Caja y Historial de Turnos
  */
 const CashArqueoModal = ({
@@ -40,25 +63,24 @@ const CashArqueoModal = ({
     const [showCalculator, setShowCalculator] = React.useState(false);
     const [quantities, setQuantities] = React.useState({});
 
-    const handleQuantityChange = (denom, value) => {
-        const valInt = parseInt(value) || 0;
-        const newQuantities = { ...quantities, [denom]: valInt >= 0 ? valInt : 0 };
+    const handleQuantityChange = (denomKey, value) => {
+        const valInt = parseInt(value, 10) || 0;
+        const newQuantities = { ...quantities, [denomKey]: valInt >= 0 ? valInt : 0 };
         setQuantities(newQuantities);
 
         // Calcular el total
-        const total = Object.keys(newQuantities).reduce((acc, k) => {
-            return acc + (parseFloat(k) * (newQuantities[k] || 0));
+        const total = ALL_DENOMINATIONS.reduce((acc, denom) => {
+            return acc + (denom.value * (newQuantities[denom.key] || 0));
         }, 0);
         
-        setCashPhysicalCount(total);
+        setCashPhysicalCount(Number(total.toFixed(2)));
     };
 
     const handleConfirmCloseShift = () => {
         // Formatear el desglose de denominaciones mexicanas ordenadas de mayor a menor
-        const denomsOrder = [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.5];
-        const activeDenoms = denomsOrder
-            .filter(val => quantities[val] > 0)
-            .map(val => `${quantities[val]}x$${val === 0.5 ? '0.50' : val}`);
+        const activeDenoms = ALL_DENOMINATIONS
+            .filter(d => (quantities[d.key] || 0) > 0)
+            .map(d => `${quantities[d.key]}x${d.label}${d.key === 'b_20' ? ' (Billete)' : d.key === 'm_20' ? ' (Moneda)' : ''}`);
 
         if (activeDenoms.length > 0) {
             const desgloseText = `Desglose de Efectivo: ${activeDenoms.join(', ')}`;
@@ -397,14 +419,14 @@ const CashArqueoModal = ({
                                         {/* Billetes */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             <div style={{ fontSize: '11px', fontWeight: '900', color: '#e67e22', borderBottom: '1px solid var(--border-color)', paddingBottom: '3px', marginBottom: '3px' }}>💵 BILLETES</div>
-                                            {[1000, 500, 200, 100, 50, 20].map(val => (
-                                                <div key={val} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>${val}</span>
+                                            {BILL_DENOMINATIONS.map(item => (
+                                                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>{item.label}</span>
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        value={quantities[val] || ''}
-                                                        onChange={(e) => handleQuantityChange(val, e.target.value)}
+                                                        value={quantities[item.key] || ''}
+                                                        onChange={(e) => handleQuantityChange(item.key, e.target.value)}
                                                         placeholder="0"
                                                         style={{
                                                             width: '60px',
@@ -425,14 +447,14 @@ const CashArqueoModal = ({
                                         {/* Monedas */}
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             <div style={{ fontSize: '11px', fontWeight: '900', color: '#7f8c8d', borderBottom: '1px solid var(--border-color)', paddingBottom: '3px', marginBottom: '3px' }}>🪙 MONEDAS</div>
-                                            {[20, 10, 5, 2, 1, 0.5].map(val => (
-                                                <div key={val} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
-                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>${val === 0.5 ? '0.50' : val}</span>
+                                            {COIN_DENOMINATIONS.map(item => (
+                                                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px' }}>{item.label}</span>
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        value={quantities[val] || ''}
-                                                        onChange={(e) => handleQuantityChange(val, e.target.value)}
+                                                        value={quantities[item.key] || ''}
+                                                        onChange={(e) => handleQuantityChange(item.key, e.target.value)}
                                                         placeholder="0"
                                                         style={{
                                                             width: '60px',
